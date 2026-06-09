@@ -10,14 +10,6 @@ function getRoute() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
 
   if (path === "/") {
-    return <HomePage />;
-  }
-
-  if (path === "/color-scheme-blue") {
-    return <HomePage version="blue-swap" />;
-  }
-
-  if (path === "/version/white") {
     return <HomePage version="white" />;
   }
 
