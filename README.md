@@ -107,6 +107,7 @@ Production container behavior:
 
 - installs dependencies with `npm ci`
 - runs `npm run build`
+- optionally runs `npm run migrate` before startup when `RUN_MIGRATIONS=true`
 - serves the built Vite app and API through `npm run start`
 - uses Railway's `PORT` env var automatically
 
@@ -126,6 +127,7 @@ ADMIN_EMAILS=you@example.com
 
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 DATABASE_SSL=true
+RUN_MIGRATIONS=false
 
 BUNNY_STORAGE_ZONE=your-zone
 BUNNY_STORAGE_REGION=
@@ -133,10 +135,24 @@ BUNNY_STORAGE_API_KEY=xxxxx
 BUNNY_CDN_BASE_URL=https://your-zone.b-cdn.net
 ```
 
-After first deploy, run migrations once from Railway shell:
+### Database migrations
+
+Option A: run migrations once from Railway shell:
 
 ```bash
 npm run migrate
 ```
 
-Do not run migrations automatically on every container start unless you intentionally change that deployment strategy.
+Option B: run migrations from Docker startup by setting:
+
+```bash
+RUN_MIGRATIONS=true
+```
+
+Recommended use:
+
+- set `RUN_MIGRATIONS=true` for the first deploy or a schema-change deploy
+- redeploy
+- set `RUN_MIGRATIONS=false` afterward
+
+The migration SQL uses `create table if not exists` and safe indexes, but keeping startup migrations opt-in is safer for production.

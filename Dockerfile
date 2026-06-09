@@ -24,7 +24,10 @@ COPY --from=build /app/server ./server
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/db ./db
 COPY --from=build /app/src ./src
+COPY docker/entrypoint.sh ./docker/entrypoint.sh
+RUN chmod +x ./docker/entrypoint.sh
 
 EXPOSE 8787
 
+ENTRYPOINT ["./docker/entrypoint.sh"]
 CMD ["npm", "run", "start"]
