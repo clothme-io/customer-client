@@ -287,8 +287,16 @@ h1 {
   font-size: 18px;
 }
 
+.blog-band {
+  background: #ffffff;
+}
+
 .blog {
   padding: 70px 0 58px;
+}
+
+.blog-band .post-grid article {
+  background: #fbfbfb;
 }
 
 .blog-page {

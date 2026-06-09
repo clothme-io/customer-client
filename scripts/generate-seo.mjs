@@ -136,12 +136,14 @@ function renderHome({ themeClass = "" } = {}) {
       <h2>Built for unique personal and family shopping experience.</h2>
       <p>ClothME is for the moments when you are buying for yourself, your child, your spouse, or someone you love and you want the right size before checkout.</p>
     </section>
-    <section class="blog" id="blog" aria-labelledby="blog-title">
-      <div class="section-heading">
-        <p class="eyebrow">ClothME blog</p>
-        <h2 id="blog-title">Helpful reads before launch.</h2>
+    <section class="blog-band" id="blog" aria-labelledby="blog-title">
+      <div class="blog">
+        <div class="section-heading">
+          <p class="eyebrow">ClothME blog</p>
+          <h2 id="blog-title">Helpful reads before launch.</h2>
+        </div>
+        <div class="post-grid">${renderBlogCards()}</div>
       </div>
-      <div class="post-grid">${renderBlogCards()}</div>
     </section>
   </main>`;
 

@@ -11,7 +11,7 @@ export function LandingHero({ onWaitlistSubmit }) {
         <form className="waitlist-form" id="waitlist" onSubmit={onWaitlistSubmit}>
           <label className="sr-only" htmlFor="email">Email address</label>
           <input id="email" name="email" type="email" placeholder="Enter your email" autoComplete="email" required />
-          <button type="submit">Get Your Invite</button>
+          <button type="submit">Reserve Your Spot</button>
         </form>
 
         <p className="privacy-note">Early access invites will be sent by email. No spam.</p>
