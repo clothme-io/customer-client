@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BlogCard } from "../components/BlogCard";
+import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
 import { posts } from "../data/posts";
@@ -61,6 +62,7 @@ export function BlogIndexPage() {
           </div>
         </section>
       </main>
+      <Footer />
     </>
   );
 }

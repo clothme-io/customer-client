@@ -83,6 +83,34 @@ function renderHeader() {
   </header>`;
 }
 
+function renderFooter() {
+  return `<footer class="site-footer">
+    <div class="footer-grid">
+      <section>
+        <h2>About</h2>
+        <p>We are organizing the world's fashion products by Size/Fit in every city and giving access to brands and consumers by creating a new commerce category <strong>"Fashion Size Commerce"</strong></p>
+      </section>
+      <section>
+        <h2>Contacts</h2>
+        <p>Email: talk2us@clothme.io</p>
+        <p>Address: Suite 250 - #1430</p>
+        <p>97 Seymour St. Vancouver,</p>
+        <p>V6B 3M1 BC, Canada</p>
+      </section>
+      <section>
+        <h2>Social</h2>
+        <a class="social-link" href="https://www.instagram.com/clothme_io" aria-label="ClothME on Instagram">
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1"></circle></svg>
+        </a>
+      </section>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; Copyright 2026 ClothME. All rights reserved.</p>
+      <a href="/privacy-policy">Privacy Policy</a>
+    </div>
+  </footer>`;
+}
+
 function renderBlogCards() {
   return contentPosts
     .map(
@@ -145,7 +173,8 @@ function renderHome({ themeClass = "" } = {}) {
         <div class="post-grid">${renderBlogCards()}</div>
       </div>
     </section>
-  </main>`;
+  </main>
+  ${renderFooter()}`;
 
   return themeClass ? `<div class="${themeClass}">${content}</div>` : content;
 }
@@ -161,7 +190,7 @@ function renderBlogIndex() {
       </div>
       <div class="post-grid">${renderBlogCards()}</div>
     </section>
-  </main></div>`;
+  </main>${renderFooter()}</div>`;
 }
 
 function renderArticle(post) {
@@ -196,7 +225,7 @@ function renderArticle(post) {
       </section>
       <div class="tag-list" aria-label="Article tags">${tags}</div>
     </article>
-  </main></div>`;
+  </main>${renderFooter()}</div>`;
 }
 
 const urls = [
@@ -204,6 +233,7 @@ const urls = [
   { loc: "/color-scheme-blue", priority: "0.2", changefreq: "monthly" },
   { loc: "/version/white", priority: "0.2", changefreq: "monthly" },
   { loc: "/blog", priority: "0.8", changefreq: "weekly" },
+  { loc: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
   ...contentPosts.map((post) => ({
     loc: `/blog/${post.slug}`,
     priority: "0.7",
@@ -262,6 +292,7 @@ ClothME is a fashion shopping platform in development. It helps users generate f
 ## Core Pages
 - Home and waitlist: ${absoluteUrl("/")}
 - Blog index: ${absoluteUrl("/blog")}
+- Privacy policy: ${absoluteUrl("/privacy-policy")}
 - Sitemap: ${absoluteUrl("/sitemap.xml")}
 - RSS feed: ${absoluteUrl("/rss.xml")}
 

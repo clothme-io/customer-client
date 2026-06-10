@@ -3,6 +3,7 @@ import { Analytics } from "./components/Analytics";
 import { BlogIndexPage } from "./pages/BlogIndexPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { HomePage } from "./pages/HomePage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { AdminBlogPage } from "./pages/admin/AdminBlogPage";
 import { AdminPostEditorPage } from "./pages/admin/AdminPostEditorPage";
 
@@ -17,6 +18,10 @@ function getRoute(path) {
 
   if (path === "/blog") {
     return <BlogIndexPage />;
+  }
+
+  if (path === "/privacy-policy") {
+    return <PrivacyPolicyPage />;
   }
 
   if (path === "/admin" || path === "/admin/blog") {
@@ -46,7 +51,7 @@ function getRoute(path) {
 export function App() {
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
   const path = getPath();
-  const pageClassName = path === "/blog" || path.startsWith("/blog/") || path.startsWith("/admin") ? "page-white" : "";
+  const pageClassName = path === "/blog" || path.startsWith("/blog/") || path === "/privacy-policy" || path.startsWith("/admin") ? "page-white" : "";
   const app = (
     <div className={pageClassName}>
       <Analytics />

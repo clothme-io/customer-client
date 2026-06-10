@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
 import { getPostBySlug, posts } from "../data/posts";
@@ -160,6 +161,7 @@ export function BlogPostPage({ slug, previewToken = "" }) {
           </div>
         </section>
       </main>
+      <Footer />
     </>
   );
 }

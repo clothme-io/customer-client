@@ -1,4 +1,5 @@
 import { Header } from "../../components/Header";
+import { Footer } from "../../components/Footer";
 import { WaitlistModal } from "../../components/WaitlistModal";
 import { LandingBlogPreview } from "./LandingBlogPreview";
 import { LandingFamilyNote } from "./LandingFamilyNote";
@@ -15,6 +16,7 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
         <LandingFamilyNote />
         <LandingBlogPreview posts={posts} />
       </main>
+      <Footer />
       <WaitlistModal isOpen={isModalOpen} onClose={onCloseModal} />
     </>
   );
