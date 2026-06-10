@@ -151,7 +151,7 @@ function renderHome({ themeClass = "" } = {}) {
 }
 
 function renderBlogIndex() {
-  return `${renderHeader()}
+  return `<div class="page-white">${renderHeader()}
   <main>
     <section class="blog blog-page" aria-labelledby="blog-title">
       <div class="section-heading">
@@ -161,7 +161,7 @@ function renderBlogIndex() {
       </div>
       <div class="post-grid">${renderBlogCards()}</div>
     </section>
-  </main>`;
+  </main></div>`;
 }
 
 function renderArticle(post) {
@@ -173,7 +173,7 @@ function renderArticle(post) {
     .join("");
   const tags = post.tags.map((tag) => `<span>${htmlEscape(tag)}</span>`).join("");
 
-  return `${renderHeader()}
+  return `<div class="page-white">${renderHeader()}
   <main class="article-shell">
     <article class="article-page">
       <p class="eyebrow">${htmlEscape(post.category)}</p>
@@ -196,7 +196,7 @@ function renderArticle(post) {
       </section>
       <div class="tag-list" aria-label="Article tags">${tags}</div>
     </article>
-  </main>`;
+  </main></div>`;
 }
 
 const urls = [

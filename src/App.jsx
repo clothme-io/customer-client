@@ -6,9 +6,11 @@ import { HomePage } from "./pages/HomePage";
 import { AdminBlogPage } from "./pages/admin/AdminBlogPage";
 import { AdminPostEditorPage } from "./pages/admin/AdminPostEditorPage";
 
-function getRoute() {
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+function getPath() {
+  return window.location.pathname.replace(/\/$/, "") || "/";
+}
 
+function getRoute(path) {
   if (path === "/") {
     return <HomePage version="white" />;
   }
@@ -43,11 +45,13 @@ function getRoute() {
 
 export function App() {
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+  const path = getPath();
+  const pageClassName = path === "/blog" || path.startsWith("/blog/") || path.startsWith("/admin") ? "page-white" : "";
   const app = (
-    <>
+    <div className={pageClassName}>
       <Analytics />
-      {getRoute()}
-    </>
+      {getRoute(path)}
+    </div>
   );
 
   if (!publishableKey) {
