@@ -10,7 +10,15 @@ const dirname = path.dirname(filename);
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 const databaseSsl = process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false };
 
-const isAdmin = ({ req: { user } }) => Boolean(user);
+const isAdmin = ({ req }) => {
+  if (req?.user) {
+    return true;
+  }
+
+  console.warn("Payload CMS write denied because no authenticated CMS user was found on the request.");
+  return false;
+};
+
 const publishedOrAdmin = ({ req: { user } }) => {
   if (user) {
     return true;
