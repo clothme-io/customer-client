@@ -83,7 +83,7 @@ DATABASE_URL=postgresql://user:password@host:port/database
 DATABASE_SSL=true
 RUN_MIGRATIONS=false
 PAYLOAD_SECRET=replace-with-a-long-random-secret
-PAYLOAD_DB_PUSH=false
+PAYLOAD_DB_PUSH=true
 
 BUNNY_STORAGE_ZONE=your-zone
 BUNNY_STORAGE_REGION=
@@ -113,4 +113,4 @@ RUN_MIGRATIONS=true
 
 For production, Railway's pre-deploy command is preferred because migrations run before the new version starts serving traffic.
 
-Payload CMS uses the same `DATABASE_URL`. In local development, Payload can push schema changes automatically. In production, keep `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
+Payload CMS uses the same `DATABASE_URL`. For the first Railway deployment, keep `PAYLOAD_DB_PUSH=true` so Payload can create its own CMS tables. After the CMS is stable and migrations are in place, you can switch to `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
