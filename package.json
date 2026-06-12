@@ -15,8 +15,6 @@
     "cms:push": "node scripts/payload-push.mjs"
   },
   "dependencies": {
-    "@clerk/backend": "^3.5.0",
-    "@clerk/clerk-react": "^5.61.8",
     "@payloadcms/db-postgres": "^3.85.1",
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
