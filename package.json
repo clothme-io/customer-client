@@ -11,7 +11,8 @@
     "cms:generate:importmap": "payload generate:importmap",
     "cms:generate:types": "payload generate:types",
     "cms:migrate": "payload migrate",
-    "cms:migrate:create": "payload migrate:create"
+    "cms:migrate:create": "payload migrate:create",
+    "cms:push": "node scripts/payload-push.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^3.5.0",

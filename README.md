@@ -65,6 +65,7 @@ npm run cms:generate:importmap
 npm run cms:generate:types
 npm run cms:migrate:create
 npm run cms:migrate
+npm run cms:push
 ```
 
 ## Environment Variables
@@ -113,4 +114,4 @@ RUN_MIGRATIONS=true
 
 For production, Railway's pre-deploy command is preferred because migrations run before the new version starts serving traffic.
 
-Payload CMS uses the same `DATABASE_URL`. For the first Railway deployment, keep `PAYLOAD_DB_PUSH=true` so Payload can create its own CMS tables. After the CMS is stable and migrations are in place, you can switch to `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
+Payload CMS uses the same `DATABASE_URL`. For the first Railway deployment, keep `PAYLOAD_DB_PUSH=true` so the Docker entrypoint can create its own CMS tables before the app starts. After the CMS is stable and migrations are in place, you can switch to `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
