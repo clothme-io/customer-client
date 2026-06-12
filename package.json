@@ -5,16 +5,30 @@
   "type": "module",
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
-    "build": "next build",
+    "build": "payload generate:importmap && next build",
     "start": "next start",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "cms:generate:importmap": "payload generate:importmap",
+    "cms:generate:types": "payload generate:types",
+    "cms:migrate": "payload migrate",
+    "cms:migrate:create": "payload migrate:create"
   },
   "dependencies": {
     "@clerk/backend": "^3.5.0",
     "@clerk/clerk-react": "^5.61.8",
-    "next": "^15.5.9",
+    "@payloadcms/db-postgres": "^3.85.1",
+    "@payloadcms/next": "^3.85.1",
+    "@payloadcms/richtext-lexical": "^3.85.1",
+    "graphql": "^16.14.2",
+    "next": "^15.4.11",
+    "payload": "^3.85.1",
     "pg": "^8.21.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sharp": "^0.35.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "typescript": "^6.0.3"
   }
 }
