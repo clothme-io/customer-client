@@ -48,6 +48,25 @@ It supports drafts, scheduled posts, preview links, publishing, Bunny.net image 
 
 Admin access is controlled by Clerk and the `ADMIN_EMAILS` allowlist.
 
+## Payload CMS
+
+The Payload CMS editor lives at:
+
+```text
+/admin/cms
+```
+
+This is separate from the custom `/admin/blog` editor. Use it for richer CMS workflows such as media, SEO fields, drafts, scheduled publishing, and location-aware content.
+
+Useful commands:
+
+```bash
+npm run cms:generate:importmap
+npm run cms:generate:types
+npm run cms:migrate:create
+npm run cms:migrate
+```
+
 ## Environment Variables
 
 ```bash
@@ -63,6 +82,8 @@ ADMIN_EMAILS=you@example.com
 DATABASE_URL=postgresql://user:password@host:port/database
 DATABASE_SSL=true
 RUN_MIGRATIONS=false
+PAYLOAD_SECRET=replace-with-a-long-random-secret
+PAYLOAD_DB_PUSH=false
 
 BUNNY_STORAGE_ZONE=your-zone
 BUNNY_STORAGE_REGION=
@@ -91,3 +112,5 @@ RUN_MIGRATIONS=true
 ```
 
 For production, Railway's pre-deploy command is preferred because migrations run before the new version starts serving traffic.
+
+Payload CMS uses the same `DATABASE_URL`. In local development, Payload can push schema changes automatically. In production, keep `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
