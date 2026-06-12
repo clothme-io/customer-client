@@ -1,13 +1,5 @@
+import Head from "next/head";
 import { siteConfig } from "../data/site";
-
-function setTag(selector, createTag) {
-  let tag = document.head.querySelector(selector);
-  if (!tag) {
-    tag = createTag();
-    document.head.appendChild(tag);
-  }
-  return tag;
-}
 
 export function SEO({ title, description, path = "/", image, type = "website", jsonLd = [], robots = "index,follow" }) {
   const absoluteTitle = title || siteConfig.defaultTitle;
@@ -15,49 +7,24 @@ export function SEO({ title, description, path = "/", image, type = "website", j
   const canonical = new URL(path, siteConfig.siteUrl).toString();
   const imageUrl = image ? new URL(image, siteConfig.siteUrl).toString() : "";
 
-  document.title = absoluteTitle;
-
-  const meta = [
-    ["name", "description", absoluteDescription],
-    ["name", "robots", robots],
-    ["property", "og:title", absoluteTitle],
-    ["property", "og:description", absoluteDescription],
-    ["property", "og:type", type],
-    ["property", "og:url", canonical],
-    ["name", "twitter:card", imageUrl ? "summary_large_image" : "summary"],
-    ["name", "twitter:title", absoluteTitle],
-    ["name", "twitter:description", absoluteDescription]
-  ];
-
-  if (imageUrl) {
-    meta.push(["property", "og:image", imageUrl]);
-    meta.push(["name", "twitter:image", imageUrl]);
-  }
-
-  meta.forEach(([attr, key, content]) => {
-    const tag = setTag(`meta[${attr}="${key}"]`, () => {
-      const node = document.createElement("meta");
-      node.setAttribute(attr, key);
-      return node;
-    });
-    tag.setAttribute("content", content);
-  });
-
-  const canonicalTag = setTag('link[rel="canonical"]', () => {
-    const node = document.createElement("link");
-    node.setAttribute("rel", "canonical");
-    return node;
-  });
-  canonicalTag.setAttribute("href", canonical);
-
-  document.querySelectorAll("script[data-json-ld]").forEach((node) => node.remove());
-  jsonLd.forEach((schema, index) => {
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.dataset.jsonLd = String(index);
-    script.textContent = JSON.stringify(schema);
-    document.head.appendChild(script);
-  });
-
-  return null;
+  return (
+    <Head>
+      <title>{absoluteTitle}</title>
+      <meta name="description" content={absoluteDescription} />
+      <meta name="robots" content={robots} />
+      <link rel="canonical" href={canonical} />
+      <meta property="og:title" content={absoluteTitle} />
+      <meta property="og:description" content={absoluteDescription} />
+      <meta property="og:type" content={type} />
+      <meta property="og:url" content={canonical} />
+      {imageUrl ? <meta property="og:image" content={imageUrl} /> : null}
+      <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
+      <meta name="twitter:title" content={absoluteTitle} />
+      <meta name="twitter:description" content={absoluteDescription} />
+      {imageUrl ? <meta name="twitter:image" content={imageUrl} /> : null}
+      {jsonLd.map((schema, index) => (
+        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replaceAll("<", "\\u003c") }} />
+      ))}
+    </Head>
+  );
 }

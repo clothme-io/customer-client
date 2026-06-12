@@ -7,48 +7,56 @@ function adminEmails() {
     .filter(Boolean);
 }
 
-export async function requireAdmin(req, res, next) {
+export async function getAdminFromAuthorization(authorization = "") {
   const allowedEmails = adminEmails();
 
   if (!process.env.CLERK_SECRET_KEY) {
-    return res.status(503).json({
-      error: "Clerk not configured",
-      message: "Set CLERK_SECRET_KEY and ADMIN_EMAILS to enable admin access."
-    });
+    const error = new Error("Set CLERK_SECRET_KEY and ADMIN_EMAILS to enable admin access.");
+    error.status = 503;
+    error.code = "Clerk not configured";
+    throw error;
   }
 
   if (!allowedEmails.length) {
-    return res.status(503).json({
-      error: "Admin allowlist not configured",
-      message: "Set ADMIN_EMAILS to the comma-separated admin email list."
-    });
+    const error = new Error("Set ADMIN_EMAILS to the comma-separated admin email list.");
+    error.status = 503;
+    error.code = "Admin allowlist not configured";
+    throw error;
   }
 
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
 
   if (!token) {
-    return res.status(401).json({ error: "Missing Clerk token" });
+    const error = new Error("Missing Clerk token");
+    error.status = 401;
+    error.code = "Missing Clerk token";
+    throw error;
   }
 
+  const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
+  const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+  const user = await clerk.users.getUser(payload.sub);
+  const primaryEmail = user.emailAddresses.find((item) => item.id === user.primaryEmailAddressId);
+  const email = String(primaryEmail?.emailAddress || user.emailAddresses[0]?.emailAddress || "").toLowerCase();
+
+  if (!email || !allowedEmails.includes(email)) {
+    const error = new Error("Not allowed");
+    error.status = 403;
+    error.code = "Not allowed";
+    throw error;
+  }
+
+  return {
+    userId: payload.sub,
+    email
+  };
+}
+
+export async function requireAdmin(req, res, next) {
   try {
-    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
-    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-    const user = await clerk.users.getUser(payload.sub);
-    const primaryEmail = user.emailAddresses.find((item) => item.id === user.primaryEmailAddressId);
-    const email = String(primaryEmail?.emailAddress || user.emailAddresses[0]?.emailAddress || "").toLowerCase();
-
-    if (!email || !allowedEmails.includes(email)) {
-      return res.status(403).json({ error: "Not allowed" });
-    }
-
-    req.admin = {
-      userId: payload.sub,
-      email
-    };
-
+    req.admin = await getAdminFromAuthorization(req.headers.authorization || "");
     return next();
   } catch (error) {
-    return res.status(401).json({ error: "Invalid Clerk token" });
+    return res.status(error.status || 401).json({ error: error.code || "Invalid Clerk token", message: error.message });
   }
 }
