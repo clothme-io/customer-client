@@ -8,6 +8,7 @@ import sharp from "sharp";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+const databaseSsl = process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false };
 
 const isAdmin = ({ req: { user } }) => Boolean(user);
 const publishedOrAdmin = ({ req: { user } }) => {
@@ -256,7 +257,8 @@ export default buildConfig({
   ],
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL
+      connectionString: process.env.DATABASE_URL,
+      ssl: databaseSsl
     },
     push: process.env.PAYLOAD_DB_PUSH !== "false"
   }),
