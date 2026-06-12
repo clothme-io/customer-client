@@ -23,9 +23,9 @@ function NotFoundPage() {
   );
 }
 
-export function BlogPostPage({ slug, previewToken = "" }) {
-  const [remotePost, setRemotePost] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
+  const [remotePost, setRemotePost] = useState(initialPost);
+  const [isLoading, setIsLoading] = useState(!initialPost);
   const fallbackPost = getPostBySlug(slug);
   const post = remotePost || fallbackPost;
 

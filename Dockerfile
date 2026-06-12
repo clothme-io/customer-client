@@ -15,19 +15,18 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server ./server
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/db ./db
-COPY --from=build /app/src ./src
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 RUN chmod +x ./docker/entrypoint.sh
 
-EXPOSE 8787
+EXPOSE 3000
 
 ENTRYPOINT ["./docker/entrypoint.sh"]
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]

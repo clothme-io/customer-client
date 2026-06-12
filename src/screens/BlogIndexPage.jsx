@@ -7,8 +7,8 @@ import { posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
 
-export function BlogIndexPage() {
-  const [blogPosts, setBlogPosts] = useState(posts);
+export function BlogIndexPage({ initialPosts = posts }) {
+  const [blogPosts, setBlogPosts] = useState(initialPosts);
   const title = `ClothME Blog | Fit-first fashion and family shopping`;
   const description = "Read ClothME articles about fashion sizing, family shopping, personal style, and shopping products that match your size.";
   const blogSchema = {

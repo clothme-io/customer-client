@@ -9,7 +9,7 @@ function ClerkMissing() {
         <section className="admin-panel">
           <p className="eyebrow">Admin setup</p>
           <h1>Clerk is not configured yet.</h1>
-          <p>Add `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `ADMIN_EMAILS` to enable the custom blog admin.</p>
+          <p>Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `ADMIN_EMAILS` to enable the custom blog admin.</p>
         </section>
       </main>
     </>
@@ -17,7 +17,7 @@ function ClerkMissing() {
 }
 
 export function AdminGate({ children }) {
-  if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.VITE_CLERK_PUBLISHABLE_KEY) {
     return <ClerkMissing />;
   }
 
