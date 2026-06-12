@@ -1,7 +1,7 @@
 export async function getServerSideProps() {
   return {
     redirect: {
-      destination: "/admin/blog",
+      destination: "/admin/cms",
       permanent: false
     }
   };

@@ -1,6 +1,6 @@
 # ClothME Waitlist and Blog
 
-Next.js application for the ClothME waitlist, custom blog admin, Railway Postgres content storage, Bunny.net image storage, SEO metadata, analytics, and AI-search-friendly content endpoints.
+Next.js application for the ClothME waitlist, Payload CMS, Railway Postgres content storage, SEO metadata, analytics, and AI-search-friendly content endpoints.
 
 ## Run Locally
 
@@ -36,18 +36,6 @@ Run migrations after setting `DATABASE_URL`:
 npm run migrate
 ```
 
-## Admin Blog UI
-
-The custom editor lives at:
-
-```text
-/admin/blog
-```
-
-It supports drafts, scheduled posts, preview links, publishing, Bunny.net image uploads, SEO fields, article sections, FAQs, and tags.
-
-Admin access is controlled by Clerk and the `ADMIN_EMAILS` allowlist.
-
 ## Payload CMS
 
 The Payload CMS editor lives at:
@@ -56,7 +44,7 @@ The Payload CMS editor lives at:
 /admin/cms
 ```
 
-This is separate from the custom `/admin/blog` editor. Use it for richer CMS workflows such as media, SEO fields, drafts, scheduled publishing, and location-aware content.
+Use it for CMS workflows such as media, SEO fields, drafts, scheduled publishing, and location-aware content. `/admin` redirects here.
 
 Useful commands:
 
@@ -72,27 +60,16 @@ npm run cms:push
 
 ```bash
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_GTM_ID=
 NEXT_PUBLIC_PLAUSIBLE_DOMAIN=
-
-CLERK_SECRET_KEY=sk_live_xxxxx
-ADMIN_EMAILS=you@example.com
 
 DATABASE_URL=postgresql://user:password@host:port/database
 DATABASE_SSL=true
 RUN_MIGRATIONS=false
 PAYLOAD_SECRET=replace-with-a-long-random-secret
 PAYLOAD_DB_PUSH=true
-
-BUNNY_STORAGE_ZONE=your-zone
-BUNNY_STORAGE_REGION=
-BUNNY_STORAGE_API_KEY=xxxxx
-BUNNY_CDN_BASE_URL=https://your-zone.b-cdn.net
 ```
-
-Bunny.net API keys are used only by the server. They are never exposed to the browser.
 
 ## Railway Docker Deploy
 

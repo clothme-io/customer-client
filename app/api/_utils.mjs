@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { hasDatabase } from "../../server/db.mjs";
-import { getAdminFromAuthorization } from "../../server/auth.mjs";
 
 export function json(data, init = {}) {
   return NextResponse.json(data, init);
@@ -17,10 +16,6 @@ export function dbRequired() {
     );
   }
   return null;
-}
-
-export async function requireAdminRequest(request) {
-  return getAdminFromAuthorization(request.headers.get("authorization") || "");
 }
 
 export function errorResponse(error) {
