@@ -260,7 +260,8 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL,
       ssl: databaseSsl
     },
-    push: process.env.PAYLOAD_DB_PUSH !== "false"
+    push: process.env.PAYLOAD_DB_PUSH !== "false",
+    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*"]
   }),
   editor: lexicalEditor({}),
   graphQL: {
