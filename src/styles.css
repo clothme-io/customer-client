@@ -93,6 +93,16 @@ input {
   font-weight: 900;
 }
 
+.brand-word {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.brand-lower-l {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+}
+
 .brand-mark {
   display: grid;
   width: 38px;
