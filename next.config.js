@@ -1,6 +1,8 @@
+import { withPayload } from "@payloadcms/next/withPayload";
+
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true
 };
 
-export default nextConfig;
+export default withPayload(nextConfig);
