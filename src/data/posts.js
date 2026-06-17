@@ -1,5 +1,52 @@
 export const posts = [
   {
+    slug: "ai-body-measurement-app-for-shopping",
+    title: "The Ultimate Guide to AI Body Measurement Apps for Shopping",
+    category: "Fit Guide",
+    excerpt: "Eliminate sizing uncertainty and find the perfect fit for you and your family using the power of Artificial Intelligence.",
+    image: "https://outgoing-oyster-428.convex.cloud/api/storage/25f1a5c6-54cd-40d1-94da-f6629f138598",
+    imageAlt: "Landing page illustration",
+    publishedAt: "2026-06-12",
+    updatedAt: "2026-06-12",
+    author: "ClothME Team",
+    readingTime: "6 min read",
+    tags: ["AI body measurement", "online shopping", "fashion sizing", "fit guide"],
+    template: "ai-body-measurement-guide",
+    aiSummary: "AI body measurement apps use smartphone photos, computer vision, and machine learning to create size profiles that reduce sizing uncertainty, improve online fashion fit, and support personal or family shopping.",
+    sections: [
+      {
+        heading: "What is an AI Body Measurement App for Shopping?",
+        body: "An ai body measurement app for shopping uses computer vision, machine learning, and advanced algorithms to calculate physical dimensions from smartphone photos and translate those measurements across fashion retailers."
+      },
+      {
+        heading: "The Sizing Crisis: Why Online Shopping is Broken",
+        body: "Online fashion returns are often driven by inconsistent sizing, bracketing, and the absence of a reliable size profile that can work across brands."
+      },
+      {
+        heading: "How Does AI Body Measurement Technology Work?",
+        body: "Modern AI sizing tools capture photos, identify body landmarks, and build a measurement profile that can be matched against garment specifications."
+      }
+    ],
+    faq: [
+      {
+        question: "How accurate is a photo-based scan compared to a tailor?",
+        answer: "Modern AI scanning can be highly consistent for ready-to-wear shopping because it compares measurement data against brand patterns at scale."
+      },
+      {
+        question: "Do I need to be undressed for the photos?",
+        answer: "No. Most apps require form-fitting clothing so the AI can detect the body's silhouette clearly."
+      },
+      {
+        question: "Can I use one profile for all brands?",
+        answer: "Yes. A universal size profile can be compared against brand-specific measurement charts to suggest different sizes across retailers."
+      },
+      {
+        question: "Is my data safe?",
+        answer: "Reputable AI shopping platforms should use encryption, clear privacy policies, and explicit consent for sensitive body data."
+      }
+    ]
+  },
+  {
     slug: "why-clothing-sizes-change-from-brand-to-brand",
     title: "Why clothing sizes change from brand to brand",
     category: "Fit Guide",
@@ -117,4 +164,12 @@ export const posts = [
 
 export function getPostBySlug(slug) {
   return posts.find((post) => post.slug === slug);
+}
+
+export function mergePostsBySlug(primaryPosts = [], fallbackPosts = posts) {
+  const seen = new Set(primaryPosts.map((post) => post.slug));
+  return [
+    ...primaryPosts,
+    ...fallbackPosts.filter((post) => !seen.has(post.slug))
+  ];
 }

@@ -5,6 +5,7 @@ import { SEO } from "../components/SEO";
 import { getPostBySlug, posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
+import { AiBodyMeasurementArticle } from "./AiBodyMeasurementArticle";
 
 function NotFoundPage() {
   return (
@@ -109,44 +110,48 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
         robots={previewToken ? "noindex,nofollow" : "index,follow"}
       />
       <Header />
-      <main className="article-shell">
-        <article className="article-page">
-          <p className="eyebrow">{post.category}</p>
-          <h1>{post.title}</h1>
-          <p className="article-lede">{post.excerpt}</p>
-          <div className="article-meta">
-            <span>{post.author}</span>
-            <span>{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
-            <span>{post.readingTime}</span>
-          </div>
-          <img className="article-image" src={post.image} alt={post.imageAlt} />
-          <aside className="ai-summary" aria-label="AI search summary">
-            <h2>Quick answer</h2>
-            <p>{post.aiSummary}</p>
-          </aside>
-          {post.sections.map((section) => (
-            <section key={section.heading}>
-              <h2>{section.heading}</h2>
-              <p>{section.body}</p>
+      <main className={post.template === "ai-body-measurement-guide" ? "lp-article-shell" : "article-shell"}>
+        {post.template === "ai-body-measurement-guide" ? (
+          <AiBodyMeasurementArticle />
+        ) : (
+          <article className="article-page">
+            <p className="eyebrow">{post.category}</p>
+            <h1>{post.title}</h1>
+            <p className="article-lede">{post.excerpt}</p>
+            <div className="article-meta">
+              <span>{post.author}</span>
+              <span>{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+              <span>{post.readingTime}</span>
+            </div>
+            <img className="article-image" src={post.image} alt={post.imageAlt} />
+            <aside className="ai-summary" aria-label="AI search summary">
+              <h2>Quick answer</h2>
+              <p>{post.aiSummary}</p>
+            </aside>
+            {post.sections.map((section) => (
+              <section key={section.heading}>
+                <h2>{section.heading}</h2>
+                <p>{section.body}</p>
+              </section>
+            ))}
+            <section>
+              <h2>Frequently asked questions</h2>
+              <div className="faq-list">
+                {post.faq.map((item) => (
+                  <div key={item.question}>
+                    <h3>{item.question}</h3>
+                    <p>{item.answer}</p>
+                  </div>
+                ))}
+              </div>
             </section>
-          ))}
-          <section>
-            <h2>Frequently asked questions</h2>
-            <div className="faq-list">
-              {post.faq.map((item) => (
-                <div key={item.question}>
-                  <h3>{item.question}</h3>
-                  <p>{item.answer}</p>
-                </div>
+            <div className="tag-list" aria-label="Article tags">
+              {post.tags.map((tag) => (
+                <span key={tag}>{tag}</span>
               ))}
             </div>
-          </section>
-          <div className="tag-list" aria-label="Article tags">
-            {post.tags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-        </article>
+          </article>
+        )}
 
         <section className="related-posts" aria-labelledby="related-title">
           <h2 id="related-title">More from ClothME</h2>
