@@ -580,7 +580,9 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL,
       ssl: databaseSsl
     },
-    push: process.env.PAYLOAD_DB_PUSH !== "false",
+    // push is dev-only (CREATE TABLE without IF NOT EXISTS — breaks on repeat deploys).
+    // In production, schema changes go through `payload migrate` instead.
+    push: process.env.NODE_ENV !== "production" && process.env.PAYLOAD_DB_PUSH !== "false",
     tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*"]
   }),
   editor: lexicalEditor({}),
