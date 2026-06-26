@@ -1,0 +1,44 @@
+export function CityFooter({ cityName, region }) {
+  const location = [cityName, region].filter(Boolean).join(", ");
+
+  return (
+    <footer className="site-footer">
+      <div className="footer-grid">
+        <section>
+          <h2>About ClothME</h2>
+          <p>
+            We are organizing the world&rsquo;s fashion products by Size/Fit in
+            every city — giving brands and consumers access to a new commerce
+            category: <strong>&ldquo;Fashion Size Commerce&rdquo;</strong>
+          </p>
+        </section>
+        <section>
+          <h2>Contact</h2>
+          <p>Email: talk2us@clothme.io</p>
+          <p>Suite 250 - #1430</p>
+          <p>97 Seymour St. Vancouver, V6B 3M1 BC, Canada</p>
+        </section>
+        <section>
+          <h2>Social</h2>
+          <a
+            className="social-link"
+            href="https://www.instagram.com/clothme_io"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="ClothME on Instagram"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1" />
+            </svg>
+          </a>
+        </section>
+      </div>
+      <div className="footer-bottom">
+        <p>&copy; {new Date().getFullYear()} ClothME{location ? ` · ${location}` : ""}. All rights reserved.</p>
+        <a href="/privacy">Privacy Policy</a>
+      </div>
+    </footer>
+  );
+}

@@ -5,7 +5,7 @@ export function WaitlistModal({ isOpen, onClose }) {
         <button className="close-button" type="button" aria-label="Close modal" onClick={onClose}>
           &times;
         </button>
-        <p className="modal-logo">ClothME</p>
+        <p className="modal-logo" aria-label="ClothME">C<span className="brand-lower-l">l</span>othME</p>
         <h2 id="modal-title">You're on the waitlist.</h2>
         <p>Thanks for joining. We'll email you when ClothME early access opens.</p>
       </div>

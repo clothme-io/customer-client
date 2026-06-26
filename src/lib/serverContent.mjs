@@ -1,4 +1,4 @@
-import { posts as fallbackPosts } from "../data/posts.js";
+import { mergePostsBySlug, posts as fallbackPosts } from "../data/posts.js";
 import { hasDatabase } from "../../server/db.mjs";
 import { listPosts } from "../../server/posts.mjs";
 
@@ -8,7 +8,8 @@ export async function getPublicPosts() {
   }
 
   try {
-    return await listPosts({ admin: false });
+    const posts = await listPosts({ admin: false });
+    return mergePostsBySlug(posts, fallbackPosts);
   } catch (error) {
     console.warn(`Could not load posts from database. Falling back to local posts. ${error.message}`);
     return fallbackPosts;
