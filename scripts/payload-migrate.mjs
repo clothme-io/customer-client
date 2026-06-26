@@ -75,14 +75,34 @@ async function main() {
       }
       console.log("Payload schema already exists — migrations recorded, nothing to run.");
     } else {
-      // Fresh database — run the migration to create all tables.
-      console.log("Fresh database — running Payload migration...");
-      const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
+      // Fresh database — push schema directly (no TS compilation needed).
+      console.log("Fresh database — pushing Payload schema...");
+      const result = spawnSync("sh", ["-c", "echo 'y' | npx payload db:push"], {
         stdio: "inherit",
-        env: process.env,
+        env: { ...process.env, NODE_ENV: "production" },
       });
       if (result.status !== 0) {
-        throw new Error(`payload migrate failed with exit code ${result.status}`);
+        throw new Error(`payload db:push failed with exit code ${result.status}`);
+      }
+      // Mark the migration file as applied so future deploys skip it.
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS payload_migrations (
+          id serial PRIMARY KEY,
+          name varchar NOT NULL,
+          batch integer,
+          created_at timestamp with time zone DEFAULT now() NOT NULL,
+          updated_at timestamp with time zone DEFAULT now() NOT NULL
+        )
+      `);
+      const files = await getMigrationFiles();
+      for (const name of files) {
+        await client.query(
+          `INSERT INTO payload_migrations (name, batch)
+           SELECT $1, 1 WHERE NOT EXISTS (
+             SELECT 1 FROM payload_migrations WHERE name = $1
+           )`,
+          [name]
+        );
       }
     }
   } finally {
