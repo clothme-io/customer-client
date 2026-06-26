@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -593,6 +594,13 @@ export default buildConfig({
     graphQL: "/graphql",
     graphQLPlayground: "/graphql-playground"
   },
+  email: process.env.RESEND_API_KEY
+    ? resendAdapter({
+        defaultFromAddress: process.env.EMAIL_FROM || "noreply@clothme.io",
+        defaultFromName: "ClothME",
+        apiKey: process.env.RESEND_API_KEY,
+      })
+    : undefined,
   secret: process.env.PAYLOAD_SECRET || "development-payload-secret-change-me",
   serverURL: siteUrl,
   sharp,

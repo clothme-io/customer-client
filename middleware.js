@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 const RESERVED_SUBDOMAINS = new Set([
   "www", "blog", "api", "admin", "app", "cdn", "mail", "ftp",
+  "dev", "staging", "preview", "demo", "test",
 ]);
 
 export function middleware(request) {
