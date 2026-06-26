@@ -1,12 +1,11 @@
 /**
- * Outrank.so Webhook Endpoint
+ * BabyLoveGrowth.ai Webhook Endpoint
  *
- * Receives POST requests from Outrank when articles are published or updated.
- * Payload envelope:
- *   { event_type: "publish_articles" | "update_article", timestamp, data: { articles: [...] } }
+ * Receives POST requests from BabyLoveGrowth when articles are published.
+ * Payload (flat structure):
+ *   { title, slug, content, featured_image, meta_title, meta_description, ... }
  *
- * Each article includes HTML + Markdown content, title, slug, featured image, meta, tags.
- * Security: Access token verified via Authorization header or x-access-token header.
+ * Security: Bearer token, API key header, or Basic auth.
  */
 
 import { NextResponse } from "next/server";
@@ -15,41 +14,51 @@ import { savePost, getPostBySlug } from "../../../../server/posts.mjs";
 import { downloadAndUploadImage } from "../../../../server/webhooks/images.mjs";
 import { transformToPostPayload, normalizeSlug } from "../../../../server/webhooks/transform.mjs";
 
-const WEBHOOK_SECRET = process.env.OUTRANK_WEBHOOK_SECRET;
+const WEBHOOK_SECRET = process.env.BABYLOVEGROWTH_WEBHOOK_SECRET;
 
 function verifyToken(request) {
   if (!WEBHOOK_SECRET) {
-    console.warn("[webhooks/outrank] OUTRANK_WEBHOOK_SECRET not configured. Rejecting request.");
+    console.warn("[webhooks/babylovegrowth] BABYLOVEGROWTH_WEBHOOK_SECRET not configured. Rejecting request.");
     return false;
   }
 
-  // Check Authorization header (Bearer token) or x-access-token header
+  // Check Authorization header (Bearer token)
   const authHeader = request.headers.get("authorization") || "";
-  const accessTokenHeader = request.headers.get("x-access-token") || "";
-
   if (authHeader.startsWith("Bearer ")) {
     return authHeader.slice(7) === WEBHOOK_SECRET;
   }
 
-  if (accessTokenHeader) {
-    return accessTokenHeader === WEBHOOK_SECRET;
+  // Check x-api-key header
+  const apiKeyHeader = request.headers.get("x-api-key") || "";
+  if (apiKeyHeader) {
+    return apiKeyHeader === WEBHOOK_SECRET;
+  }
+
+  // Check Basic auth (username is ignored, password is the secret)
+  if (authHeader.startsWith("Basic ")) {
+    try {
+      const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
+      const password = decoded.split(":").slice(1).join(":");
+      return password === WEBHOOK_SECRET;
+    } catch {
+      return false;
+    }
   }
 
   return false;
 }
 
-function normalizeOutrankArticle(article) {
-  // Outrank provides both HTML and Markdown — we use HTML for our sections parser
+function normalizeBabyLoveGrowthArticle(payload) {
   return {
-    title: article.title || "",
-    slug: article.slug || "",
-    content: article.html || article.content || article.body || "",
-    featuredImageUrl: article.featured_image || article.featuredImage || article.image || "",
-    metaTitle: article.meta_title || article.metaTitle || article.seo_title || "",
-    metaDescription: article.meta_description || article.metaDescription || article.seo_description || "",
-    tags: Array.isArray(article.tags) ? article.tags : (article.keywords || []),
-    author: article.author || "",
-    faq: Array.isArray(article.faq) ? article.faq : []
+    title: payload.title || "",
+    slug: payload.slug || "",
+    content: payload.content || payload.html || payload.body || "",
+    featuredImageUrl: payload.featured_image || payload.featuredImage || payload.image || "",
+    metaTitle: payload.meta_title || payload.metaTitle || "",
+    metaDescription: payload.meta_description || payload.metaDescription || "",
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+    author: payload.author || "",
+    faq: Array.isArray(payload.faq) ? payload.faq : []
   };
 }
 
@@ -80,34 +89,18 @@ export async function POST(request) {
     );
   }
 
-  const { event_type, data } = payload;
-
-  if (!event_type || !data) {
-    return NextResponse.json(
-      { error: "Bad request", message: "Missing event_type or data in payload." },
-      { status: 400 }
-    );
-  }
-
-  // Support both publish_articles (array) and update_article (single or array)
-  const articles = Array.isArray(data.articles)
-    ? data.articles
-    : data.article
-      ? [data.article]
-      : [];
-
-  if (articles.length === 0) {
-    return NextResponse.json(
-      { error: "Bad request", message: "No articles found in payload." },
-      { status: 400 }
-    );
-  }
+  // BabyLoveGrowth sends articles either as a single object or within an array
+  const articles = Array.isArray(payload.articles)
+    ? payload.articles
+    : Array.isArray(payload)
+      ? payload
+      : [payload];
 
   const results = [];
 
   for (const rawArticle of articles) {
     try {
-      const article = normalizeOutrankArticle(rawArticle);
+      const article = normalizeBabyLoveGrowthArticle(rawArticle);
       const slug = normalizeSlug(article.slug, article.title);
 
       // Check if post already exists (idempotency)
@@ -124,7 +117,7 @@ export async function POST(request) {
         postPayload.id = existingPost.id;
       }
 
-      const savedPost = await savePost(postPayload, "webhook:outrank");
+      const savedPost = await savePost(postPayload, "webhook:babylovegrowth");
 
       results.push({
         slug,
@@ -132,9 +125,9 @@ export async function POST(request) {
         id: savedPost?.id || null
       });
 
-      console.log(`[webhooks/outrank] ${existingPost ? "Updated" : "Created"} post: ${slug}`);
+      console.log(`[webhooks/babylovegrowth] ${existingPost ? "Updated" : "Created"} post: ${slug}`);
     } catch (error) {
-      console.error(`[webhooks/outrank] Error processing article: ${error.message}`);
+      console.error(`[webhooks/babylovegrowth] Error processing article: ${error.message}`);
       results.push({
         slug: rawArticle.slug || "unknown",
         status: "error",
@@ -145,7 +138,6 @@ export async function POST(request) {
 
   return NextResponse.json({
     success: true,
-    event_type,
     processed: results.length,
     results
   });
