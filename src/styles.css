@@ -93,6 +93,16 @@ input {
   font-weight: 900;
 }
 
+.brand-word {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.brand-lower-l {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+}
+
 .brand-mark {
   display: grid;
   width: 38px;
@@ -570,6 +580,228 @@ h1 {
   font-size: clamp(30px, 4vw, 44px);
 }
 
+.lp-article-shell {
+  width: min(1240px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: clamp(36px, 7vw, 72px) 0 64px;
+}
+
+.lp-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  color: #333333;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.lp-hero {
+  margin-bottom: 60px;
+  padding: 80px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 20px;
+}
+
+.lp-hero h1 {
+  margin-bottom: 20px;
+  color: #1a1a1a;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.lp-hero p {
+  max-width: 800px;
+  margin: 0 auto 30px;
+  color: #555555;
+  font-size: 1.25rem;
+}
+
+.lp-section {
+  padding: 60px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.lp-section:last-child {
+  border-bottom: 0;
+}
+
+.lp-section h2 {
+  margin-bottom: 25px;
+  color: #111111;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.lp-section h3 {
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: #222222;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.lp-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.lp-section p,
+.lp-section li,
+.lp-cta-box p {
+  color: inherit;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.lp-section a {
+  color: #007bff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lp-section ul {
+  display: grid;
+  gap: 10px;
+  padding-left: 24px;
+}
+
+.lp-section-image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 24px 0;
+  border-radius: 8px;
+}
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.lp-card {
+  padding: 30px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, .05);
+}
+
+.lp-card h4 {
+  color: #007bff;
+  font-size: 1.25rem;
+}
+
+.lp-card p {
+  margin-bottom: 0;
+}
+
+.lp-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin: 40px 0;
+  padding: 40px 20px;
+  color: #ffffff;
+  background: #1a1a1a;
+  border-radius: 15px;
+}
+
+.lp-stat-item {
+  padding: 10px;
+  text-align: center;
+}
+
+.lp-stat-number {
+  display: block;
+  color: #4dabf7;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.lp-stat-label {
+  font-size: .9rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.lp-faq-container {
+  margin-top: 40px;
+}
+
+.lp-faq-item {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #fdfdfd;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+}
+
+.lp-faq-item p {
+  margin-bottom: 0;
+}
+
+.lp-faq-question {
+  display: block;
+  margin-bottom: 10px;
+  color: #1a1a1a;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.lp-cta-box {
+  margin: 80px 0;
+  padding: 60px;
+  color: #ffffff;
+  text-align: center;
+  background: #007bff;
+  border-radius: 20px;
+}
+
+.lp-cta-box h2 {
+  margin-bottom: 20px;
+  color: #ffffff;
+}
+
+.lp-btn {
+  display: inline-block;
+  padding: 15px 35px;
+  color: #007bff;
+  font-weight: 700;
+  text-decoration: none;
+  background: #ffffff;
+  border-radius: 30px;
+  transition: transform .2s ease;
+}
+
+.lp-btn:hover {
+  transform: translateY(-3px);
+}
+
+.lp-highlight-box {
+  margin: 30px 0;
+  padding: 25px;
+  background: #e7f5ff;
+  border-left: 5px solid #007bff;
+  border-radius: 0 8px 8px 0;
+}
+
+.lp-highlight-box p {
+  margin-bottom: 0;
+}
+
+.lp-cta-note {
+  margin-top: 20px;
+  font-size: .9rem;
+  opacity: .9;
+}
+
 .text-link {
   font-weight: 900;
 }
@@ -875,6 +1107,11 @@ h1 {
     flex-direction: column;
   }
 
+  .lp-stats-bar {
+    flex-direction: column;
+    gap: 20px;
+  }
+
   .footer-bottom {
     grid-template-columns: 1fr;
     text-align: left;
@@ -916,8 +1153,402 @@ h1 {
     height: 280px;
   }
 
+  .lp-article-shell {
+    width: min(100%, calc(100% - 24px));
+    padding-top: 28px;
+  }
+
+  .lp-container {
+    padding: 0 8px;
+  }
+
+  .lp-hero {
+    margin-bottom: 38px;
+    padding: 52px 18px;
+    border-radius: 14px;
+  }
+
+  .lp-hero h1 {
+    font-size: 2rem;
+  }
+
+  .lp-section {
+    padding: 42px 0;
+  }
+
+  .lp-section h2 {
+    font-size: 1.75rem;
+  }
+
+  .lp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-cta-box {
+    margin: 54px 0;
+    padding: 42px 20px;
+    border-radius: 14px;
+  }
+
   .editor-two {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+/* ── City Microsite Styles ─────────────────────────────────────────────────── */
+
+.city-section {
+  padding: clamp(52px, 8vw, 96px) 0;
+}
+
+.city-section--alt {
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.city-section--cta {
+  background: var(--accent);
+  border-top: 1px solid rgba(21,19,15,.12);
+}
+
+.city-section-inner {
+  width: min(1160px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+.city-section-inner--narrow {
+  max-width: 780px;
+}
+
+/* Card grid — pain points and benefits */
+.city-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.city-card {
+  padding: 28px 24px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.city-section--alt .city-card {
+  background: var(--paper);
+}
+
+.city-card h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.city-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+/* Local boutiques */
+.city-boutiques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.city-boutique-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.city-boutique-img {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.city-boutique-body {
+  padding: 20px 22px 24px;
+}
+
+.city-boutique-body h3 {
+  margin: 6px 0 10px;
+  font-size: 20px;
+}
+
+.city-boutique-body p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+/* FAQ accordion */
+.city-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.city-faq-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.city-faq-item:last-child {
+  border-bottom: 0;
+}
+
+.city-faq-q {
+  display: block;
+  padding: 18px 22px;
+  background: var(--card);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 0.15s;
+}
+
+.city-faq-q::-webkit-details-marker { display: none; }
+
+.city-faq-item[open] .city-faq-q {
+  background: var(--paper);
+}
+
+.city-faq-a {
+  margin: 0;
+  padding: 14px 22px 20px;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 15px;
+  background: var(--paper);
+}
+
+/* App store CTA buttons */
+.city-app-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 28px;
+}
+
+.city-store-btn {
+  display: inline-block;
+  line-height: 0;
+}
+
+.city-store-btn img {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+
+/* City about, contact, blog pages */
+.city-page-shell {
+  width: min(920px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: clamp(52px, 8vw, 96px) 0 70px;
+}
+
+.city-page-shell h1 {
+  margin-bottom: 18px;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: .96;
+}
+
+.city-page-shell p {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 680px;
+}
+
+/* Contact form */
+.city-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 540px;
+  margin-top: 36px;
+}
+
+.city-contact-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.city-contact-form input,
+.city-contact-form textarea {
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.city-contact-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.city-contact-form button {
+  align-self: flex-start;
+  padding: 12px 28px;
+  background: var(--cta);
+  color: #fffdf8;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .city-cards,
+  .city-boutiques {
+    grid-template-columns: 1fr;
+  }
+
+  .city-app-ctas {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Phase 4: City visual polish ──────────────────────────────────── */
+
+/* Sticky header — city pages only */
+.city-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(251, 247, 239, 0.94);
+}
+
+/* City nav stays visible on all screen sizes (override main-site hide at 560px) */
+.city-header .city-nav {
+  display: flex !important;
+  gap: 22px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  align-items: center;
+}
+
+/* FAQ — open/close chevron indicator */
+.city-faq-q {
+  position: relative;
+  padding-right: 52px;
+}
+
+.city-faq-q::after {
+  content: "▾";
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.city-faq-item[open] .city-faq-q::after {
+  transform: translateY(-50%) rotate(-180deg);
+}
+
+.city-faq-q:hover {
+  background: var(--paper);
+}
+
+/* Card hover lift */
+.city-card {
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.city-card:hover {
+  box-shadow: 0 4px 20px rgba(15, 78, 113, 0.09);
+  transform: translateY(-2px);
+}
+
+/* Boutique card hover */
+.city-boutique-card {
+  transition: box-shadow 0.15s;
+}
+
+.city-boutique-card:hover {
+  box-shadow: 0 6px 28px rgba(15, 78, 113, 0.11);
+}
+
+/* App store button hover */
+.city-store-btn {
+  transition: opacity 0.15s, transform 0.15s;
+  border-radius: 8px;
+}
+
+.city-store-btn:hover {
+  opacity: 0.82;
+  transform: scale(1.03);
+}
+
+/* Eyebrow on lime-green CTA section — switch to ink so contrast passes */
+.city-section--cta .eyebrow {
+  color: var(--ink);
+  opacity: 0.55;
+}
+
+/* Mobile refinements */
+@media (max-width: 900px) {
+  .city-boutiques {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .city-header .city-nav {
+    gap: 16px;
+    font-size: 12px;
+  }
+
+  /* Hide "How it works" on the narrowest screens to avoid overflow */
+  .city-header .city-nav a:first-child {
+    display: none;
+  }
+
+  .city-page-shell h1 {
+    font-size: clamp(32px, 9vw, 48px);
+  }
+
+  .city-section-inner {
+    width: calc(100% - 32px);
+  }
+
+  .city-faq-q {
+    font-size: 15px;
+    padding: 16px 44px 16px 18px;
+  }
+
+  .city-faq-a {
+    padding: 12px 18px 18px;
+  }
+
+  .city-boutique-img {
+    height: 160px;
   }
 }

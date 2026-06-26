@@ -12,10 +12,13 @@
     "cms:generate:types": "payload generate:types",
     "cms:migrate": "payload migrate",
     "cms:migrate:create": "payload migrate:create",
-    "cms:push": "node scripts/payload-push.mjs"
+    "cms:push": "node scripts/payload-push.mjs",
+    "cms:sync": "node scripts/payload-migrate.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
     "@payloadcms/db-postgres": "^3.85.1",
+    "@payloadcms/email-resend": "^3.85.1",
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
     "graphql": "^16.14.2",

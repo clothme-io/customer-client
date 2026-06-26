@@ -3,7 +3,7 @@ import { BlogCard } from "../components/BlogCard";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
-import { posts } from "../data/posts";
+import { mergePostsBySlug, posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
 
@@ -35,7 +35,7 @@ export function BlogIndexPage({ initialPosts = posts }) {
     async function loadPosts() {
       try {
         const data = await apiFetch("/api/posts");
-        if (data.posts?.length) setBlogPosts(data.posts);
+        if (data.posts?.length) setBlogPosts(mergePostsBySlug(data.posts));
       } catch (error) {
         console.warn("Using local blog posts fallback.", error);
       }

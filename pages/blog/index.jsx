@@ -1,5 +1,5 @@
 import { BlogIndexPage } from "../../src/screens/BlogIndexPage";
-import { posts as fallbackPosts } from "../../src/data/posts";
+import { mergePostsBySlug, posts as fallbackPosts } from "../../src/data/posts";
 import { hasDatabase } from "../../server/db.mjs";
 import { listPosts } from "../../server/posts.mjs";
 import { serializePosts } from "../../src/lib/serverContent.mjs";
@@ -11,7 +11,7 @@ export async function getServerSideProps() {
 
   try {
     const initialPosts = await listPosts({ admin: false });
-    return { props: { initialPosts: serializePosts(initialPosts) } };
+    return { props: { initialPosts: serializePosts(mergePostsBySlug(initialPosts, fallbackPosts)) } };
   } catch (error) {
     console.warn(`Could not load posts from database. Falling back to local posts. ${error.message}`);
     return { props: { initialPosts: serializePosts(fallbackPosts) } };

@@ -200,11 +200,141 @@ export interface Media {
 export interface Location {
   id: number;
   name: string;
+  /**
+   * Subdomain slug — e.g. 'vancouver' for vancouver.clothme.io
+   */
   slug: string;
+  /**
+   * Province or state — e.g. BC
+   */
   region?: string | null;
   country?: string | null;
-  seoTitle?: string | null;
-  seoDescription?: string | null;
+  status: 'draft' | 'published' | 'unpublished';
+  /**
+   * Fill these in before clicking Generate Content. The AI uses them to write city-specific copy.
+   */
+  aiGeneration?: {
+    /**
+     * Enter up to 3 boutique names with a one-line description each. One per line. Used by AI to write the Local Shopping section.
+     */
+    boutiquesContext?: string | null;
+    /**
+     * Enter article topic ideas, one per line. Used by AI to generate blog articles for this city.
+     */
+    articleTopics?: string | null;
+    /**
+     * Set automatically when AI generation runs.
+     */
+    lastGeneratedAt?: string | null;
+  };
+  hero?: {
+    /**
+     * Main headline — should include the city name. Max ~10 words.
+     */
+    headline?: string | null;
+    /**
+     * 1–2 sentences expanding on the headline.
+     */
+    subheadline?: string | null;
+    primaryCta?: ('app-store' | 'waitlist') | null;
+  };
+  painPoints?: {
+    headline?: string | null;
+    items?:
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  benefits?: {
+    headline?: string | null;
+    items?:
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  localShopping?: {
+    /**
+     * e.g. 'Shop Vancouver with confidence'
+     */
+    headline?: string | null;
+    /**
+     * 1–2 sentence intro to the boutiques section.
+     */
+    intro?: string | null;
+    boutiques?:
+      | {
+          name: string;
+          neighborhood?: string | null;
+          description: string;
+          websiteUrl?: string | null;
+          image?: (number | null) | Media;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  faq?: {
+    headline?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  aboutPage?: {
+    headline?: string | null;
+    body?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  contactPage?: {
+    headline?: string | null;
+    subheadline?: string | null;
+  };
+  seo?: {
+    home?: {
+      /**
+       * Recommended: 50–60 characters
+       */
+      metaTitle?: string | null;
+      /**
+       * Recommended: 140–160 characters
+       */
+      metaDescription?: string | null;
+      ogImage?: (number | null) | Media;
+    };
+    about?: {
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+    };
+    blog?: {
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+    };
+    contact?: {
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -506,8 +636,114 @@ export interface LocationsSelect<T extends boolean = true> {
   slug?: T;
   region?: T;
   country?: T;
-  seoTitle?: T;
-  seoDescription?: T;
+  status?: T;
+  aiGeneration?:
+    | T
+    | {
+        boutiquesContext?: T;
+        articleTopics?: T;
+        lastGeneratedAt?: T;
+      };
+  hero?:
+    | T
+    | {
+        headline?: T;
+        subheadline?: T;
+        primaryCta?: T;
+      };
+  painPoints?:
+    | T
+    | {
+        headline?: T;
+        items?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  benefits?:
+    | T
+    | {
+        headline?: T;
+        items?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  localShopping?:
+    | T
+    | {
+        headline?: T;
+        intro?: T;
+        boutiques?:
+          | T
+          | {
+              name?: T;
+              neighborhood?: T;
+              description?: T;
+              websiteUrl?: T;
+              image?: T;
+              id?: T;
+            };
+      };
+  faq?:
+    | T
+    | {
+        headline?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  aboutPage?:
+    | T
+    | {
+        headline?: T;
+        body?: T;
+      };
+  contactPage?:
+    | T
+    | {
+        headline?: T;
+        subheadline?: T;
+      };
+  seo?:
+    | T
+    | {
+        home?:
+          | T
+          | {
+              metaTitle?: T;
+              metaDescription?: T;
+              ogImage?: T;
+            };
+        about?:
+          | T
+          | {
+              metaTitle?: T;
+              metaDescription?: T;
+            };
+        blog?:
+          | T
+          | {
+              metaTitle?: T;
+              metaDescription?: T;
+            };
+        contact?:
+          | T
+          | {
+              metaTitle?: T;
+              metaDescription?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
 }
