@@ -1,19 +1,13 @@
 import { BlogIndexPage } from "../../src/screens/BlogIndexPage";
-import { mergePostsBySlug, posts as fallbackPosts } from "../../src/data/posts";
-import { hasDatabase } from "../../server/db.mjs";
-import { listPosts } from "../../server/posts.mjs";
-import { serializePosts } from "../../src/lib/serverContent.mjs";
+import { posts as fallbackPosts } from "../../src/data/posts";
+import { getPublicPosts, serializePosts } from "../../src/lib/serverContent.mjs";
 
 export async function getServerSideProps() {
-  if (!hasDatabase()) {
-    return { props: { initialPosts: serializePosts(fallbackPosts) } };
-  }
-
   try {
-    const initialPosts = await listPosts({ admin: false });
-    return { props: { initialPosts: serializePosts(mergePostsBySlug(initialPosts, fallbackPosts)) } };
+    const posts = await getPublicPosts();
+    return { props: { initialPosts: serializePosts(posts) } };
   } catch (error) {
-    console.warn(`Could not load posts from database. Falling back to local posts. ${error.message}`);
+    console.warn("Blog index falling back to local posts:", error.message);
     return { props: { initialPosts: serializePosts(fallbackPosts) } };
   }
 }
