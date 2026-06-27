@@ -1,21 +1,33 @@
-import { getPostBySlug } from "../../../../server/posts.mjs";
-import { dbRequired, errorResponse, json } from "../../_utils.mjs";
+import { NextResponse } from "next/server";
+import { getPayload } from "payload";
+import config from "@payload-config";
+import { mapPayloadPostToLegacy } from "../../../../server/webhooks/transform.mjs";
 
 export async function GET(request, { params }) {
-  const unavailable = dbRequired();
-  if (unavailable) return unavailable;
-
   try {
     const { slug } = await params;
-    const url = new URL(request.url);
-    const post = await getPostBySlug(slug, { previewToken: url.searchParams.get("previewToken") || "" });
+    const payload = await getPayload({ config });
 
-    if (!post) {
-      return json({ error: "Post not found" }, { status: 404 });
+    const result = await payload.find({
+      collection: "cms-posts",
+      where: {
+        and: [
+          { slug: { equals: slug } },
+          { status: { equals: "published" } },
+        ],
+      },
+      limit: 1,
+      depth: 1,
+    });
+
+    const doc = result.docs[0];
+    if (!doc) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return json({ post });
+    return NextResponse.json({ post: mapPayloadPostToLegacy(doc) });
   } catch (error) {
-    return errorResponse(error);
+    console.error("[api/posts/[slug]]", error.message);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

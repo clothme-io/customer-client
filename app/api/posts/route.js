@@ -1,14 +1,23 @@
-import { listPosts } from "../../../server/posts.mjs";
-import { dbRequired, errorResponse, json } from "../_utils.mjs";
+import { NextResponse } from "next/server";
+import { getPayload } from "payload";
+import config from "@payload-config";
+import { mapPayloadPostToLegacy } from "../../../server/webhooks/transform.mjs";
 
 export async function GET() {
-  const unavailable = dbRequired();
-  if (unavailable) return unavailable;
-
   try {
-    const posts = await listPosts({ admin: false });
-    return json({ posts });
+    const payload = await getPayload({ config });
+    const result = await payload.find({
+      collection: "cms-posts",
+      where: { status: { equals: "published" } },
+      sort: "-publishedAt",
+      limit: 50,
+      depth: 1,
+    });
+
+    const posts = result.docs.map(doc => mapPayloadPostToLegacy(doc));
+    return NextResponse.json({ posts });
   } catch (error) {
-    return errorResponse(error);
+    console.error("[api/posts]", error.message);
+    return NextResponse.json({ posts: [] }, { status: 500 });
   }
 }
