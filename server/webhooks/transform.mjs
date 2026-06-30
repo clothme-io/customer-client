@@ -1,6 +1,7 @@
 /**
  * Shared transformation logic for webhook payloads → Payload CMS cms-posts format.
  */
+import { lexicalToHtml } from "../../src/lib/lexicalToHtml.mjs";
 
 // ── Category auto-classification ─────────────────────────────────────────────
 
@@ -134,56 +135,141 @@ export function normalizeSlug(slug, title) {
 
 // ── Lexical JSON builder ──────────────────────────────────────────────────────
 
-function lexicalText(text) {
-  return { type: "text", text, detail: 0, format: 0, mode: "normal", style: "", version: 1 };
+import { parse as parseHtml } from "node-html-parser";
+
+// Text format bitmasks (Lexical spec)
+const FMT_BOLD          = 1;
+const FMT_ITALIC        = 2;
+const FMT_STRIKETHROUGH = 4;
+const FMT_UNDERLINE     = 8;
+const FMT_CODE          = 16;
+const FMT_SUBSCRIPT     = 32;
+const FMT_SUPERSCRIPT   = 64;
+
+function makeText(text, format = 0) {
+  return { type: "text", text, detail: 0, format, mode: "normal", style: "", version: 1 };
 }
 
-function lexicalParagraph(text) {
-  return {
-    type: "paragraph",
-    children: [lexicalText(text)],
-    direction: "ltr",
-    format: "",
-    indent: 0,
-    version: 1
-  };
+function makeNode(type, extra, children) {
+  return { type, children, direction: "ltr", format: "", indent: 0, version: 1, ...extra };
 }
 
-function lexicalHeading(text, tag = "h2") {
-  return {
-    type: "heading",
-    tag,
-    children: [lexicalText(text)],
-    direction: "ltr",
-    format: "",
-    indent: 0,
-    version: 1
-  };
-}
-
-export function htmlToLexical(html) {
-  const sections = parseHtmlToSections(html || "");
-  const children = [];
-
-  for (const section of sections) {
-    if (section.heading) {
-      children.push(lexicalHeading(section.heading));
+/** Converts an HTML element's children to an array of Lexical inline nodes. */
+function inlineChildren(el, inheritedFormat = 0) {
+  const nodes = [];
+  for (const child of el.childNodes) {
+    if (child.nodeType === 3 /* TEXT_NODE */) {
+      const text = child.rawText;
+      if (text) nodes.push(makeText(text, inheritedFormat));
+    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
+      const tag = child.tagName?.toLowerCase();
+      let fmt = inheritedFormat;
+      if (tag === "strong" || tag === "b") fmt |= FMT_BOLD;
+      else if (tag === "em" || tag === "i") fmt |= FMT_ITALIC;
+      else if (tag === "u")                 fmt |= FMT_UNDERLINE;
+      else if (tag === "s" || tag === "del" || tag === "strike") fmt |= FMT_STRIKETHROUGH;
+      else if (tag === "code")              fmt |= FMT_CODE;
+      else if (tag === "sub")               fmt |= FMT_SUBSCRIPT;
+      else if (tag === "sup")               fmt |= FMT_SUPERSCRIPT;
+      else if (tag === "a") {
+        const href = child.getAttribute("href") || "";
+        const newTab = child.getAttribute("target") === "_blank";
+        const linkChildren = inlineChildren(child, inheritedFormat);
+        if (linkChildren.length > 0) {
+          nodes.push({
+            type: "link",
+            fields: { url: href, newTab, rel: null, title: null, linkType: "custom" },
+            children: linkChildren,
+            direction: "ltr",
+            format: "",
+            indent: 0,
+            version: 2,
+          });
+        }
+        continue;
+      } else if (tag === "br") {
+        nodes.push({ type: "linebreak", version: 1 });
+        continue;
+      }
+      nodes.push(...inlineChildren(child, fmt));
     }
+  }
+  return nodes;
+}
 
-    const plainBody = stripHtml(section.body || "");
-    const paragraphs = plainBody.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+/** Converts an HTML element to an array of block-level Lexical nodes. */
+function blockNodes(el) {
+  const nodes = [];
+  for (const child of el.childNodes) {
+    if (child.nodeType === 3 /* TEXT_NODE */) {
+      const text = child.rawText.trim();
+      if (text) {
+        nodes.push(makeNode("paragraph", {}, [makeText(text)]));
+      }
+      continue;
+    }
+    if (child.nodeType !== 1) continue;
+    const tag = child.tagName?.toLowerCase();
 
-    if (paragraphs.length === 0 && plainBody.trim()) {
-      children.push(lexicalParagraph(plainBody.trim()));
+    if (/^h[1-6]$/.test(tag)) {
+      const inline = inlineChildren(child);
+      if (inline.length > 0) {
+        nodes.push(makeNode("heading", { tag }, inline));
+      }
+    } else if (tag === "p") {
+      const inline = inlineChildren(child);
+      if (inline.length > 0) {
+        nodes.push(makeNode("paragraph", {}, inline));
+      }
+    } else if (tag === "ul" || tag === "ol") {
+      const listType = tag === "ol" ? "number" : "bullet";
+      const items = [];
+      let value = 1;
+      for (const li of child.querySelectorAll("li")) {
+        const inline = inlineChildren(li);
+        if (inline.length > 0) {
+          items.push({ type: "listitem", children: inline, direction: "ltr", format: "", indent: 0, version: 1, value, checked: null });
+          value++;
+        }
+      }
+      if (items.length > 0) {
+        nodes.push({ type: "list", listType, children: items, direction: "ltr", format: "", indent: 0, version: 1, start: 1, tag });
+      }
+    } else if (tag === "blockquote") {
+      const inner = blockNodes(child);
+      if (inner.length > 0) {
+        nodes.push(makeNode("quote", {}, inner));
+      }
+    } else if (tag === "pre") {
+      const codeEl = child.querySelector("code");
+      const text = (codeEl || child).innerText || "";
+      const lang = codeEl?.getAttribute("class")?.replace(/language-/, "") || "";
+      nodes.push({ type: "code", language: lang, children: [makeText(text)], direction: "ltr", format: "", indent: 0, version: 1 });
+    } else if (tag === "hr") {
+      nodes.push({ type: "horizontalrule", version: 1 });
+    } else if (tag === "div" || tag === "section" || tag === "article" || tag === "main") {
+      nodes.push(...blockNodes(child));
     } else {
-      for (const para of paragraphs) {
-        children.push(lexicalParagraph(para));
+      // Treat unknown elements as paragraphs if they contain text
+      const inline = inlineChildren(child);
+      if (inline.length > 0) {
+        nodes.push(makeNode("paragraph", {}, inline));
       }
     }
   }
+  return nodes;
+}
+
+export function htmlToLexical(html) {
+  if (!html?.trim()) {
+    return { root: { children: [makeNode("paragraph", {}, [makeText("")])], direction: "ltr", format: "", indent: 0, type: "root", version: 1 } };
+  }
+
+  const root = parseHtml(html, { lowerCaseTagName: true, comment: false });
+  const children = blockNodes(root);
 
   if (children.length === 0) {
-    children.push(lexicalParagraph(""));
+    children.push(makeNode("paragraph", {}, [makeText("")]));
   }
 
   return {
@@ -193,8 +279,8 @@ export function htmlToLexical(html) {
       format: "",
       indent: 0,
       type: "root",
-      version: 1
-    }
+      version: 1,
+    },
   };
 }
 
@@ -285,11 +371,12 @@ export function mapPayloadPostToLegacy(doc, siteUrl = "") {
     publishedAt: doc.publishedAt || doc.createdAt,
     updatedAt: doc.updatedAt,
     author: "ClothME Team",
-    readingTime: "",
+    readingTime: estimateReadingTime(lexicalToHtml(doc.content)),
     tags: keywords,
     aiSummary: doc.aiSummary || "",
     seoTitle: doc.seo?.title || doc.title || "",
     seoDescription: doc.seo?.description || doc.excerpt || "",
+    renderedHtml: lexicalToHtml(doc.content),
     sections: lexicalToSections(doc.content),
     faq: []
   };

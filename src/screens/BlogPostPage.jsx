@@ -128,12 +128,15 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
               <h2>Quick answer</h2>
               <p>{post.aiSummary}</p>
             </aside>
-            {post.sections.map((section) => (
-              <section key={section.heading}>
-                <h2>{section.heading}</h2>
-                <p>{section.body}</p>
-              </section>
-            ))}
+            {post.renderedHtml
+              ? <div className="article-body" dangerouslySetInnerHTML={{ __html: post.renderedHtml }} />
+              : post.sections.map((section) => (
+                  <section key={section.heading}>
+                    <h2>{section.heading}</h2>
+                    <p>{section.body}</p>
+                  </section>
+                ))
+            }
             <section>
               <h2>Frequently asked questions</h2>
               <div className="faq-list">
