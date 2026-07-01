@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import Head from "next/head";
 import { BlogPostPage } from "../../../../src/screens/BlogPostPage";
-import { getCityBySlug, serializeCity } from "../../../../src/lib/getCityData";
+import { getCityBySlug } from "../../../../src/lib/getCityData";
 import { serializePost } from "../../../../src/lib/serverContent.mjs";
+import { mapPayloadPostToLegacy } from "../../../../server/webhooks/transform.mjs";
 import { track } from "../../../../src/lib/track";
 
 async function fetchCmsPost(articleSlug) {
@@ -20,27 +21,7 @@ async function fetchCmsPost(articleSlug) {
     const data = await res.json();
     const doc = data.docs?.[0];
     if (!doc) return null;
-    // Map Payload cms-post to the shape BlogPostPage expects
-    return {
-      id: doc.id,
-      slug: doc.slug,
-      title: doc.title,
-      excerpt: doc.excerpt,
-      category: doc.category,
-      status: doc.status,
-      heroImageUrl: doc.heroImage?.url || "",
-      heroImageAlt: doc.heroImage?.alt || "",
-      publishedAt: doc.publishedAt,
-      updatedAt: doc.updatedAt,
-      author: "ClothME Team",
-      readingTime: "",
-      aiSummary: doc.aiSummary || "",
-      seoTitle: doc.seo?.title || "",
-      seoDescription: doc.seo?.description || "",
-      tags: [],
-      sections: [],
-      faq: [],
-    };
+    return mapPayloadPostToLegacy(doc);
   } catch {
     return null;
   }
