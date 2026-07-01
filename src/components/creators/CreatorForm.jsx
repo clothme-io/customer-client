@@ -1,0 +1,347 @@
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+
+const INITIAL_STATE = {
+  fullName: '',
+  email: '',
+  phoneNumber: '',
+  country: '',
+  city: '',
+  creatorType: '',
+  tiktokUrl: '',
+  instagramUrl: '',
+  youtubeUrl: '',
+  otherLinks: '',
+  followerCountRange: '',
+  hasUgcExperience: '',
+  portfolioLink: '',
+  whyClothme: '',
+  interestedCreatorStore: '',
+};
+
+export function CreatorForm() {
+  const router = useRouter();
+  const [form, setForm] = useState(INITIAL_STATE);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const payload = {
+        ...form,
+        hasUgcExperience: form.hasUgcExperience === 'true',
+      };
+
+      const res = await fetch(`${apiUrl}/creator-applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        throw new Error(json.error?.message || 'Submission failed. Please try again.');
+      }
+
+      router.push('/creators/success');
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="creator-form-section" id="apply">
+      <div className="creator-section-inner">
+        <p className="eyebrow">Apply Now</p>
+        <h2>Join the ClothME Creator Program</h2>
+        <p className="creator-form-intro">
+          We're selecting 20 founding creators. Fill out the form below — it takes under 3 minutes.
+        </p>
+
+        <form className="creator-form" onSubmit={handleSubmit} noValidate>
+
+          {/* Personal Info */}
+          <fieldset className="creator-form-fieldset">
+            <legend className="creator-form-legend">Personal Info</legend>
+
+            <div className="creator-form-row">
+              <div className="creator-form-group">
+                <label htmlFor="fullName">Full Name <span aria-hidden="true">*</span></label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  placeholder="Jane Doe"
+                  required
+                  autoComplete="name"
+                />
+              </div>
+              <div className="creator-form-group">
+                <label htmlFor="email">Email <span aria-hidden="true">*</span></label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="jane@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            <div className="creator-form-row">
+              <div className="creator-form-group">
+                <label htmlFor="phoneNumber">Phone Number <span className="creator-optional">(optional)</span></label>
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  value={form.phoneNumber}
+                  onChange={handleChange}
+                  placeholder="+1 555 000 0000"
+                  autoComplete="tel"
+                />
+              </div>
+              <div className="creator-form-group">
+                <label htmlFor="country">Country <span aria-hidden="true">*</span></label>
+                <select
+                  id="country"
+                  name="country"
+                  value={form.country}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="" disabled>Select country</option>
+                  <option value="USA">🇺🇸 USA</option>
+                  <option value="Canada">🇨🇦 Canada</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="creator-form-group">
+              <label htmlFor="city">City <span aria-hidden="true">*</span></label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="New York"
+                required
+              />
+            </div>
+          </fieldset>
+
+          {/* Creator Profile */}
+          <fieldset className="creator-form-fieldset">
+            <legend className="creator-form-legend">Creator Profile</legend>
+
+            <div className="creator-form-group">
+              <label htmlFor="creatorType">Creator Type <span aria-hidden="true">*</span></label>
+              <select
+                id="creatorType"
+                name="creatorType"
+                value={form.creatorType}
+                onChange={handleChange}
+                required
+              >
+                <option value="" disabled>Select your creator type</option>
+                <option value="mom_parent">Mom / Parent</option>
+                <option value="student">Student</option>
+                <option value="fashion_creator">Fashion Creator</option>
+                <option value="lifestyle_creator">Lifestyle Creator</option>
+                <option value="ugc_creator">UGC Creator</option>
+                <option value="gen_z_creator">Gen Z Creator</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="creator-form-row">
+              <div className="creator-form-group">
+                <label htmlFor="tiktokUrl">TikTok URL <span aria-hidden="true">*</span></label>
+                <input
+                  id="tiktokUrl"
+                  name="tiktokUrl"
+                  type="url"
+                  value={form.tiktokUrl}
+                  onChange={handleChange}
+                  placeholder="https://tiktok.com/@you"
+                  required
+                />
+              </div>
+              <div className="creator-form-group">
+                <label htmlFor="instagramUrl">Instagram URL <span aria-hidden="true">*</span></label>
+                <input
+                  id="instagramUrl"
+                  name="instagramUrl"
+                  type="url"
+                  value={form.instagramUrl}
+                  onChange={handleChange}
+                  placeholder="https://instagram.com/you"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="creator-form-row">
+              <div className="creator-form-group">
+                <label htmlFor="youtubeUrl">YouTube URL <span className="creator-optional">(optional)</span></label>
+                <input
+                  id="youtubeUrl"
+                  name="youtubeUrl"
+                  type="url"
+                  value={form.youtubeUrl}
+                  onChange={handleChange}
+                  placeholder="https://youtube.com/@you"
+                />
+              </div>
+              <div className="creator-form-group">
+                <label htmlFor="otherLinks">Other Links <span className="creator-optional">(optional)</span></label>
+                <input
+                  id="otherLinks"
+                  name="otherLinks"
+                  type="text"
+                  value={form.otherLinks}
+                  onChange={handleChange}
+                  placeholder="Linktree, Pinterest, etc."
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Audience */}
+          <fieldset className="creator-form-fieldset">
+            <legend className="creator-form-legend">Your Audience</legend>
+
+            <div className="creator-form-group">
+              <label htmlFor="followerCountRange">Follower Count Range <span aria-hidden="true">*</span></label>
+              <select
+                id="followerCountRange"
+                name="followerCountRange"
+                value={form.followerCountRange}
+                onChange={handleChange}
+                required
+              >
+                <option value="" disabled>Select range</option>
+                <option value="0-500">0 – 500</option>
+                <option value="500-1K">500 – 1K</option>
+                <option value="1K-5K">1K – 5K</option>
+                <option value="5K+">5K+</option>
+              </select>
+            </div>
+
+            <div className="creator-form-group">
+              <label>Have you created UGC before? <span aria-hidden="true">*</span></label>
+              <div className="creator-radio-group">
+                <label className="creator-radio-label">
+                  <input
+                    type="radio"
+                    name="hasUgcExperience"
+                    value="true"
+                    checked={form.hasUgcExperience === 'true'}
+                    onChange={handleChange}
+                    required
+                  />
+                  Yes
+                </label>
+                <label className="creator-radio-label">
+                  <input
+                    type="radio"
+                    name="hasUgcExperience"
+                    value="false"
+                    checked={form.hasUgcExperience === 'false'}
+                    onChange={handleChange}
+                  />
+                  No
+                </label>
+              </div>
+            </div>
+
+            <div className="creator-form-group">
+              <label htmlFor="portfolioLink">Portfolio / Example Video Link <span aria-hidden="true">*</span></label>
+              <input
+                id="portfolioLink"
+                name="portfolioLink"
+                type="url"
+                value={form.portfolioLink}
+                onChange={handleChange}
+                placeholder="https://drive.google.com/... or TikTok/Instagram link"
+                required
+              />
+            </div>
+          </fieldset>
+
+          {/* Your Story */}
+          <fieldset className="creator-form-fieldset">
+            <legend className="creator-form-legend">Your Story</legend>
+
+            <div className="creator-form-group">
+              <label htmlFor="whyClothme">Why do you want to work with ClothME? <span aria-hidden="true">*</span></label>
+              <textarea
+                id="whyClothme"
+                name="whyClothme"
+                value={form.whyClothme}
+                onChange={handleChange}
+                placeholder="Tell us what excites you about ClothME and what you'd bring as a creator..."
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="creator-form-group">
+              <label>Would you be interested in selling products through your own ClothME Creator Store? <span aria-hidden="true">*</span></label>
+              <div className="creator-radio-group">
+                {[
+                  { value: 'yes', label: 'Yes, definitely' },
+                  { value: 'maybe', label: 'Maybe, tell me more' },
+                  { value: 'no', label: 'Not right now' },
+                ].map(({ value, label }) => (
+                  <label key={value} className="creator-radio-label">
+                    <input
+                      type="radio"
+                      name="interestedCreatorStore"
+                      value={value}
+                      checked={form.interestedCreatorStore === value}
+                      onChange={handleChange}
+                      required={value === 'yes'}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </fieldset>
+
+          {error && (
+            <p className="creator-form-error" role="alert">{error}</p>
+          )}
+
+          <button type="submit" className="creator-submit" disabled={loading}>
+            {loading ? 'Submitting…' : 'Submit Application'}
+          </button>
+
+          <p className="privacy-note">
+            We review every application. Selected creators will be contacted by email.
+          </p>
+        </form>
+      </div>
+    </section>
+  );
+}
