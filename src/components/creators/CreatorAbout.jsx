@@ -6,10 +6,9 @@ export function CreatorAbout() {
         <h2>A better way to shop for fashion</h2>
         <div className="creator-about-body">
           <p>
-            ClothME is building a better way to shop for fashion by helping people find clothing
-            that fits before they buy. We use size data and fit preferences to match shoppers with
-            clothes that actually work for their body — reducing returns, saving time, and making
-            fashion more personal.
+            ClothME is a fashion marketplace that generates accurate clothing sizes for you and your
+            family from just two photos, then matches you with products that fit from brands and
+            stores in your city for a personalized shopping experience.
           </p>
           <p>
             We're building a creator community that will help us create content, test products, and

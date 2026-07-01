@@ -8,7 +8,7 @@ export function CreatorHero() {
           Help shape the future of fashion shopping while earning money creating content.
         </p>
         <div className="creator-hero-ctas">
-          <a href="#apply" className="creator-btn-primary">Apply Now</a>
+          <a href="/creators/apply" className="creator-btn-primary">Apply Now</a>
           <a href="#about" className="creator-btn-ghost">Learn More</a>
         </div>
       </div>

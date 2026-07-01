@@ -5,7 +5,6 @@ import { CreatorHero } from '../components/creators/CreatorHero';
 import { CreatorAbout } from '../components/creators/CreatorAbout';
 import { CreatorWhoFor } from '../components/creators/CreatorWhoFor';
 import { CreatorBenefits } from '../components/creators/CreatorBenefits';
-import { CreatorForm } from '../components/creators/CreatorForm';
 
 export function CreatorsPage() {
   return (
@@ -29,7 +28,11 @@ export function CreatorsPage() {
           <CreatorAbout />
           <CreatorWhoFor />
           <CreatorBenefits />
-          <CreatorForm />
+          <section className="creator-cta-section">
+            <h2>Ready to join?</h2>
+            <p>We're selecting 20 founding creators. Applications take under 3 minutes.</p>
+            <a href="/creators/apply" className="creator-btn-primary">Apply Now</a>
+          </section>
         </main>
         <Footer />
       </div>
