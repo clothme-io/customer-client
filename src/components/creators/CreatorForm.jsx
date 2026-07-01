@@ -63,15 +63,14 @@ export function CreatorForm() {
   }
 
   return (
-    <section className="creator-form-section" id="apply">
-      <div className="creator-section-inner">
-        <p className="eyebrow">Apply Now</p>
-        <h2>Join the ClothME Creator Program</h2>
-        <p className="creator-form-intro">
-          We're selecting 20 founding creators. Fill out the form below — it takes under 3 minutes.
-        </p>
+    <div className="creator-apply-wrap">
+      <p className="eyebrow">Apply Now</p>
+      <h1>Join the ClothME Creator Program</h1>
+      <p className="creator-apply-intro">
+        We're selecting 20 founding creators. Fill out the form below — it takes under 3 minutes.
+      </p>
 
-        <form className="creator-form" onSubmit={handleSubmit} noValidate>
+      <form className="creator-form" onSubmit={handleSubmit} noValidate>
 
           {/* Personal Info */}
           <fieldset className="creator-form-fieldset">
@@ -340,8 +339,7 @@ export function CreatorForm() {
           <p className="privacy-note">
             We review every application. Selected creators will be contacted by email.
           </p>
-        </form>
-      </div>
-    </section>
+      </form>
+    </div>
   );
 }

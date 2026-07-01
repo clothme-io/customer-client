@@ -1818,7 +1818,7 @@ h1 {
 }
 
 .creator-about-body {
-  max-width: 680px;
+  max-width: 100%;
 }
 
 .creator-about-body p {
@@ -1967,6 +1967,69 @@ h1 {
   border-bottom: 1px solid var(--line);
 }
 
+/* Standalone apply page — centered narrow layout */
+.creator-apply-page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.creator-apply-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 64px 24px 80px;
+}
+
+.creator-apply-wrap .eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.creator-apply-wrap h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.creator-apply-intro {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0 0 36px;
+  line-height: 1.6;
+}
+
+/* Landing page bottom CTA */
+.creator-cta-section {
+  background: var(--ink);
+  text-align: center;
+  padding: 80px clamp(18px, 5vw, 64px);
+}
+
+.creator-cta-section h2 {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+
+.creator-cta-section p {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 36px;
+}
+
+.creator-cta-section .creator-btn-primary {
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 17px;
+  padding: 16px 40px;
+}
+
 .creator-form-section .eyebrow {
   font-size: 12px;
   text-transform: uppercase;
@@ -2023,6 +2086,11 @@ h1 {
 }
 
 .creator-form-group:first-child {
+  margin-top: 0;
+}
+
+/* Both columns in a 2-col row must start at the same vertical position */
+.creator-form-row .creator-form-group {
   margin-top: 0;
 }
 
