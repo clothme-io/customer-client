@@ -17,6 +17,7 @@ const INITIAL_STATE = {
   portfolioLink: '',
   whyClothme: '',
   interestedCreatorStore: '',
+  interestedAffiliate: '',
 };
 
 export function CreatorForm() {
@@ -318,6 +319,30 @@ export function CreatorForm() {
                       name="interestedCreatorStore"
                       value={value}
                       checked={form.interestedCreatorStore === value}
+                      onChange={handleChange}
+                      required={value === 'yes'}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="creator-form-group">
+              <label>Would you like to earn through our Affiliate Program? <span aria-hidden="true">*</span></label>
+              <p className="creator-field-hint">Automatically set up with your account — recommend products and earn a commission on every sale.</p>
+              <div className="creator-radio-group">
+                {[
+                  { value: 'yes', label: 'Yes, sign me up' },
+                  { value: 'maybe', label: 'Tell me more first' },
+                  { value: 'no', label: 'Not right now' },
+                ].map(({ value, label }) => (
+                  <label key={value} className="creator-radio-label">
+                    <input
+                      type="radio"
+                      name="interestedAffiliate"
+                      value={value}
+                      checked={form.interestedAffiliate === value}
                       onChange={handleChange}
                       required={value === 'yes'}
                     />
