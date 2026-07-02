@@ -30,10 +30,10 @@ Next.js serves:
 
 ## Database
 
-Run migrations after setting `DATABASE_URL`:
+Payload CMS owns the application database schema. Run Payload migrations after setting `DATABASE_URL`:
 
 ```bash
-npm run migrate
+npm run cms:sync
 ```
 
 ## Payload CMS
@@ -66,9 +66,7 @@ NEXT_PUBLIC_PLAUSIBLE_DOMAIN=
 
 DATABASE_URL=postgresql://user:password@host:port/database
 DATABASE_SSL=true
-RUN_MIGRATIONS=false
 PAYLOAD_SECRET=replace-with-a-long-random-secret
-PAYLOAD_DB_PUSH=true
 ```
 
 ## Railway Docker Deploy
@@ -80,15 +78,7 @@ Recommended Railway setup:
 - one app service
 - one Railway Postgres service
 - app service variable `DATABASE_URL=${{Postgres.DATABASE_URL}}`
-- Railway pre-deploy command: `npm run migrate`
+- Railway pre-deploy command: `npm run cms:sync`
 - Docker deploy from the repository
 
-You can also run migrations from the container entrypoint by setting:
-
-```bash
-RUN_MIGRATIONS=true
-```
-
-For production, Railway's pre-deploy command is preferred because migrations run before the new version starts serving traffic.
-
-Payload CMS uses the same `DATABASE_URL`. For the first Railway deployment, keep `PAYLOAD_DB_PUSH=true` so the Docker entrypoint can create its own CMS tables before the app starts. After the CMS is stable and migrations are in place, you can switch to `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
+Payload CMS uses the same `DATABASE_URL`. The Docker entrypoint also runs `npm run cms:sync` when `DATABASE_URL` is configured, so schema changes are applied through Payload migrations instead of legacy SQL files.

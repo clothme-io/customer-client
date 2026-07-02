@@ -3,11 +3,10 @@ import { BlogCard } from "../components/BlogCard";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
-import { mergePostsBySlug, posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
 
-export function BlogIndexPage({ initialPosts = posts }) {
+export function BlogIndexPage({ initialPosts = [] }) {
   const [blogPosts, setBlogPosts] = useState(initialPosts);
   const title = `ClothME Blog | Fit-first fashion and family shopping`;
   const description = "Read ClothME articles about fashion sizing, family shopping, personal style, and shopping products that match your size.";
@@ -35,7 +34,7 @@ export function BlogIndexPage({ initialPosts = posts }) {
     async function loadPosts() {
       try {
         const data = await apiFetch("/api/posts");
-        if (data.posts?.length) setBlogPosts(mergePostsBySlug(data.posts));
+        if (Array.isArray(data.posts)) setBlogPosts(data.posts);
       } catch (error) {
         console.warn("Using local blog posts fallback.", error);
       }
