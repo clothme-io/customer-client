@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { SEO } from "../components/SEO";
-import { posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { BlueLanding } from "../landing/versions/blue/BlueLanding";
 import { CurrentLanding } from "../landing/versions/current/CurrentLanding";
@@ -25,7 +24,7 @@ const versionMap = {
   }
 };
 
-export function HomePage({ version = "current" }) {
+export function HomePage({ version = "current", posts = [] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = versionMap[version] || versionMap.current;
   const LandingVersion = config.Component;

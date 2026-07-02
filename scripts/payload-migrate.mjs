@@ -1,17 +1,15 @@
 /**
  * Idempotent Payload CMS schema sync — runs on every deploy, never prompts.
  *
- * - Tables already exist (previous deploy): marks migrations as applied and exits.
- * - Fresh database (first deploy to prod): runs `payload migrate` to create tables.
+ * - Tables already exist (previous deploy): marks only the baseline migration as applied,
+ *   then lets Payload run any newer pending migrations.
+ * - Fresh database (first deploy to prod): runs all Payload migrations.
  */
 import pg from "pg";
-import { readdir } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const { Pool } = pg;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASELINE_MIGRATIONS = ["20260626_183444"];
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -27,19 +25,6 @@ async function tableExists(client, name) {
     [name]
   );
   return res.rows[0].exists;
-}
-
-async function getMigrationFiles() {
-  const dir = path.join(__dirname, "../src/migrations");
-  try {
-    const files = await readdir(dir);
-    return files
-      .filter((f) => f.endsWith(".ts") && f !== "index.ts")
-      .map((f) => f.replace(".ts", ""))
-      .sort();
-  } catch {
-    return [];
-  }
 }
 
 async function main() {
@@ -63,8 +48,7 @@ async function main() {
         )
       `);
 
-      const files = await getMigrationFiles();
-      for (const name of files) {
+      for (const name of BASELINE_MIGRATIONS) {
         await client.query(
           `INSERT INTO payload_migrations (name, batch)
            SELECT $1, 1 WHERE NOT EXISTS (
@@ -73,21 +57,21 @@ async function main() {
           [name]
         );
       }
-      console.log("Payload schema already exists — migrations recorded, nothing to run.");
+      console.log("Payload schema already exists — baseline migration recorded.");
     } else {
-      // Fresh database — run migrations to create all tables.
-      console.log("Fresh database — running Payload migrations...");
-      const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
-        stdio: "inherit",
-        env: process.env,
-      });
-      if (result.status !== 0) {
-        throw new Error(`payload migrate failed with exit code ${result.status}`);
-      }
+      console.log("Fresh database — running all Payload migrations...");
     }
   } finally {
     client.release();
     await pool.end();
+  }
+
+  const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
+    stdio: "inherit",
+    env: process.env,
+  });
+  if (result.status !== 0) {
+    throw new Error(`payload migrate failed with exit code ${result.status}`);
   }
 }
 

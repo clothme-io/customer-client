@@ -1,6 +1,8 @@
 import { BlogCard } from "../../components/BlogCard";
 
 export function LandingBlogPreview({ posts }) {
+  if (!posts.length) return null;
+
   return (
     <section className="blog-band" id="blog" aria-labelledby="blog-title">
       <div className="blog">

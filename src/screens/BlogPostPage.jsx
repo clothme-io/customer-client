@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
-import { getPostBySlug, posts } from "../data/posts";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
 import { AiBodyMeasurementArticle } from "./AiBodyMeasurementArticle";
@@ -27,8 +26,8 @@ function NotFoundPage() {
 export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
   const [remotePost, setRemotePost] = useState(initialPost);
   const [isLoading, setIsLoading] = useState(!initialPost);
-  const fallbackPost = getPostBySlug(slug);
-  const post = remotePost || fallbackPost;
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const post = remotePost;
 
   useEffect(() => {
     async function loadPost() {
@@ -47,6 +46,21 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
     loadPost();
   }, [slug, previewToken]);
 
+  useEffect(() => {
+    async function loadRelatedPosts() {
+      try {
+        const data = await apiFetch("/api/posts");
+        if (Array.isArray(data.posts)) {
+          setRelatedPosts(data.posts.filter((item) => item.slug !== slug).slice(0, 2));
+        }
+      } catch (error) {
+        console.warn("Could not load related posts.", error);
+      }
+    }
+
+    loadRelatedPosts();
+  }, [slug]);
+
   if (!post && !isLoading) {
     return <NotFoundPage />;
   }
@@ -63,7 +77,6 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
   }
 
   const postUrl = `${siteConfig.siteUrl}/blog/${post.slug}`;
-  const relatedPosts = posts.filter((item) => item.slug !== post.slug).slice(0, 2);
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",

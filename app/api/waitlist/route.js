@@ -1,28 +1,41 @@
-import { query } from "../../../server/db.mjs";
-import { dbRequired, errorResponse, json } from "../_utils.mjs";
+import { NextResponse } from "next/server";
+import { getPayload } from "payload";
+import config from "@payload-config";
 
 export async function POST(request) {
-  const unavailable = dbRequired();
-  if (unavailable) return unavailable;
-
   try {
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
     const source = String(body.source || "").slice(0, 120);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json({ error: "Valid email is required" }, { status: 400 });
+      return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
     }
 
-    await query(
-      `insert into waitlist_signups (email, source)
-       values ($1, $2)
-       on conflict (email) do nothing`,
-      [email, source]
-    );
+    const payload = await getPayload({ config });
+    const existing = await payload.find({
+      collection: "waitlist-entries",
+      where: { email: { equals: email } },
+      limit: 1,
+      depth: 0
+    });
 
-    return json({ ok: true }, { status: 201 });
+    if (existing.docs.length === 0) {
+      await payload.create({
+        collection: "waitlist-entries",
+        data: { email, source }
+      });
+    }
+
+    return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
-    return errorResponse(error);
+    console.error("[api/waitlist]", error.message);
+    return NextResponse.json(
+      {
+        error: error.message || "Request failed",
+        message: error.message || "Request failed"
+      },
+      { status: 500 }
+    );
   }
 }

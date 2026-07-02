@@ -574,6 +574,32 @@ export default buildConfig({
           }
         }
       ]
+    },
+    {
+      slug: "waitlist-entries",
+      access: {
+        create: () => true,
+        delete: () => true,
+        read: () => true,
+        update: () => true
+      },
+      admin: {
+        defaultColumns: ["email", "source", "createdAt"],
+        group: "Content",
+        useAsTitle: "email"
+      },
+      fields: [
+        {
+          name: "email",
+          type: "email",
+          required: true,
+          unique: true
+        },
+        {
+          name: "source",
+          type: "text"
+        }
+      ]
     }
   ],
   db: postgresAdapter({
@@ -582,7 +608,7 @@ export default buildConfig({
       ssl: databaseSsl
     },
     push: process.env.NODE_ENV === "development",
-    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*"]
+    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*", "waitlist_entries"]
   }),
   editor: lexicalEditor({}),
   graphQL: {
