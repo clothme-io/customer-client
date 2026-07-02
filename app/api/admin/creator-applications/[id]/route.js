@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { backendApiUrl } from '../../../_utils.mjs';
 
 function getAdminKey() {
   const cookieStore = cookies();
@@ -12,10 +13,8 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
   try {
-    const res = await fetch(`${apiUrl}/creator-applications/${params.id}`, {
+    const res = await fetch(backendApiUrl(`/creator-applications/${params.id}`), {
       headers: { 'x-admin-key': adminKey },
       cache: 'no-store',
     });
@@ -33,11 +32,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
   try {
     const body = await request.json();
-    const res = await fetch(`${apiUrl}/creator-applications/${params.id}/status`, {
+    const res = await fetch(backendApiUrl(`/creator-applications/${params.id}/status`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

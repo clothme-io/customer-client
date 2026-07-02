@@ -30,10 +30,10 @@ Next.js serves:
 
 ## Database
 
-Run migrations after setting `DATABASE_URL`:
+Payload CMS owns the application database schema. Run Payload migrations after setting `DATABASE_URL`:
 
 ```bash
-npm run migrate
+npm run cms:sync
 ```
 
 ## Payload CMS
@@ -66,10 +66,26 @@ NEXT_PUBLIC_PLAUSIBLE_DOMAIN=
 
 DATABASE_URL=postgresql://user:password@host:port/database
 DATABASE_SSL=true
-RUN_MIGRATIONS=false
 PAYLOAD_SECRET=replace-with-a-long-random-secret
-PAYLOAD_DB_PUSH=true
+
+# Creator program — requires backend-api with POST /v1/creator-applications
+BACKEND_API_URL=https://your-backend-api.example.com
+NEXT_PUBLIC_API_URL=https://your-backend-api.example.com
+ADMIN_API_KEY=replace-with-a-long-random-secret
 ```
+
+The creator application form at `/creators/apply` POSTs to `/api/creator-applications` (a Next.js proxy). The proxy forwards to `BACKEND_API_URL` or `NEXT_PUBLIC_API_URL` with the `/v1` prefix. Set at least one of those URLs on Railway — `BACKEND_API_URL` is preferred because it is read at runtime and does not require a rebuild to change.
+
+## Creator Program
+
+Public routes:
+
+- `/creators` — landing page
+- `/creators/apply` — application form
+- `/creators/success` — confirmation after submit
+- `/admin/creators` — admin dashboard (requires `ADMIN_API_KEY`)
+
+The backend must have migration `0063` applied (`interested_affiliate` column). Run `npm run db:deploy` on the backend service before accepting submissions with the affiliate field.
 
 ## Railway Docker Deploy
 
@@ -80,15 +96,13 @@ Recommended Railway setup:
 - one app service
 - one Railway Postgres service
 - app service variable `DATABASE_URL=${{Postgres.DATABASE_URL}}`
-- Railway pre-deploy command: `npm run migrate`
+- app service variable `BACKEND_API_URL=https://your-backend-api.example.com` (or `NEXT_PUBLIC_API_URL`)
+- app service variable `ADMIN_API_KEY=...` (for `/admin/creators`)
+- Railway pre-deploy command: `npm run cms:sync` (not `npm run migrate`)
 - Docker deploy from the repository
 
-You can also run migrations from the container entrypoint by setting:
+If your Railway service still has `npm run migrate` as the pre-deploy command, update it to `npm run cms:sync`. The legacy `migrate` script was removed when Payload CMS migrations replaced SQL migrations.
 
-```bash
-RUN_MIGRATIONS=true
-```
+The `cms:sync` script retries Postgres connections while the database wakes (up to 20 attempts, 3s apart). Override with `MIGRATION_MAX_ATTEMPTS` and `MIGRATION_RETRY_DELAY_MS` if needed.
 
-For production, Railway's pre-deploy command is preferred because migrations run before the new version starts serving traffic.
-
-Payload CMS uses the same `DATABASE_URL`. For the first Railway deployment, keep `PAYLOAD_DB_PUSH=true` so the Docker entrypoint can create its own CMS tables before the app starts. After the CMS is stable and migrations are in place, you can switch to `PAYLOAD_DB_PUSH=false` and run Payload migrations with `npm run cms:migrate`.
+Payload CMS uses the same `DATABASE_URL`. The Docker entrypoint also runs `npm run cms:sync` when `DATABASE_URL` is configured, so schema changes are applied through Payload migrations instead of legacy SQL files.

@@ -23,7 +23,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/scripts ./scripts
-COPY --from=build /app/db ./db
 COPY --from=build /app/src ./src
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY docker/entrypoint.sh ./docker/entrypoint.sh

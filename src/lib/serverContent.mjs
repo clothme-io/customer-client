@@ -1,6 +1,5 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { posts as fallbackPosts, mergePostsBySlug } from "../data/posts.js";
 import { mapPayloadPostToLegacy } from "../../server/webhooks/transform.mjs";
 
 async function getPayloadPosts({ slug } = {}) {
@@ -33,11 +32,10 @@ async function getPayloadPosts({ slug } = {}) {
 
 export async function getPublicPosts() {
   try {
-    const posts = await getPayloadPosts();
-    return mergePostsBySlug(posts, fallbackPosts);
+    return await getPayloadPosts();
   } catch (error) {
-    console.warn(`Could not load posts from Payload CMS. Falling back to local posts. ${error.message}`);
-    return fallbackPosts;
+    console.warn(`Could not load posts from Payload CMS. ${error.message}`);
+    return [];
   }
 }
 
