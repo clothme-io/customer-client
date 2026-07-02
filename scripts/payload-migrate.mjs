@@ -4,6 +4,8 @@
  * - Tables already exist (previous deploy): marks only the baseline migration as applied,
  *   then lets Payload run any newer pending migrations.
  * - Fresh database (first deploy to prod): runs all Payload migrations.
+ *
+ * Retries DB connections while Postgres wakes (Railway pre-deploy).
  */
 import pg from "pg";
 import { spawnSync } from "node:child_process";
@@ -11,10 +13,55 @@ import { spawnSync } from "node:child_process";
 const { Pool } = pg;
 const BASELINE_MIGRATIONS = ["20260626_183444"];
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
-});
+const retryableDatabaseCodes = new Set([
+  "08000",
+  "08001",
+  "08003",
+  "08004",
+  "08006",
+  "08007",
+  "57P03",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "ENOTFOUND",
+]);
+const maxAttempts = Number.parseInt(process.env.MIGRATION_MAX_ATTEMPTS || "20", 10);
+const retryDelayMs = Number.parseInt(process.env.MIGRATION_RETRY_DELAY_MS || "3000", 10);
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function isRetryableError(error) {
+  return retryableDatabaseCodes.has(error?.code);
+}
+
+async function withRetry(label, fn) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      const canRetry = isRetryableError(error) && attempt < maxAttempts;
+      if (!canRetry) {
+        throw error;
+      }
+      console.warn(
+        `Database is not ready while ${label}. Retrying in ${retryDelayMs}ms (${attempt}/${maxAttempts}).`
+      );
+      await sleep(retryDelayMs);
+    }
+  }
+}
+
+function createPool() {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  });
+}
 
 async function tableExists(client, name) {
   const res = await client.query(
@@ -27,17 +74,16 @@ async function tableExists(client, name) {
   return res.rows[0].exists;
 }
 
-async function main() {
-  const client = await pool.connect();
+async function runBaselineSetup(pool) {
+  const client = await withRetry("connecting to Postgres", () => pool.connect());
   try {
-    const tablesExist =
+    const tablesExist = await withRetry("checking existing tables", async () =>
       (await tableExists(client, "cms_posts")) ||
       (await tableExists(client, "media")) ||
-      (await tableExists(client, "locations"));
+      (await tableExists(client, "locations"))
+    );
 
     if (tablesExist) {
-      // Tables are already in the DB — just make sure migrations are recorded
-      // so `payload migrate` never tries to re-create them.
       await client.query(`
         CREATE TABLE IF NOT EXISTS payload_migrations (
           id serial PRIMARY KEY,
@@ -63,9 +109,10 @@ async function main() {
     }
   } finally {
     client.release();
-    await pool.end();
   }
+}
 
+async function runPayloadMigrate() {
   const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
     stdio: "inherit",
     env: process.env,
@@ -73,6 +120,21 @@ async function main() {
   if (result.status !== 0) {
     throw new Error(`payload migrate failed with exit code ${result.status}`);
   }
+}
+
+async function main() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is required to run cms:sync");
+  }
+
+  const pool = createPool();
+  try {
+    await runBaselineSetup(pool);
+  } finally {
+    await pool.end();
+  }
+
+  await runPayloadMigrate();
 }
 
 main().catch((err) => {
