@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { backendApiUrl } from '../../_utils.mjs';
 
 function getAdminKey() {
   const cookieStore = cookies();
@@ -12,10 +13,9 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const { searchParams } = new URL(request.url);
 
-  const upstream = new URL(`${apiUrl}/creator-applications`);
+  const upstream = new URL(backendApiUrl('/creator-applications'));
   for (const [key, value] of searchParams.entries()) {
     upstream.searchParams.set(key, value);
   }

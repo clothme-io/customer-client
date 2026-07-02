@@ -1,4 +1,5 @@
 import { AdminCreatorsPage } from '../../src/screens/AdminCreatorsPage';
+import { backendApiUrl } from '../../src/lib/backendApi';
 
 export async function getServerSideProps({ req }) {
   const adminKey = req.cookies['cm-admin-key'];
@@ -12,10 +13,8 @@ export async function getServerSideProps({ req }) {
     };
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
   try {
-    const res = await fetch(`${apiUrl}/creator-applications`, {
+    const res = await fetch(backendApiUrl('/creator-applications'), {
       headers: { 'x-admin-key': adminKey },
     });
     const json = await res.json();

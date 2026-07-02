@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { parseCreatorApplicationError } from '../../lib/creatorFormErrors';
 
 const INITIAL_STATE = {
   fullName: '',
@@ -20,6 +21,19 @@ const INITIAL_STATE = {
   interestedAffiliate: '',
 };
 
+function validateForm(form) {
+  if (!form.hasUgcExperience) {
+    return 'Please indicate whether you have created UGC before.';
+  }
+  if (!form.interestedCreatorStore) {
+    return 'Please select your interest in the ClothME Creator Store.';
+  }
+  if (!form.interestedAffiliate) {
+    return 'Please select your interest in the Affiliate Program.';
+  }
+  return '';
+}
+
 export function CreatorForm() {
   const router = useRouter();
   const [form, setForm] = useState(INITIAL_STATE);
@@ -34,25 +48,36 @@ export function CreatorForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    const validationError = validateForm(form);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const payload = {
         ...form,
         hasUgcExperience: form.hasUgcExperience === 'true',
       };
 
-      const res = await fetch(`${apiUrl}/creator-applications`, {
+      const res = await fetch('/api/creator-applications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Submission failed. Please try again.');
+      }
+
       const json = await res.json();
 
       if (!res.ok || json.error) {
-        throw new Error(json.error?.message || 'Submission failed. Please try again.');
+        throw new Error(parseCreatorApplicationError(json));
       }
 
       router.push('/creators/success');
@@ -71,7 +96,7 @@ export function CreatorForm() {
         We're selecting 20 founding creators. Fill out the form below — it takes under 3 minutes.
       </p>
 
-      <form className="creator-form" onSubmit={handleSubmit} noValidate>
+      <form className="creator-form" onSubmit={handleSubmit}>
 
           {/* Personal Info */}
           <fieldset className="creator-form-fieldset">
@@ -320,7 +345,7 @@ export function CreatorForm() {
                       value={value}
                       checked={form.interestedCreatorStore === value}
                       onChange={handleChange}
-                      required={value === 'yes'}
+                      required
                     />
                     {label}
                   </label>
@@ -344,7 +369,7 @@ export function CreatorForm() {
                       value={value}
                       checked={form.interestedAffiliate === value}
                       onChange={handleChange}
-                      required={value === 'yes'}
+                      required
                     />
                     {label}
                   </label>
