@@ -28,6 +28,7 @@ const retryableDatabaseCodes = new Set([
 ]);
 const maxAttempts = Number.parseInt(process.env.MIGRATION_MAX_ATTEMPTS || "20", 10);
 const retryDelayMs = Number.parseInt(process.env.MIGRATION_RETRY_DELAY_MS || "3000", 10);
+const payloadMigrateMaxAttempts = Number.parseInt(process.env.PAYLOAD_MIGRATE_MAX_ATTEMPTS || "5", 10);
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -39,17 +40,17 @@ function isRetryableError(error) {
   return retryableDatabaseCodes.has(error?.code);
 }
 
-async function withRetry(label, fn) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+async function withRetry(label, fn, attempts = maxAttempts) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       return await fn();
     } catch (error) {
-      const canRetry = isRetryableError(error) && attempt < maxAttempts;
+      const canRetry = isRetryableError(error) && attempt < attempts;
       if (!canRetry) {
         throw error;
       }
       console.warn(
-        `Database is not ready while ${label}. Retrying in ${retryDelayMs}ms (${attempt}/${maxAttempts}).`
+        `Database is not ready while ${label}. Retrying in ${retryDelayMs}ms (${attempt}/${attempts}).`
       );
       await sleep(retryDelayMs);
     }
@@ -67,21 +68,20 @@ async function tableExists(client, name) {
   const res = await client.query(
     `SELECT EXISTS (
        SELECT FROM information_schema.tables
-       WHERE table_schema = 'public' AND table_name = $1
+       WHERE table_schema = 'public' AND table_name = $1::text
      )`,
     [name]
   );
   return res.rows[0].exists;
 }
 
-async function runBaselineSetup(pool) {
-  const client = await withRetry("connecting to Postgres", () => pool.connect());
+async function runBaselineSetupOnce(pool) {
+  const client = await pool.connect();
   try {
-    const tablesExist = await withRetry("checking existing tables", async () =>
+    const tablesExist =
       (await tableExists(client, "cms_posts")) ||
       (await tableExists(client, "media")) ||
-      (await tableExists(client, "locations"))
-    );
+      (await tableExists(client, "locations"));
 
     if (tablesExist) {
       await client.query(`
@@ -97,8 +97,8 @@ async function runBaselineSetup(pool) {
       for (const name of BASELINE_MIGRATIONS) {
         await client.query(
           `INSERT INTO payload_migrations (name, batch)
-           SELECT $1, 1 WHERE NOT EXISTS (
-             SELECT 1 FROM payload_migrations WHERE name = $1
+           SELECT $1::varchar, 1 WHERE NOT EXISTS (
+             SELECT 1 FROM payload_migrations WHERE name = $1::varchar
            )`,
           [name]
         );
@@ -112,12 +112,29 @@ async function runBaselineSetup(pool) {
   }
 }
 
+async function runBaselineSetup(pool) {
+  await withRetry("running baseline setup", () => runBaselineSetupOnce(pool));
+}
+
 async function runPayloadMigrate() {
-  const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
-    stdio: "inherit",
-    env: process.env,
-  });
-  if (result.status !== 0) {
+  for (let attempt = 1; attempt <= payloadMigrateMaxAttempts; attempt += 1) {
+    const result = spawnSync("sh", ["-c", "echo 'y' | npx payload migrate"], {
+      stdio: "inherit",
+      env: process.env,
+    });
+
+    if (result.status === 0) {
+      return;
+    }
+
+    if (attempt < payloadMigrateMaxAttempts) {
+      console.warn(
+        `payload migrate failed with exit code ${result.status}. Retrying in ${retryDelayMs}ms (${attempt}/${payloadMigrateMaxAttempts}).`
+      );
+      await sleep(retryDelayMs);
+      continue;
+    }
+
     throw new Error(`payload migrate failed with exit code ${result.status}`);
   }
 }
