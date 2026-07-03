@@ -201,8 +201,8 @@ h1 {
 .waitlist-form button {
   min-height: 50px;
   padding: 0 24px;
-  color: #fffdf8;
-  background: var(--cta);
+  color: var(--ink);
+  background: var(--accent);
   border: 0;
   border-radius: 999px;
   cursor: pointer;
