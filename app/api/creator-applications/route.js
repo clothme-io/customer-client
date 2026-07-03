@@ -1,5 +1,23 @@
 import { NextResponse } from "next/server";
 import { backendApiUrl, getBackendBaseUrl } from "../_utils.mjs";
+import { parseCreatorApplicationError } from "../../../src/lib/creatorFormErrors.js";
+
+const UPSTREAM_TIMEOUT_MS = 25000;
+
+async function readUpstreamBody(res) {
+  const contentType = res.headers.get("content-type") || "";
+  const text = await res.text();
+
+  if (contentType.includes("application/json")) {
+    try {
+      return { json: JSON.parse(text), text };
+    } catch {
+      return { json: null, text };
+    }
+  }
+
+  return { json: null, text };
+}
 
 export async function POST(request) {
   if (!getBackendBaseUrl()) {
@@ -9,31 +27,50 @@ export async function POST(request) {
     );
   }
 
+  const upstreamUrl = backendApiUrl("/creator-applications");
+
   try {
     const body = await request.json();
-    const res = await fetch(backendApiUrl("/creator-applications"), {
+    const res = await fetch(upstreamUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
-    const contentType = res.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-      const text = await res.text();
-      console.error("[creator-applications] non-JSON upstream response:", res.status, text.slice(0, 200));
-      return NextResponse.json(
-        { error: { message: "Submission failed. Please try again." } },
-        { status: 502 }
-      );
+    const { json, text } = await readUpstreamBody(res);
+
+    if (json) {
+      if (!res.ok || json.error) {
+        const message = parseCreatorApplicationError(json);
+        return NextResponse.json({ error: { message } }, { status: res.ok ? 500 : res.status });
+      }
+      return NextResponse.json(json, { status: res.status });
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error("[creator-applications] POST error:", error);
+    console.error(
+      "[creator-applications] non-JSON upstream response:",
+      upstreamUrl,
+      res.status,
+      text.slice(0, 300)
+    );
     return NextResponse.json(
-      { error: { message: "Submission failed. Please try again." } },
+      {
+        error: {
+          message:
+            res.status >= 500
+              ? "Our application service is temporarily unavailable. Please try again in a few minutes."
+              : "Submission failed. Please try again.",
+        },
+      },
       { status: 502 }
     );
+  } catch (error) {
+    console.error("[creator-applications] POST error:", upstreamUrl, error);
+    const message =
+      error?.name === "TimeoutError"
+        ? "The application service timed out. Please try again."
+        : "Could not reach the application service. Please try again later.";
+    return NextResponse.json({ error: { message } }, { status: 502 });
   }
 }
