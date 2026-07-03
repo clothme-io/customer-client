@@ -71,6 +71,7 @@ export interface Config {
     media: Media;
     locations: Location;
     'cms-posts': CmsPost;
+    'webhook-events': WebhookEvent;
     'waitlist-entries': WaitlistEntry;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -84,6 +85,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     locations: LocationsSelect<false> | LocationsSelect<true>;
     'cms-posts': CmsPostsSelect<false> | CmsPostsSelect<true>;
+    'webhook-events': WebhookEventsSelect<false> | WebhookEventsSelect<true>;
     'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -349,11 +351,15 @@ export interface CmsPost {
   title: string;
   slug: string;
   excerpt: string;
-  status: 'draft' | 'scheduled' | 'published';
+  status: 'draft' | 'published';
   publishedAt?: string | null;
   location?: (number | null) | Location;
   category?: ('fit-guide' | 'family-shopping' | 'personal-style' | 'location-guide') | null;
   heroImage?: (number | null) | Media;
+  /**
+   * Image URL received from an auto-blogging webhook. Upload a CMS hero image to replace it.
+   */
+  externalHeroImageUrl?: string | null;
   content: {
     root: {
       type: string;
@@ -385,9 +391,50 @@ export interface CmsPost {
    * A concise summary for AI search engines and answer engines.
    */
   aiSummary?: string | null;
+  source?: {
+    provider?: string | null;
+    externalId?: string | null;
+    publicUrl?: string | null;
+    providerCreatedAt?: string | null;
+    receivedAt?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "webhook-events".
+ */
+export interface WebhookEvent {
+  id: number;
+  provider: 'babylovegrowth' | 'outrank';
+  eventType?: string | null;
+  externalId?: string | null;
+  slug?: string | null;
+  post?: (number | null) | CmsPost;
+  status: 'created' | 'updated' | 'rejected' | 'skipped' | 'error';
+  message?: string | null;
+  payload?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  normalized?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -531,6 +578,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'cms-posts';
         value: number | CmsPost;
+      } | null)
+    | ({
+        relationTo: 'webhook-events';
+        value: number | WebhookEvent;
       } | null)
     | ({
         relationTo: 'waitlist-entries';
@@ -777,6 +828,7 @@ export interface CmsPostsSelect<T extends boolean = true> {
   location?: T;
   category?: T;
   heroImage?: T;
+  externalHeroImageUrl?: T;
   content?: T;
   seo?:
     | T
@@ -793,9 +845,35 @@ export interface CmsPostsSelect<T extends boolean = true> {
         ogImage?: T;
       };
   aiSummary?: T;
+  source?:
+    | T
+    | {
+        provider?: T;
+        externalId?: T;
+        publicUrl?: T;
+        providerCreatedAt?: T;
+        receivedAt?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "webhook-events_select".
+ */
+export interface WebhookEventsSelect<T extends boolean = true> {
+  provider?: T;
+  eventType?: T;
+  externalId?: T;
+  slug?: T;
+  post?: T;
+  status?: T;
+  message?: T;
+  payload?: T;
+  normalized?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

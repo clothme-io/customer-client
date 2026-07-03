@@ -463,6 +463,26 @@ export default buildConfig({
         group: "Content",
         useAsTitle: "title"
       },
+      hooks: {
+        beforeChange: [
+          ({ data, originalDoc }) => {
+            const status = data.status || originalDoc?.status || "draft";
+            const category = data.category || originalDoc?.category;
+
+            if (status === "published") {
+              if (!category) {
+                throw new Error("Choose a blog category before publishing this post.");
+              }
+              if (!data.publishedAt) {
+                data.publishedAt = originalDoc?.publishedAt || new Date().toISOString();
+              }
+            }
+
+            data._status = status === "published" ? "published" : "draft";
+            return data;
+          }
+        ]
+      },
       versions: {
         drafts: {
           autosave: true,
@@ -493,7 +513,6 @@ export default buildConfig({
           defaultValue: "draft",
           options: [
             { label: "Draft", value: "draft" },
-            { label: "Scheduled", value: "scheduled" },
             { label: "Published", value: "published" }
           ],
           required: true
@@ -526,6 +545,14 @@ export default buildConfig({
           name: "heroImage",
           type: "upload",
           relationTo: "media"
+        },
+        {
+          name: "externalHeroImageUrl",
+          type: "text",
+          label: "External Hero Image URL",
+          admin: {
+            description: "Image URL received from an auto-blogging webhook. Upload a CMS hero image to replace it."
+          }
         },
         {
           name: "content",
@@ -572,6 +599,107 @@ export default buildConfig({
           admin: {
             description: "A concise summary for AI search engines and answer engines."
           }
+        },
+        {
+          name: "source",
+          type: "group",
+          label: "Webhook Source",
+          admin: {
+            position: "sidebar"
+          },
+          fields: [
+            {
+              name: "provider",
+              type: "text",
+              admin: { readOnly: true }
+            },
+            {
+              name: "externalId",
+              type: "text",
+              admin: { readOnly: true }
+            },
+            {
+              name: "publicUrl",
+              type: "text",
+              admin: { readOnly: true }
+            },
+            {
+              name: "providerCreatedAt",
+              type: "date",
+              admin: { readOnly: true }
+            },
+            {
+              name: "receivedAt",
+              type: "date",
+              admin: { readOnly: true }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      slug: "webhook-events",
+      access: {
+        create: () => true,
+        delete: () => true,
+        read: () => true,
+        update: () => true
+      },
+      admin: {
+        defaultColumns: ["provider", "eventType", "status", "slug", "createdAt"],
+        group: "Content",
+        useAsTitle: "slug"
+      },
+      fields: [
+        {
+          name: "provider",
+          type: "select",
+          options: [
+            { label: "BabyLoveGrowth", value: "babylovegrowth" },
+            { label: "Outrank", value: "outrank" }
+          ],
+          required: true
+        },
+        {
+          name: "eventType",
+          type: "text"
+        },
+        {
+          name: "externalId",
+          type: "text"
+        },
+        {
+          name: "slug",
+          type: "text"
+        },
+        {
+          name: "post",
+          type: "relationship",
+          relationTo: "cms-posts"
+        },
+        {
+          name: "status",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Created", value: "created" },
+            { label: "Updated", value: "updated" },
+            { label: "Rejected", value: "rejected" },
+            { label: "Skipped", value: "skipped" },
+            { label: "Error", value: "error" }
+          ]
+        },
+        {
+          name: "message",
+          type: "textarea"
+        },
+        {
+          name: "payload",
+          type: "json"
+        },
+        {
+          name: "normalized",
+          type: "json"
         }
       ]
     },
@@ -608,7 +736,7 @@ export default buildConfig({
       ssl: databaseSsl
     },
     push: process.env.NODE_ENV === "development",
-    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*", "waitlist_entries"]
+    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*", "waitlist_entries", "webhook_events"]
   }),
   editor: lexicalEditor({}),
   graphQL: {
