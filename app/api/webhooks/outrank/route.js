@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { transformToPayloadPost, normalizeSlug } from "../../../../server/webhooks/transform.mjs";
+import { transformToPayloadPost, normalizeSlug, validateNormalizedArticle } from "../../../../server/webhooks/transform.mjs";
 
 const WEBHOOK_SECRET = process.env.OUTRANK_WEBHOOK_SECRET;
 
@@ -21,18 +21,38 @@ function verifyToken(request) {
   return token === WEBHOOK_SECRET;
 }
 
-function normalizeOutrankArticle(article) {
+function firstString(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function normalizeOutrankArticle(article, receivedAt) {
   return {
-    title: article.title || "",
-    slug: article.slug || "",
-    content: article.html || article.content || article.body || "",
-    featuredImageUrl: article.featured_image || article.featuredImage || article.image || "",
-    metaTitle: article.meta_title || article.metaTitle || article.seo_title || "",
-    metaDescription: article.meta_description || article.metaDescription || article.seo_description || "",
+    provider: "outrank",
+    externalId: firstString(article.id, article.article_id, article.externalId),
+    title: firstString(article.title),
+    slug: firstString(article.slug),
+    content: firstString(article.content_html, article.contentHtml, article.html, article.content, article.body, article.content_markdown, article.contentMarkdown),
+    featuredImageUrl: firstString(article.image_url, article.heroImageUrl, article.featured_image, article.featuredImage, article.image),
+    metaTitle: firstString(article.meta_title, article.metaTitle, article.seo_title, article.title),
+    metaDescription: firstString(article.meta_description, article.metaDescription, article.seo_description),
     tags: Array.isArray(article.tags) ? article.tags : (article.keywords || []),
-    author: article.author || "",
-    faq: Array.isArray(article.faq) ? article.faq : []
+    author: firstString(article.author),
+    faq: Array.isArray(article.faq) ? article.faq : [],
+    publicUrl: firstString(article.public_url, article.publicUrl, article.url),
+    providerCreatedAt: firstString(article.created_at, article.createdAt),
+    receivedAt
   };
+}
+
+async function recordWebhookEvent(payload, data) {
+  try {
+    await payload.create({ collection: "webhook-events", data });
+  } catch (error) {
+    console.error(`[webhooks/outrank] Could not record webhook event: ${error.message}`);
+  }
 }
 
 export async function POST(request) {
@@ -62,11 +82,29 @@ export async function POST(request) {
 
   const payload = await getPayload({ config });
   const results = [];
+  const receivedAt = new Date().toISOString();
 
   for (const raw of articles) {
-    const slug = normalizeSlug(raw.slug, raw.title);
+    const article = normalizeOutrankArticle(raw, receivedAt);
+    const validation = validateNormalizedArticle(article);
+    const slug = validation.slug || normalizeSlug(raw.slug, raw.title);
+
+    if (!validation.valid) {
+      await recordWebhookEvent(payload, {
+        provider: "outrank",
+        eventType: event_type,
+        externalId: article.externalId,
+        slug,
+        status: "rejected",
+        message: validation.errors.join("; "),
+        payload: raw,
+        normalized: article
+      });
+      results.push({ slug, status: "rejected", errors: validation.errors });
+      continue;
+    }
+
     try {
-      const article = normalizeOutrankArticle(raw);
       const postData = transformToPayloadPost(article);
 
       const existing = await payload.find({
@@ -77,10 +115,36 @@ export async function POST(request) {
       });
 
       if (existing.docs.length > 0) {
+        if (existing.docs[0].status === "published") {
+          await recordWebhookEvent(payload, {
+            provider: "outrank",
+            eventType: event_type,
+            externalId: article.externalId,
+            slug,
+            post: existing.docs[0].id,
+            status: "skipped",
+            message: "Existing post is already published; webhook did not overwrite reviewed content.",
+            payload: raw,
+            normalized: article
+          });
+          results.push({ slug, status: "skipped_published", id: existing.docs[0].id });
+          continue;
+        }
+
         await payload.update({
           collection: "cms-posts",
           id: existing.docs[0].id,
           data: postData,
+        });
+        await recordWebhookEvent(payload, {
+          provider: "outrank",
+          eventType: event_type,
+          externalId: article.externalId,
+          slug,
+          post: existing.docs[0].id,
+          status: "updated",
+          payload: raw,
+          normalized: article
         });
         results.push({ slug, status: "updated", id: existing.docs[0].id });
         console.log(`[webhooks/outrank] Updated: ${slug}`);
@@ -89,16 +153,38 @@ export async function POST(request) {
           collection: "cms-posts",
           data: postData,
         });
+        await recordWebhookEvent(payload, {
+          provider: "outrank",
+          eventType: event_type,
+          externalId: article.externalId,
+          slug,
+          post: created.id,
+          status: "created",
+          payload: raw,
+          normalized: article
+        });
         results.push({ slug, status: "created", id: created.id });
         console.log(`[webhooks/outrank] Created: ${slug}`);
       }
     } catch (error) {
       console.error(`[webhooks/outrank] Error on ${slug}: ${error.message}`);
+      await recordWebhookEvent(payload, {
+        provider: "outrank",
+        eventType: event_type,
+        externalId: article.externalId,
+        slug,
+        status: "error",
+        message: error.message,
+        payload: raw,
+        normalized: article
+      });
       results.push({ slug, status: "error", error: error.message });
     }
   }
 
-  return NextResponse.json({ success: true, event_type, processed: results.length, results });
+  const accepted = results.filter((result) => ["created", "updated", "skipped_published"].includes(result.status));
+  const responseStatus = accepted.length > 0 ? 200 : 422;
+  return NextResponse.json({ success: accepted.length > 0, event_type, processed: results.length, results }, { status: responseStatus });
 }
 
 export async function GET() {
