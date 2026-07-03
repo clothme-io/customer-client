@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { transformToPayloadPost, normalizeSlug } from "../../../../server/webhooks/transform.mjs";
+import { transformToPayloadPost, normalizeSlug, validateNormalizedArticle } from "../../../../server/webhooks/transform.mjs";
 
 const WEBHOOK_SECRET = process.env.BABYLOVEGROWTH_WEBHOOK_SECRET;
 
@@ -31,18 +31,65 @@ function verifyToken(request) {
   return false;
 }
 
-function normalizeBabyLoveGrowthArticle(raw) {
+function firstString(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function normalizeFaq(raw) {
+  if (Array.isArray(raw.faq)) return raw.faq;
+  if (typeof raw.faqJsonLd === "string" && raw.faqJsonLd.trim()) {
+    try {
+      const parsed = JSON.parse(raw.faqJsonLd);
+      const entities = Array.isArray(parsed?.mainEntity) ? parsed.mainEntity : [];
+      return entities.map((item) => ({
+        question: item.name || "",
+        answer: item.acceptedAnswer?.text || ""
+      })).filter((item) => item.question && item.answer);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function articleCandidates(body) {
+  if (Array.isArray(body?.articles)) return body.articles;
+  if (Array.isArray(body?.data?.articles)) return body.data.articles;
+  if (body?.article) return [body.article];
+  if (body?.data?.article) return [body.data.article];
+  if (body?.data && typeof body.data === "object" && !Array.isArray(body.data)) return [body.data];
+  if (Array.isArray(body)) return body;
+  return [body];
+}
+
+function normalizeBabyLoveGrowthArticle(raw, receivedAt) {
   return {
-    title: raw.title || "",
-    slug: raw.slug || "",
-    content: raw.content || raw.html || raw.body || "",
-    featuredImageUrl: raw.featured_image || raw.featuredImage || raw.image || "",
-    metaTitle: raw.meta_title || raw.metaTitle || "",
-    metaDescription: raw.meta_description || raw.metaDescription || "",
+    provider: "babylovegrowth",
+    externalId: firstString(raw.id, raw.articleId, raw.externalId),
+    title: firstString(raw.title),
+    slug: firstString(raw.slug),
+    content: firstString(raw.content_html, raw.contentHtml, raw.html, raw.content, raw.body, raw.content_markdown, raw.contentMarkdown),
+    featuredImageUrl: firstString(raw.heroImageUrl, raw.hero_image_url, raw.featured_image, raw.featuredImage, raw.image),
+    metaTitle: firstString(raw.metaTitle, raw.meta_title, raw.title),
+    metaDescription: firstString(raw.metaDescription, raw.meta_description, raw.seo_description),
     tags: Array.isArray(raw.tags) ? raw.tags : [],
-    author: raw.author || "",
-    faq: Array.isArray(raw.faq) ? raw.faq : []
+    author: firstString(raw.author),
+    faq: normalizeFaq(raw),
+    publicUrl: firstString(raw.publicUrl, raw.public_url, raw.url),
+    providerCreatedAt: firstString(raw.createdAt, raw.created_at),
+    receivedAt
   };
+}
+
+async function recordWebhookEvent(payload, data) {
+  try {
+    await payload.create({ collection: "webhook-events", data });
+  } catch (error) {
+    console.error(`[webhooks/babylovegrowth] Could not record webhook event: ${error.message}`);
+  }
 }
 
 export async function POST(request) {
@@ -57,20 +104,36 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // BabyLoveGrowth sends a single article (flat), an array, or { articles: [...] }
-  const articles = Array.isArray(body.articles)
-    ? body.articles
-    : Array.isArray(body)
-      ? body
-      : [body];
+  const articles = articleCandidates(body);
+  if (articles.length === 0) {
+    return NextResponse.json({ error: "No articles in payload" }, { status: 400 });
+  }
 
   const payload = await getPayload({ config });
   const results = [];
+  const receivedAt = new Date().toISOString();
 
   for (const raw of articles) {
-    const slug = normalizeSlug(raw.slug, raw.title);
+    const article = normalizeBabyLoveGrowthArticle(raw, receivedAt);
+    const validation = validateNormalizedArticle(article);
+    const slug = validation.slug || normalizeSlug(raw.slug, raw.title);
+
+    if (!validation.valid) {
+      await recordWebhookEvent(payload, {
+        provider: "babylovegrowth",
+        eventType: "article_received",
+        externalId: article.externalId,
+        slug,
+        status: "rejected",
+        message: validation.errors.join("; "),
+        payload: raw,
+        normalized: article
+      });
+      results.push({ slug, status: "rejected", errors: validation.errors });
+      continue;
+    }
+
     try {
-      const article = normalizeBabyLoveGrowthArticle(raw);
       const postData = transformToPayloadPost(article);
 
       const existing = await payload.find({
@@ -81,10 +144,36 @@ export async function POST(request) {
       });
 
       if (existing.docs.length > 0) {
+        if (existing.docs[0].status === "published") {
+          await recordWebhookEvent(payload, {
+            provider: "babylovegrowth",
+            eventType: "article_received",
+            externalId: article.externalId,
+            slug,
+            post: existing.docs[0].id,
+            status: "skipped",
+            message: "Existing post is already published; webhook did not overwrite reviewed content.",
+            payload: raw,
+            normalized: article
+          });
+          results.push({ slug, status: "skipped_published", id: existing.docs[0].id });
+          continue;
+        }
+
         await payload.update({
           collection: "cms-posts",
           id: existing.docs[0].id,
           data: postData,
+        });
+        await recordWebhookEvent(payload, {
+          provider: "babylovegrowth",
+          eventType: "article_received",
+          externalId: article.externalId,
+          slug,
+          post: existing.docs[0].id,
+          status: "updated",
+          payload: raw,
+          normalized: article
         });
         results.push({ slug, status: "updated", id: existing.docs[0].id });
         console.log(`[webhooks/babylovegrowth] Updated: ${slug}`);
@@ -93,16 +182,38 @@ export async function POST(request) {
           collection: "cms-posts",
           data: postData,
         });
+        await recordWebhookEvent(payload, {
+          provider: "babylovegrowth",
+          eventType: "article_received",
+          externalId: article.externalId,
+          slug,
+          post: created.id,
+          status: "created",
+          payload: raw,
+          normalized: article
+        });
         results.push({ slug, status: "created", id: created.id });
         console.log(`[webhooks/babylovegrowth] Created: ${slug}`);
       }
     } catch (error) {
       console.error(`[webhooks/babylovegrowth] Error on ${slug}: ${error.message}`);
+      await recordWebhookEvent(payload, {
+        provider: "babylovegrowth",
+        eventType: "article_received",
+        externalId: article.externalId,
+        slug,
+        status: "error",
+        message: error.message,
+        payload: raw,
+        normalized: article
+      });
       results.push({ slug, status: "error", error: error.message });
     }
   }
 
-  return NextResponse.json({ success: true, processed: results.length, results });
+  const accepted = results.filter((result) => ["created", "updated", "skipped_published"].includes(result.status));
+  const responseStatus = accepted.length > 0 ? 200 : 422;
+  return NextResponse.json({ success: accepted.length > 0, processed: results.length, results }, { status: responseStatus });
 }
 
 export async function GET() {

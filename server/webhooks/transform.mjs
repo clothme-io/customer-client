@@ -286,25 +286,55 @@ export function htmlToLexical(html) {
 
 // ── Payload CMS transformation ────────────────────────────────────────────────
 
+export function validateNormalizedArticle(article) {
+  const errors = [];
+  const title = article.title?.trim();
+  const content = article.content?.trim();
+  const slug = normalizeSlug(article.slug, title);
+
+  if (!title) errors.push("Missing title");
+  if (!slug) errors.push("Missing slug and title could not generate one");
+  if (!content || !stripHtml(content)) errors.push("Missing article content");
+
+  return { valid: errors.length === 0, errors, slug };
+}
+
+function keywordRows(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+    .filter(Boolean)
+    .map((keyword) => ({ keyword }));
+}
+
 /**
  * Transforms a normalized article into a Payload CMS cms-posts create/update payload.
- * heroImage is intentionally omitted — added manually in CMS after review.
+ * Webhook posts stay uncategorized drafts until a human reviews and publishes them.
  */
 export function transformToPayloadPost(article) {
-  const plainContent = stripHtml(article.content || "");
-  const category = classifyCategory(article.title || "", plainContent);
+  const receivedAt = article.receivedAt || new Date().toISOString();
 
   return {
-    title: article.title || "Untitled Article",
+    title: article.title.trim(),
     slug: normalizeSlug(article.slug, article.title),
     excerpt: generateExcerpt(article.content, article.metaDescription),
     status: "draft",
-    category: category || undefined,
+    _status: "draft",
     content: htmlToLexical(article.content),
+    externalHeroImageUrl: article.featuredImageUrl || "",
     aiSummary: article.metaDescription || "",
+    source: {
+      provider: article.provider || "",
+      externalId: article.externalId || "",
+      publicUrl: article.publicUrl || "",
+      providerCreatedAt: article.providerCreatedAt || undefined,
+      receivedAt
+    },
     seo: {
       title: article.metaTitle || article.title || "",
-      description: article.metaDescription || ""
+      description: article.metaDescription || "",
+      keywords: keywordRows(article.tags),
+      canonicalUrl: article.publicUrl || ""
     }
   };
 }
@@ -351,7 +381,7 @@ function lexicalToSections(lexicalJson) {
 export function mapPayloadPostToLegacy(doc, siteUrl = "") {
   const heroUrl = doc.heroImage?.url
     ? (doc.heroImage.url.startsWith("http") ? doc.heroImage.url : `${siteUrl}${doc.heroImage.url}`)
-    : "";
+    : (doc.externalHeroImageUrl || "");
 
   const keywords = Array.isArray(doc.seo?.keywords)
     ? doc.seo.keywords.map(k => (typeof k === "string" ? k : k.keyword)).filter(Boolean)
