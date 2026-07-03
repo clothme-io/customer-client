@@ -1814,8 +1814,8 @@ h1 {
 }
 
 .creator-hero .creator-btn-primary {
-  background: var(--cta);
-  color: #fff;
+  background: var(--accent);
+  color: var(--ink);
 }
 
 .creator-hero .creator-btn-ghost {
@@ -1978,8 +1978,8 @@ h1 {
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  background: var(--accent);
-  color: var(--ink);
+  background: var(--cta);
+  color: #fff;
   border-radius: 999px;
   font-weight: 700;
   font-size: 14px;
