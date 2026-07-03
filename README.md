@@ -96,7 +96,7 @@ Recommended Railway setup:
 - one app service
 - one Railway Postgres service
 - app service variable `DATABASE_URL=${{Postgres.DATABASE_URL}}`
-- app service variable `BACKEND_API_URL=https://your-backend-api.example.com` (or `NEXT_PUBLIC_API_URL`)
+- app service variable `BACKEND_API_URL=https://api-clothme.com` (your live **customer-microservice** public URL — no trailing slash, no `/v1`)
 - app service variable `ADMIN_API_KEY=...` (for `/admin/creators`)
 - Railway pre-deploy command: `npm run cms:sync` (not `npm run migrate`)
 - Docker deploy from the repository
