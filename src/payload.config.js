@@ -459,9 +459,15 @@ export default buildConfig({
         update: () => true
       },
       admin: {
-        defaultColumns: ["title", "status", "location", "publishedAt"],
+        defaultColumns: ["title", "status", "category", "source.provider", "createdAt", "updatedAt"],
+        description: "Webhook articles arrive here as drafts. Review the content, choose a category, then publish.",
+        enableListViewSelectAPI: true,
         group: "Content",
         useAsTitle: "title"
+      },
+      labels: {
+        plural: "Blog Posts",
+        singular: "Blog Post"
       },
       hooks: {
         beforeChange: [
@@ -505,7 +511,10 @@ export default buildConfig({
         {
           name: "excerpt",
           type: "textarea",
-          required: true
+          required: true,
+          admin: {
+            disableListColumn: true
+          }
         },
         {
           name: "status",
@@ -529,7 +538,10 @@ export default buildConfig({
         {
           name: "location",
           type: "relationship",
-          relationTo: "locations"
+          relationTo: "locations",
+          admin: {
+            disableListColumn: true
+          }
         },
         {
           name: "category",
@@ -544,7 +556,10 @@ export default buildConfig({
         {
           name: "heroImage",
           type: "upload",
-          relationTo: "media"
+          relationTo: "media",
+          admin: {
+            disableListColumn: true
+          }
         },
         {
           name: "externalHeroImageUrl",
@@ -558,11 +573,17 @@ export default buildConfig({
           name: "content",
           type: "richText",
           editor: lexicalEditor({}),
-          required: true
+          required: true,
+          admin: {
+            disableListColumn: true
+          }
         },
         {
           name: "seo",
           type: "group",
+          admin: {
+            disableListColumn: true
+          },
           fields: [
             {
               name: "title",
@@ -647,7 +668,7 @@ export default buildConfig({
       },
       admin: {
         defaultColumns: ["provider", "eventType", "status", "slug", "createdAt"],
-        group: "Content",
+        group: false,
         useAsTitle: "slug"
       },
       fields: [
