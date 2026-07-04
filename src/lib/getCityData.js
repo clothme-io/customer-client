@@ -52,14 +52,14 @@ export async function getCityPosts(locationId, { limit = 10 } = {}) {
     // Fetch city-tagged posts
     const cityWhere = encodeWhere({
       and: {
-        0: { status: { equals: "published" } },
+        0: { _status: { equals: "published" } },
         1: { location: { equals: locationId } },
       },
     });
     // Fetch global posts (no location relationship)
     const globalWhere = encodeWhere({
       and: {
-        0: { status: { equals: "published" } },
+        0: { _status: { equals: "published" } },
         1: { location: { exists: false } },
       },
     });

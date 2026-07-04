@@ -11,7 +11,7 @@ async function getPayloadPosts({ slug } = {}) {
       where: {
         and: [
           { slug: { equals: slug } },
-          { status: { equals: "published" } },
+          { _status: { equals: "published" } },
         ],
       },
       limit: 1,
@@ -22,7 +22,7 @@ async function getPayloadPosts({ slug } = {}) {
 
   const result = await payload.find({
     collection: "cms-posts",
-    where: { status: { equals: "published" } },
+    where: { _status: { equals: "published" } },
     sort: "-publishedAt",
     limit: 50,
     depth: 1,

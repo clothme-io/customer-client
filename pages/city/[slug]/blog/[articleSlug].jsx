@@ -14,7 +14,7 @@ async function fetchCmsPost(articleSlug) {
     `http://localhost:${process.env.PORT || 3000}`;
   try {
     const res = await fetch(
-      `${base}/api/payload/cms-posts?where[slug][equals]=${encodeURIComponent(articleSlug)}&where[status][equals]=published&depth=1&limit=1`,
+      `${base}/api/payload/cms-posts?where[slug][equals]=${encodeURIComponent(articleSlug)}&where[_status][equals]=published&depth=1&limit=1`,
       { cache: "no-store" }
     );
     if (!res.ok) return null;
