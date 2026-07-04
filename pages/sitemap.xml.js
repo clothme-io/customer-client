@@ -26,7 +26,7 @@ async function getPublishedCmsPosts() {
   try {
     const res = await fetch(
       internalUrl(
-        "/api/payload/cms-posts?where[status][equals]=published&depth=1&limit=500&sort=-publishedAt"
+        "/api/payload/cms-posts?where[_status][equals]=published&depth=1&limit=500&sort=-publishedAt"
       ),
       { cache: "no-store" }
     );

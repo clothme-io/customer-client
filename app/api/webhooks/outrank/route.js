@@ -115,7 +115,7 @@ export async function POST(request) {
       });
 
       if (existing.docs.length > 0) {
-        if (existing.docs[0].status === "published") {
+        if (existing.docs[0]._status === "published") {
           await recordWebhookEvent(payload, {
             provider: "outrank",
             eventType: event_type,

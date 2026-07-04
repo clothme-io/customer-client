@@ -8,7 +8,7 @@ export async function GET() {
     const payload = await getPayload({ config });
     const result = await payload.find({
       collection: "cms-posts",
-      where: { status: { equals: "published" } },
+      where: { _status: { equals: "published" } },
       sort: "-publishedAt",
       limit: 50,
       depth: 1,

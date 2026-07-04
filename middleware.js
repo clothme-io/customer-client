@@ -21,6 +21,11 @@ export function middleware(request) {
 
   // Never rewrite Next.js internals, static files, or Payload routes
   const { pathname } = url;
+  if (pathname === "/admin/cms/collections/cms-posts" && url.searchParams.has("columns")) {
+    url.searchParams.delete("columns");
+    return NextResponse.redirect(url);
+  }
+
   if (
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||

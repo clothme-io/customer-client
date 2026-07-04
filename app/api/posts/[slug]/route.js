@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       where: {
         and: [
           { slug: { equals: slug } },
-          { status: { equals: "published" } },
+          { _status: { equals: "published" } },
         ],
       },
       limit: 1,

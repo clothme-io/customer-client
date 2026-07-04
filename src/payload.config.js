@@ -3,7 +3,7 @@ import path from "node:path";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import { buildConfig } from "payload";
+import { APIError, buildConfig } from "payload";
 import sharp from "sharp";
 
 const filename = fileURLToPath(import.meta.url);
@@ -459,7 +459,7 @@ export default buildConfig({
         update: () => true
       },
       admin: {
-        defaultColumns: ["title", "status", "category", "source.provider", "createdAt", "updatedAt"],
+        defaultColumns: ["title", "category", "createdAt", "updatedAt"],
         description: "Webhook articles arrive here as drafts. Review the content, choose a category, then publish.",
         enableListViewSelectAPI: true,
         group: "Content",
@@ -472,19 +472,19 @@ export default buildConfig({
       hooks: {
         beforeChange: [
           ({ data, originalDoc }) => {
-            const status = data.status || originalDoc?.status || "draft";
+            const status = data._status || originalDoc?._status || data.status || originalDoc?.status || "draft";
             const category = data.category || originalDoc?.category;
 
             if (status === "published") {
               if (!category) {
-                throw new Error("Choose a blog category before publishing this post.");
+                throw new APIError("Choose a blog category before publishing this post.", 400, null, true);
               }
               if (!data.publishedAt) {
                 data.publishedAt = originalDoc?.publishedAt || new Date().toISOString();
               }
             }
 
-            data._status = status === "published" ? "published" : "draft";
+            data.status = status === "published" ? "published" : "draft";
             return data;
           }
         ]
@@ -520,6 +520,10 @@ export default buildConfig({
           name: "status",
           type: "select",
           defaultValue: "draft",
+          admin: {
+            description: "Mirrors Payload's publish state. Use the Publish button after choosing a category.",
+            readOnly: true
+          },
           options: [
             { label: "Draft", value: "draft" },
             { label: "Published", value: "published" }
@@ -626,6 +630,7 @@ export default buildConfig({
           type: "group",
           label: "Webhook Source",
           admin: {
+            disableListColumn: true,
             position: "sidebar"
           },
           fields: [
