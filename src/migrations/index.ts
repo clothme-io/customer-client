@@ -4,6 +4,7 @@ import * as migration_20260702_000002_drop_legacy_tables from './20260702_000002
 import * as migration_20260703_000001_webhook_ingest_repair from './20260703_000001_webhook_ingest_repair';
 import * as migration_20260704_000001_reset_cms_posts_preferences from './20260704_000001_reset_cms_posts_preferences';
 import * as migration_20260706_000001_repair_cms_post_quotes from './20260706_000001_repair_cms_post_quotes';
+import * as migration_20260707_000001_repair_cms_post_list_items from './20260707_000001_repair_cms_post_list_items';
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20260706_000001_repair_cms_post_quotes.up,
     down: migration_20260706_000001_repair_cms_post_quotes.down,
     name: '20260706_000001_repair_cms_post_quotes'
+  },
+  {
+    up: migration_20260707_000001_repair_cms_post_list_items.up,
+    down: migration_20260707_000001_repair_cms_post_list_items.down,
+    name: '20260707_000001_repair_cms_post_list_items'
   },
 ];

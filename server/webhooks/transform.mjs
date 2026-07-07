@@ -225,10 +225,31 @@ function blockNodes(el) {
       const listType = tag === "ol" ? "number" : "bullet";
       const items = [];
       let value = 1;
-      for (const li of child.querySelectorAll("li")) {
-        const inline = inlineChildren(li);
+      const directItems = child.childNodes.filter((node) => node.nodeType === 1 && node.tagName?.toLowerCase() === "li");
+
+      for (const li of directItems) {
+        const inlineSource = [];
+        const nestedLists = [];
+
+        for (const liChild of li.childNodes) {
+          if (liChild.nodeType === 1 && ["ul", "ol"].includes(liChild.tagName?.toLowerCase())) {
+            nestedLists.push(...blockNodes({ childNodes: [liChild] }));
+          } else {
+            inlineSource.push(liChild);
+          }
+        }
+
+        const inline = inlineChildren({ childNodes: inlineSource });
+        const children = [];
+
         if (inline.length > 0) {
-          items.push({ type: "listitem", children: inline, direction: "ltr", format: "", indent: 0, version: 1, value, checked: null });
+          children.push(makeNode("paragraph", {}, inline));
+        }
+
+        children.push(...nestedLists);
+
+        if (children.length > 0) {
+          items.push({ type: "listitem", children, direction: "ltr", format: "", indent: 0, version: 1, value, checked: null });
           value++;
         }
       }
