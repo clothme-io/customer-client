@@ -236,9 +236,17 @@ function blockNodes(el) {
         nodes.push({ type: "list", listType, children: items, direction: "ltr", format: "", indent: 0, version: 1, start: 1, tag });
       }
     } else if (tag === "blockquote") {
-      const inner = blockNodes(child);
-      if (inner.length > 0) {
-        nodes.push(makeNode("quote", {}, inner));
+      const quoteChildren = [];
+      for (const block of blockNodes(child)) {
+        if (Array.isArray(block.children)) {
+          if (quoteChildren.length > 0) {
+            quoteChildren.push({ type: "linebreak", version: 1 });
+          }
+          quoteChildren.push(...block.children);
+        }
+      }
+      if (quoteChildren.length > 0) {
+        nodes.push(makeNode("quote", {}, quoteChildren));
       }
     } else if (tag === "pre") {
       const codeEl = child.querySelector("code");
