@@ -45,7 +45,7 @@ export function BlogIndexPage({ initialPosts = [] }) {
 
   return (
     <>
-      <SEO title={title} description={description} path="/blog" type="blog" jsonLd={[blogSchema]} />
+      <SEO title={title} description={description} path="/blog" type="blog" image={siteConfig.defaultOgImage} jsonLd={[blogSchema]} />
       <Header />
       <main>
         <section className="blog blog-page" aria-labelledby="blog-title">

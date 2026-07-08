@@ -315,6 +315,20 @@ export function htmlToLexical(html) {
 
 // ── Payload CMS transformation ────────────────────────────────────────────────
 
+const STALE_WEBHOOK_LINK_LABELS = {
+  "ClothME | White background preview": "ClothME | Find Clothes That Fit Every Time",
+  "ClothME | Shop Fashion with Your Size": "ClothME | Find Clothes That Fit Every Time",
+};
+
+export function sanitizeWebhookHtml(html) {
+  if (!html) return html;
+  let result = html;
+  for (const [from, to] of Object.entries(STALE_WEBHOOK_LINK_LABELS)) {
+    result = result.split(from).join(to);
+  }
+  return result;
+}
+
 export function validateNormalizedArticle(article) {
   const errors = [];
   const title = article.title?.trim();
@@ -342,14 +356,15 @@ function keywordRows(tags) {
  */
 export function transformToPayloadPost(article) {
   const receivedAt = article.receivedAt || new Date().toISOString();
+  const contentHtml = sanitizeWebhookHtml(article.content);
 
   return {
     title: article.title.trim(),
     slug: normalizeSlug(article.slug, article.title),
-    excerpt: generateExcerpt(article.content, article.metaDescription),
+    excerpt: generateExcerpt(contentHtml, article.metaDescription),
     status: "draft",
     _status: "draft",
-    content: htmlToLexical(article.content),
+    content: htmlToLexical(contentHtml),
     externalHeroImageUrl: article.featuredImageUrl || "",
     aiSummary: article.metaDescription || "",
     source: {

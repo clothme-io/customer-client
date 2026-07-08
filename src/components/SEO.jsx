@@ -5,7 +5,8 @@ export function SEO({ title, description, path = "/", image, type = "website", j
   const absoluteTitle = title || siteConfig.defaultTitle;
   const absoluteDescription = description || siteConfig.description;
   const canonical = new URL(path, siteConfig.siteUrl).toString();
-  const imageUrl = image ? new URL(image, siteConfig.siteUrl).toString() : "";
+  const imageSource = image || siteConfig.defaultOgImage || "";
+  const imageUrl = imageSource ? new URL(imageSource, siteConfig.siteUrl).toString() : "";
 
   return (
     <Head>

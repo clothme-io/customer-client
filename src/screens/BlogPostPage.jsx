@@ -117,7 +117,7 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
         title={`${post.title} | ClothME Blog`}
         description={post.excerpt}
         path={previewToken ? `/preview/${post.slug}` : `/blog/${post.slug}`}
-        image={post.image}
+        image={post.image || siteConfig.defaultOgImage}
         type="article"
         jsonLd={[articleSchema, faqSchema]}
         robots={previewToken ? "noindex,nofollow" : "index,follow"}

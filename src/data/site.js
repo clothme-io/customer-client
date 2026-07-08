@@ -1,7 +1,8 @@
 export const siteConfig = {
   name: "ClothME",
-  defaultTitle: "ClothME | Join the waitlist",
-  description: "Join the ClothME waitlist to shop fashion products that match your size and your family's sizes.",
+  defaultTitle: "ClothME | Find Clothes That Fit Every Time",
+  description: "Shop fashion that fits you and your family. ClothME generates sizes from two photos and matches products to each person's fit, style, and preferences.",
+  defaultOgImage: "/clothme-logo.png",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || process.env.VITE_SITE_URL || "https://clothme.app",
   twitterHandle: "",
   analytics: {
