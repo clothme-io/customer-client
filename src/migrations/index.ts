@@ -5,6 +5,8 @@ import * as migration_20260703_000001_webhook_ingest_repair from './20260703_000
 import * as migration_20260704_000001_reset_cms_posts_preferences from './20260704_000001_reset_cms_posts_preferences';
 import * as migration_20260706_000001_repair_cms_post_quotes from './20260706_000001_repair_cms_post_quotes';
 import * as migration_20260707_000001_repair_cms_post_list_items from './20260707_000001_repair_cms_post_list_items';
+import * as migration_20260708_000001_sync_locked_documents_rels from './20260708_000001_sync_locked_documents_rels';
+import * as migration_20260708_000002_repair_stale_homepage_link_labels from './20260708_000002_repair_stale_homepage_link_labels';
 
 export const migrations = [
   {
@@ -41,5 +43,15 @@ export const migrations = [
     up: migration_20260707_000001_repair_cms_post_list_items.up,
     down: migration_20260707_000001_repair_cms_post_list_items.down,
     name: '20260707_000001_repair_cms_post_list_items'
+  },
+  {
+    up: migration_20260708_000001_sync_locked_documents_rels.up,
+    down: migration_20260708_000001_sync_locked_documents_rels.down,
+    name: '20260708_000001_sync_locked_documents_rels'
+  },
+  {
+    up: migration_20260708_000002_repair_stale_homepage_link_labels.up,
+    down: migration_20260708_000002_repair_stale_homepage_link_labels.down,
+    name: '20260708_000002_repair_stale_homepage_link_labels'
   },
 ];
