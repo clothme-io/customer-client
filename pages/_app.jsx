@@ -9,8 +9,8 @@ export default function App({ Component, pageProps, router }) {
   return (
     <>
       <Head>
-        <link rel="icon" type="image/png" href="/icon.png" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="icon" type="image/png" href="/clothme-logo.png" />
+        <link rel="apple-touch-icon" href="/clothme-logo.png" />
       </Head>
       <div className={pageClassName}>
         <Analytics />

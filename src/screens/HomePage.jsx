@@ -19,8 +19,8 @@ const versionMap = {
   },
   white: {
     Component: WhiteLanding,
-    title: "ClothME | White background preview",
-    path: "/version/white"
+    title: null,
+    path: "/"
   }
 };
 
@@ -55,6 +55,7 @@ export function HomePage({ version = "current", posts = [] }) {
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.siteUrl,
+    logo: new URL(siteConfig.defaultOgImage, siteConfig.siteUrl).toString(),
     description: siteConfig.description
   };
 
@@ -72,6 +73,7 @@ export function HomePage({ version = "current", posts = [] }) {
         title={config.title || siteConfig.defaultTitle}
         description={siteConfig.description}
         path={config.path}
+        image={siteConfig.defaultOgImage}
         jsonLd={[organizationSchema, websiteSchema]}
       />
       <LandingVersion
