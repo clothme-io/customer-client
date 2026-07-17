@@ -20,6 +20,7 @@
     "@payloadcms/email-resend": "^3.85.1",
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
+    "@seshuk/payload-storage-bunny": "^2.2.0",
     "graphql": "^16.14.2",
     "next": "^15.4.11",
     "node-html-parser": "^8.0.4",

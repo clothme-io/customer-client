@@ -7,6 +7,9 @@ RUN npm ci --include=optional --legacy-peer-deps
 FROM node:22-alpine AS build
 WORKDIR /app
 
+ARG NEXT_PUBLIC_SITE_URL=https://clothme.io
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

@@ -86,7 +86,7 @@ function normalizeBabyLoveGrowthArticle(raw, receivedAt) {
 
 async function recordWebhookEvent(payload, data) {
   try {
-    await payload.create({ collection: "webhook-events", data });
+    await payload.create({ collection: "webhook-events", data, overrideAccess: true });
   } catch (error) {
     console.error(`[webhooks/babylovegrowth] Could not record webhook event: ${error.message}`);
   }
@@ -141,6 +141,7 @@ export async function POST(request) {
         where: { slug: { equals: slug } },
         limit: 1,
         depth: 0,
+        overrideAccess: true,
       });
 
       if (existing.docs.length > 0) {
@@ -164,6 +165,7 @@ export async function POST(request) {
           collection: "cms-posts",
           id: existing.docs[0].id,
           data: postData,
+          overrideAccess: true,
         });
         await recordWebhookEvent(payload, {
           provider: "babylovegrowth",
@@ -181,6 +183,7 @@ export async function POST(request) {
         const created = await payload.create({
           collection: "cms-posts",
           data: postData,
+          overrideAccess: true,
         });
         await recordWebhookEvent(payload, {
           provider: "babylovegrowth",

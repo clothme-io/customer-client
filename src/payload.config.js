@@ -3,6 +3,7 @@ import path from "node:path";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { bunnyStorage } from "@seshuk/payload-storage-bunny";
 import { APIError, buildConfig } from "payload";
 import sharp from "sharp";
 
@@ -10,6 +11,34 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 const databaseSsl = process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false };
+const isProduction = process.env.NODE_ENV === "production";
+const payloadSecret = process.env.PAYLOAD_SECRET;
+
+if (isProduction) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL must be set in production");
+  }
+  if (!payloadSecret || payloadSecret === "development-payload-secret-change-me") {
+    throw new Error("PAYLOAD_SECRET must be set to a strong value in production");
+  }
+}
+
+function bunnyHostname() {
+  const base = process.env.BUNNY_CDN_BASE_URL || "";
+  try {
+    return new URL(base.startsWith("http") ? base : `https://${base}`).hostname;
+  } catch {
+    return base.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+}
+
+const bunnyConfigured = Boolean(
+  process.env.BUNNY_STORAGE_API_KEY &&
+    process.env.BUNNY_STORAGE_ZONE &&
+    process.env.BUNNY_CDN_BASE_URL
+);
+
+const authenticated = ({ req }) => Boolean(req.user);
 
 export default buildConfig({
   admin: {
@@ -39,7 +68,10 @@ export default buildConfig({
     {
       slug: "media",
       access: {
-        read: () => true
+        create: authenticated,
+        delete: authenticated,
+        read: () => true,
+        update: authenticated
       },
       admin: {
         group: "Content",
@@ -77,10 +109,10 @@ export default buildConfig({
     {
       slug: "locations",
       access: {
-        create: () => true,
-        delete: () => true,
+        create: authenticated,
+        delete: authenticated,
         read: () => true,
-        update: () => true
+        update: authenticated
       },
       admin: {
         group: "Cities",
@@ -453,10 +485,10 @@ export default buildConfig({
     {
       slug: "cms-posts",
       access: {
-        create: () => true,
-        delete: () => true,
+        create: authenticated,
+        delete: authenticated,
         read: () => true,
-        update: () => true
+        update: authenticated
       },
       admin: {
         defaultColumns: ["title", "category", "createdAt", "updatedAt"],
@@ -666,10 +698,10 @@ export default buildConfig({
     {
       slug: "webhook-events",
       access: {
-        create: () => true,
-        delete: () => true,
-        read: () => true,
-        update: () => true
+        create: authenticated,
+        delete: authenticated,
+        read: authenticated,
+        update: authenticated
       },
       admin: {
         defaultColumns: ["provider", "eventType", "status", "slug", "createdAt"],
@@ -733,9 +765,9 @@ export default buildConfig({
       slug: "waitlist-entries",
       access: {
         create: () => true,
-        delete: () => true,
-        read: () => true,
-        update: () => true
+        delete: authenticated,
+        read: authenticated,
+        update: authenticated
       },
       admin: {
         defaultColumns: ["email", "source", "createdAt"],
@@ -781,7 +813,27 @@ export default buildConfig({
         apiKey: process.env.RESEND_API_KEY,
       })
     : undefined,
-  secret: process.env.PAYLOAD_SECRET || "development-payload-secret-change-me",
+  plugins: bunnyConfigured
+    ? [
+        bunnyStorage({
+          collections: {
+            media: {
+              prefix: "cms-media",
+              disablePayloadAccessControl: true
+            }
+          },
+          storage: {
+            apiKey: process.env.BUNNY_STORAGE_API_KEY,
+            hostname: bunnyHostname(),
+            zoneName: process.env.BUNNY_STORAGE_ZONE,
+            ...(process.env.BUNNY_STORAGE_REGION
+              ? { region: process.env.BUNNY_STORAGE_REGION }
+              : {})
+          }
+        })
+      ]
+    : [],
+  secret: payloadSecret || "development-payload-secret-change-me",
   serverURL: siteUrl,
   sharp,
   typescript: {
