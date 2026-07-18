@@ -12,9 +12,13 @@ const dirname = path.dirname(filename);
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 const databaseSsl = process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false };
 const isProduction = process.env.NODE_ENV === "production";
+const isBuildTime =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.npm_lifecycle_event === "build";
 const payloadSecret = process.env.PAYLOAD_SECRET;
 
-if (isProduction) {
+// Fail closed at runtime only — `next build` imports this config without DB secrets.
+if (isProduction && !isBuildTime) {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL must be set in production");
   }
