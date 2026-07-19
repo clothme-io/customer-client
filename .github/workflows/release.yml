@@ -49,7 +49,7 @@ env:
   ROLLOUT_NAME: customer-client-web
   ROLLOUT_NAMESPACE: apps
   IMAGE_REPOSITORY: ghcr.io/clothme-io/customer-client-web
-  INFRA_BRANCH: rancher-quickstart
+  INFRA_BRANCH: main
   OVERLAY_PATHS_DEV: fleet/bundles/apps/customer-client-web/overlays/dev
   OVERLAY_PATHS_PROD: fleet/bundles/apps/customer-client-web/overlays/prod
   MIGRATE_OVERLAY_DEV: fleet/bundles/apps/customer-client-web-migrate/overlays/dev
