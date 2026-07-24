@@ -12,19 +12,24 @@ const versionMap = {
     title: null,
     path: "/"
   },
-  "blue-swap": {
+  blue: {
     Component: BlueLanding,
-    title: "ClothME | Blue color scheme preview",
-    path: "/color-scheme-blue"
+    title: null,
+    path: "/"
+  },
+  black: {
+    Component: WhiteLanding,
+    title: "ClothME | Black home preview",
+    path: "/black"
   },
   white: {
     Component: WhiteLanding,
-    title: null,
-    path: "/"
+    title: "ClothME | Black home preview",
+    path: "/black"
   }
 };
 
-export function HomePage({ version = "current", posts = [] }) {
+export function HomePage({ version = "current" }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = versionMap[version] || versionMap.current;
   const LandingVersion = config.Component;
@@ -32,13 +37,16 @@ export function HomePage({ version = "current", posts = [] }) {
   async function handleSubmit(event) {
     event.preventDefault();
     const form = event.currentTarget;
-    const email = new FormData(form).get("email");
+    const data = new FormData(form);
+    const email = data.get("email");
+    const state = String(data.get("state") || "").trim();
 
     try {
       await apiFetch("/api/waitlist", {
         method: "POST",
         body: JSON.stringify({
           email,
+          state: state || undefined,
           source: window.location.pathname
         })
       });
@@ -80,7 +88,6 @@ export function HomePage({ version = "current", posts = [] }) {
         isModalOpen={isModalOpen}
         onCloseModal={() => setIsModalOpen(false)}
         onWaitlistSubmit={handleSubmit}
-        posts={posts}
       />
     </>
   );

@@ -1,31 +1,23 @@
+import { WaitlistForm } from "../../components/WaitlistForm";
+import { landingImages } from "../../data/landing";
+
 export function LandingHero({ onWaitlistSubmit }) {
+  const image = landingImages.hero;
+
   return (
-    <section className="hero">
-      <div className="hero-content">
-        <p className="eyebrow">Coming soon</p>
-        <h1>Shop clothes that fit you and your family.</h1>
-        <p className="hero-text">
-          ClothME helps you generate fashion sizes from two photos, save sizes for family members, and find products that match each person's fit, style, color, fabric, and brand preferences.
+    <section className="mock-hero" id="top">
+      <div className="mock-hero-copy">
+        <p className="mock-pill">Coming Soon</p>
+        <h1 className="mock-display">Shopping That Finally Fits.</h1>
+        <p className="mock-hero-sub">For you. For your family.</p>
+        <p className="mock-hero-text">
+          Personalized shopping for the whole family. Discover brands you'll love, shop with confidence, and spend less time guessing what fits.
         </p>
-
-        <form className="waitlist-form" id="waitlist" onSubmit={onWaitlistSubmit}>
-          <label className="sr-only" htmlFor="email">Email address</label>
-          <input id="email" name="email" type="email" placeholder="Enter your email" autoComplete="email" required />
-          <button type="submit">Reserve Your Spot</button>
-        </form>
-
-        <p className="privacy-note">Early access invites will be sent by email. No spam.</p>
+        <WaitlistForm onSubmit={onWaitlistSubmit} />
       </div>
 
-      <div className="hero-visual" aria-label="ClothME shopping preview">
-        <figure>
-          <img src="/family-shopping.jpg" alt="Mother and children smiling while using a smartphone" />
-          <figcaption>Shop for family</figcaption>
-        </figure>
-        <figure>
-          <img src="/personal-shopping.jpg" alt="Woman smiling while shopping on her smartphone" />
-          <figcaption>Shop for yourself</figcaption>
-        </figure>
+      <div className="mock-hero-visual">
+        <img className="mock-hero-image" src={image.src} alt={image.alt} />
       </div>
     </section>
   );

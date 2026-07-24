@@ -7,6 +7,7 @@ export async function POST(request) {
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
     const source = String(body.source || "").slice(0, 120);
+    const state = String(body.state || "").trim().toUpperCase().slice(0, 8);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
@@ -23,7 +24,17 @@ export async function POST(request) {
     if (existing.docs.length === 0) {
       await payload.create({
         collection: "waitlist-entries",
-        data: { email, source }
+        data: {
+          email,
+          source,
+          ...(state ? { state } : {})
+        }
+      });
+    } else if (state) {
+      await payload.update({
+        collection: "waitlist-entries",
+        id: existing.docs[0].id,
+        data: { state }
       });
     }
 

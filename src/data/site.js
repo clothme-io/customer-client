@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "ClothME",
-  defaultTitle: "ClothME | Find Clothes That Fit Every Time",
-  description: "Shop fashion that fits you and your family. ClothME generates sizes from two photos and matches products to each person's fit, style, and preferences.",
+  defaultTitle: "ClothME | Shopping That Finally Fits",
+  description: "Find clothes you'll love—with personalized sizing, smarter discovery, and brands you'll actually want to wear. For you. For your family.",
   defaultOgImage: "/clothme-logo.png",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || process.env.VITE_SITE_URL || "https://clothme.app",
   twitterHandle: "",

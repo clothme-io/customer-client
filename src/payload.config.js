@@ -774,7 +774,7 @@ export default buildConfig({
         update: authenticated
       },
       admin: {
-        defaultColumns: ["email", "source", "createdAt"],
+        defaultColumns: ["email", "state", "source", "createdAt"],
         group: "Content",
         useAsTitle: "email"
       },
@@ -784,6 +784,13 @@ export default buildConfig({
           type: "email",
           required: true,
           unique: true
+        },
+        {
+          name: "state",
+          type: "text",
+          admin: {
+            description: "Optional US state or Canadian province code"
+          }
         },
         {
           name: "source",
