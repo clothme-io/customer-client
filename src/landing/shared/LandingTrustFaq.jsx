@@ -6,7 +6,7 @@ export function LandingTrustFaq() {
   const [openIndex, setOpenIndex] = useState(-1);
 
   return (
-    <section className="mock-trust-band" id="faq" aria-labelledby="faq-title">
+    <section className="mock-faq-section" id="faq" aria-labelledby="faq-title">
       <div className="mock-trust-faq">
         <div className="mock-privacy">
           <div className="mock-privacy-badge" aria-hidden="true">
@@ -24,7 +24,9 @@ export function LandingTrustFaq() {
         </div>
 
         <div className="mock-faq">
-          <h2 id="faq-title" className="mock-section-title mock-section-title--left">Frequently asked questions</h2>
+          <h2 id="faq-title" className="mock-section-title mock-section-title--left mock-faq-heading">
+            Frequently asked questions
+          </h2>
           <div className="mock-faq-list">
             {landingFaq.map((item, index) => {
               const isOpen = openIndex === index;

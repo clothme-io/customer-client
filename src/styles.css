@@ -3157,6 +3157,24 @@ h1 {
   display: block;
   width: min(100%, 460px);
   height: auto;
+  animation: hero-float 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mock-hero-image {
+    animation: none;
+  }
 }
 
 /* Waitlist */
@@ -3715,7 +3733,13 @@ h1 {
   line-height: 1.3;
 }
 
-/* Privacy + FAQ */
+/* Privacy + FAQ — together on white */
+.mock-faq-section {
+  width: 100%;
+  background: #ffffff;
+  padding: clamp(72px, 10vw, 112px) 0;
+}
+
 .mock-trust-faq {
   width: min(1120px, calc(100% - 48px));
   margin: 0 auto;
@@ -3729,6 +3753,7 @@ h1 {
   text-align: left;
   margin-bottom: 20px;
   font-size: clamp(24px, 3vw, 30px);
+  color: var(--ink);
 }
 
 .mock-privacy-badge {
@@ -3738,17 +3763,29 @@ h1 {
   height: 64px;
   margin-bottom: 16px;
   border-radius: 50%;
-  background: #f1eee9;
+  background: var(--mock-soft);
 }
 
 .mock-privacy-badge .mock-icon {
   margin: 0;
   width: 30px;
   height: 30px;
+  color: var(--ink);
+}
+
+.mock-privacy .mock-check-list li,
+.mock-privacy .mock-section-title {
+  color: var(--ink);
 }
 
 .mock-check--accent {
-  color: var(--mock-peach-deep);
+  color: var(--blue);
+}
+
+.mock-faq-heading,
+.mock-faq-trigger,
+.mock-faq-chevron {
+  color: var(--ink);
 }
 
 .mock-faq-list {
@@ -3761,7 +3798,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
 .mock-faq-trigger {
@@ -3772,7 +3809,7 @@ h1 {
   padding: 16px 18px;
   border: 0;
   background: #fff;
-  color: #1a1a1a;
+  color: var(--ink);
   font-size: 15px;
   font-weight: 600;
   text-align: left;
@@ -3780,16 +3817,36 @@ h1 {
 }
 
 .mock-faq-chevron {
-  color: #8a8178;
+  opacity: 0.55;
   font-size: 12px;
 }
 
 .mock-faq-answer {
   margin: 0;
   padding: 0 18px 16px;
-  color: var(--muted);
+  color: var(--ink);
+  opacity: 0.78;
   line-height: 1.55;
   font-size: 14px;
+}
+
+.theme-blue-landing .mock-faq-section {
+  background: #ffffff;
+}
+
+.theme-blue-landing .mock-faq-heading,
+.theme-blue-landing .mock-faq-trigger,
+.theme-blue-landing .mock-faq-answer,
+.theme-blue-landing .mock-faq-chevron,
+.theme-blue-landing .mock-privacy .mock-section-title,
+.theme-blue-landing .mock-privacy .mock-check-list li {
+  color: var(--ink);
+}
+
+.theme-blue-landing .mock-faq-item,
+.theme-blue-landing .mock-faq-trigger {
+  background: #fff;
+  border-color: var(--line);
 }
 
 /* Final CTA */
@@ -3809,7 +3866,11 @@ h1 {
   font-size: clamp(32px, 4.5vw, 44px);
   margin-bottom: 28px;
   line-height: 1.15;
-  color: #111;
+  color: var(--ink);
+}
+
+.theme-blue-landing .mock-final-cta .mock-display {
+  color: var(--ink);
 }
 
 .mock-final-cta .waitlist-block {
@@ -3937,5 +3998,67 @@ h1 {
 
   .mock-imagine-props {
     display: none;
+  }
+}
+
+/* Statement — temporary stand-in where brands marquee sat */
+.mock-statement {
+  background: #ffffff;
+  text-align: left;
+  max-width: min(920px, calc(100% - 48px));
+}
+
+.mock-statement-title {
+  margin: 0 0 16px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.mock-statement-text {
+  margin: 0;
+  max-width: 46rem;
+  font-size: clamp(16px, 1.8vw, 18px);
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.theme-blue-landing .mock-statement-title,
+.theme-blue-landing .mock-statement-text {
+  color: var(--ink);
+}
+
+.theme-white-landing .mock-statement-title,
+.theme-white-landing .mock-statement-text {
+  color: var(--ink);
+}
+
+/* Scroll reveal — sections animate in as they enter the viewport */
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.landing-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-reveal--hero {
+  transform: translateY(16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

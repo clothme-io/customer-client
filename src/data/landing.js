@@ -33,8 +33,7 @@ export const landingBrands = [
   { name: "ARITZIA", logo: null },
   { name: "NIKE", logo: null },
   { name: "Levi's", logo: null },
-  { name: "ALLSAINTS", logo: null },
-  { name: "& More", logo: null }
+  { name: "ALLSAINTS", logo: null }
 ];
 
 export const usStatesAndProvinces = [
@@ -49,7 +48,7 @@ export const usStatesAndProvinces = [
 export const landingNav = [
   { label: "For You", href: "/#why" },
   { label: "For Your Family", href: "/#family" },
-  { label: "Brands", href: "/#brands" },
+  // { label: "Brands", href: "/#brands" }, // restore with brands section
   { label: "How It Works", href: "/#how" },
   { label: "FAQ", href: "/#faq" }
 ];
@@ -122,8 +121,8 @@ export const landingFaq = [
 export const landingFooterLinks = {
   shop: [
     { label: "For You", href: "/#why" },
-    { label: "For Your Family", href: "/#family" },
-    { label: "Brands", href: "/#brands" }
+    { label: "For Your Family", href: "/#family" }
+    // { label: "Brands", href: "/#brands" }, // restore with brands section
   ],
   company: [
     { label: "About Us", href: "/#why" },
@@ -132,6 +131,6 @@ export const landingFooterLinks = {
   support: [
     { label: "FAQ", href: "/#faq" },
     { label: "Privacy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "/privacy-policy" }
+    { label: "Terms of Service", href: "/terms-of-service" }
   ]
 };

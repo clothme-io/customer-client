@@ -1,15 +1,23 @@
-import { IconShield } from "./LandingIcons";
+import { landingPrivacyPoints } from "../../data/landing";
+import { IconCheck, IconShield } from "./LandingIcons";
 
 export function LandingPrivacy() {
   return (
-    <section className="landing-section landing-privacy" id="privacy" aria-labelledby="privacy-title">
-      <div className="landing-privacy-card">
-        <IconShield className="landing-icon" />
-        <h2 id="privacy-title">Your Privacy Matters</h2>
-        <ul>
-          <li>Your shopping experience belongs to you.</li>
-          <li>Your personal information stays protected.</li>
-          <li>Any insights shared with brands are aggregated and anonymized.</li>
+    <section className="mock-trust-band mock-privacy-section" id="privacy" aria-labelledby="privacy-title">
+      <div className="mock-privacy-inner">
+        <div className="mock-privacy-badge" aria-hidden="true">
+          <IconShield className="mock-icon" />
+        </div>
+        <h2 id="privacy-title" className="mock-section-title mock-section-title--left">
+          We protect your privacy
+        </h2>
+        <ul className="mock-check-list">
+          {landingPrivacyPoints.map((line) => (
+            <li key={line}>
+              <IconCheck className="mock-check mock-check--accent" />
+              <span>{line}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </section>
