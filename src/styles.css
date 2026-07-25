@@ -4052,7 +4052,7 @@ h1 {
 }
 
 .landing-reveal--hero {
-  transform: translateY(16px);
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

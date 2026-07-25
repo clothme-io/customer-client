@@ -17,7 +17,7 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
     <>
       <Header />
       <main id="main" className="mock-landing">
-        <LandingReveal className="landing-reveal--hero">
+        <LandingReveal className="landing-reveal--hero" eager>
           <LandingHero onWaitlistSubmit={onWaitlistSubmit} />
         </LandingReveal>
         <LandingReveal>
