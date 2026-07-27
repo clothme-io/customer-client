@@ -15,6 +15,7 @@ ClothME is a fashion shopping platform in development. It helps users generate f
 - Home and waitlist: ${absoluteUrl("/")}
 - Blog index: ${absoluteUrl("/blog")}
 - Privacy policy: ${absoluteUrl("/privacy-policy")}
+- Terms of service: ${absoluteUrl("/terms-of-service")}
 - Sitemap: ${absoluteUrl("/sitemap.xml")}
 - RSS feed: ${absoluteUrl("/rss.xml")}
 

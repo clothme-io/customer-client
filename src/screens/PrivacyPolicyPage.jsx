@@ -2,90 +2,308 @@ import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
 
-const legalRights = [
-  "Request access to your personal data.",
-  "Request correction of your personal data.",
-  "Request erasure of your personal data.",
-  "Object to processing of your personal data.",
-  "Request restriction of processing your personal data.",
-  "Request transfer of your personal data.",
-  "Right to withdraw consent."
-];
-
-const dataSecurityText = "We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used, or accessed in an unauthorized way, altered, or disclosed.";
-const dataSecurityAccessText = "In addition, we limit access to your personal data to those employees, agents, contractors, and other third parties who have a business need to know.";
-
-function renderRemainingPolicy() {
-  return (
-    <>
-      <section>
-        <h2>4. Data Security</h2>
-        <p>{dataSecurityText} {dataSecurityAccessText}</p>
-      </section>
-      <section>
-        <h2>5. Your Legal Rights</h2>
-        <p>Under certain circumstances, you have rights under data protection laws in relation to your personal data, including:</p>
-        <ul>
-          {legalRights.map((right) => (
-            <li key={right}>{right}</li>
-          ))}
-        </ul>
-      </section>
-      <section>
-        <h2>6. Contact Us</h2>
-        <p>If you have any questions about this privacy policy or our privacy practices, please contact us at:</p>
-        <p>Email: privacy@clothme.io</p>
-        <p>Address: Suite 250 - #1430, 97 Seymour St. Vancouver, V6B 3M1 BC, Canada</p>
-      </section>
-    </>
-  );
-}
-
 export function PrivacyPolicyPage() {
   return (
     <>
       <SEO
         title="Privacy Policy | ClothME"
-        description="Read the ClothME privacy policy, including how we handle personal data, body measurement photos, and Face ID authentication."
+        description="Read the ClothME privacy policy, including how we collect, use, share, and protect your information."
         path="/privacy-policy"
       />
       <Header />
       <main className="legal-shell">
         <article className="legal-page">
           <h1>Privacy Policy</h1>
-          <p className="legal-updated">Last updated: May 5, 2026</p>
+          <p className="legal-updated">Last Updated: July 24, 2026</p>
 
           <section>
-            <h2>1. Introduction</h2>
-            <p>At ClothME ("we", "our", or "us"), we respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website (regardless of where you visit it from) and tell you about your privacy rights and how the law protects you.</p>
+            <p>Welcome to ClothME (&quot;ClothME,&quot; &quot;we,&quot; &quot;our,&quot; or &quot;us&quot;).</p>
+            <p>
+              Your privacy is important to us. This Privacy Policy explains how ClothME collects, uses, shares, and
+              protects your information when you use our website, mobile applications, and related services
+              (collectively, the &quot;Services&quot;).
+            </p>
+            <p>By using ClothME, you agree to the practices described in this Privacy Policy.</p>
           </section>
 
           <section>
-            <h2>2. The Data We Collect About You</h2>
-            <p>Personal data means any information about an individual from which that person can be identified. We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:</p>
+            <h2>1. Information We Collect</h2>
+            <h3>Information You Provide</h3>
+            <p>When you create an account or use our Services, we may collect information including:</p>
             <ul>
-              <li><strong>Identity Data</strong> includes first name, last name, username or similar identifier.</li>
-              <li><strong>Contact Data</strong> includes email address and telephone numbers.</li>
-              <li><strong>Technical Data</strong> includes internet protocol (IP) address, your login data, browser type and version, time zone setting and location, browser plug-in types and versions, operating system and platform, and other technology on the devices you use to access this website.</li>
-              <li><strong>Usage Data</strong> includes information about how you use our website, products, and services.</li>
-              <li><strong>Marketing and Communications Data</strong> includes your preferences in receiving marketing from us and our third parties and your communication preferences.</li>
+              <li>Name</li>
+              <li>Email address</li>
+              <li>Phone number (optional)</li>
+              <li>Password (encrypted)</li>
+              <li>Date of birth (optional)</li>
+              <li>Gender (optional)</li>
+              <li>Country and location</li>
+              <li>Profile photo (optional)</li>
             </ul>
-            <h3>Body Measurement Photo Data</h3>
-            <p>When you use the size measurement feature in our mobile app, the app captures two photos — one front-facing and one side-facing — using your device camera. These photos are transmitted securely to our servers solely for the purpose of calculating your clothing size measurements. The photos are not stored, retained, or used for any other purpose after processing is complete. No photo data is shared with third parties.</p>
-            <h3>Biometric Authentication (Face ID)</h3>
-            <p>Our mobile app offers Face ID as an option to securely authenticate your identity when signing in to your account. ClothME does not access, collect, process, or store any facial or biometric data. Face ID authentication is handled entirely by iOS on your device, and no biometric information is ever transmitted to our servers or shared with any third party.</p>
+
+            <h3>Fit Profile Information</h3>
+            <p>To provide personalized clothing recommendations, we may collect information such as:</p>
+            <ul>
+              <li>Height</li>
+              <li>Weight</li>
+              <li>Body measurements</li>
+              <li>Clothing sizes</li>
+              <li>Fit preferences</li>
+              <li>Style preferences</li>
+              <li>Shopping preferences</li>
+            </ul>
+            <p>Providing this information is optional, but it helps improve your shopping experience.</p>
+
+            <h3>Family Accounts</h3>
+            <p>
+              If you choose to create profiles for family members, we may collect similar information for those
+              individuals that you provide to us.
+            </p>
+            <p>
+              You are responsible for ensuring you have permission to provide information for anyone whose profile you
+              create.
+            </p>
           </section>
 
           <section>
-            <h2>3. How We Use Your Personal Data</h2>
-            <p>We will only use your personal data when the law allows us to. Most commonly, we will use your personal data in the following circumstances:</p>
+            <h2>2. Shopping Information</h2>
+            <p>When using ClothME, we may collect:</p>
             <ul>
-              <li>Where we need to perform the contract we are about to enter into or have entered into with you.</li>
-              <li>Where it is necessary for our legitimate interests (or those of a third party) and your interests and fundamental rights do not override those interests.</li>
-              <li>Where we need to comply with a legal obligation.</li>
+              <li>Products viewed</li>
+              <li>Products saved</li>
+              <li>Products purchased through ClothME</li>
+              <li>Favorite brands</li>
+              <li>Shopping history</li>
+              <li>Wish lists</li>
+              <li>Reviews and ratings</li>
             </ul>
           </section>
-          {renderRemainingPolicy()}
+
+          <section>
+            <h2>3. Creator Information</h2>
+            <p>If you apply to become a ClothME Creator, we may collect:</p>
+            <ul>
+              <li>Social media accounts</li>
+              <li>Creator portfolio</li>
+              <li>Audience information</li>
+              <li>Campaign participation</li>
+              <li>Content submitted</li>
+              <li>Performance metrics</li>
+              <li>Payment information (where applicable)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>4. Brand Information</h2>
+            <p>If you represent a brand or boutique, we may collect:</p>
+            <ul>
+              <li>Business name</li>
+              <li>Contact information</li>
+              <li>Store locations</li>
+              <li>Product information</li>
+              <li>Shopify or ecommerce integration details</li>
+              <li>Sales and campaign analytics</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>5. Automatically Collected Information</h2>
+            <p>We automatically collect certain technical information, including:</p>
+            <ul>
+              <li>IP address</li>
+              <li>Device information</li>
+              <li>Browser type</li>
+              <li>Operating system</li>
+              <li>App version</li>
+              <li>Pages viewed</li>
+              <li>Time spent using the Services</li>
+              <li>Crash reports</li>
+              <li>Cookies and similar technologies</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>6. How We Use Your Information</h2>
+            <p>We use your information to:</p>
+            <ul>
+              <li>Create and manage your account</li>
+              <li>Personalize product recommendations</li>
+              <li>Improve Fit Profile recommendations</li>
+              <li>Process transactions</li>
+              <li>Connect customers with brands and boutiques</li>
+              <li>Support creator campaigns</li>
+              <li>Improve our Services</li>
+              <li>Respond to customer support requests</li>
+              <li>Detect fraud and abuse</li>
+              <li>Comply with legal obligations</li>
+              <li>Communicate product updates and marketing (where permitted)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>7. How We Share Information</h2>
+            <p>We do not sell your personal information.</p>
+            <p>We may share information with:</p>
+            <ul>
+              <li>Brands and boutiques when necessary to fulfill orders</li>
+              <li>Payment processors</li>
+              <li>Shipping providers</li>
+              <li>Cloud hosting providers</li>
+              <li>Analytics providers</li>
+              <li>Customer support providers</li>
+              <li>Legal authorities where required by law</li>
+            </ul>
+            <p>
+              If you participate in creator campaigns, limited campaign-related information may be shared with
+              participating brands.
+            </p>
+          </section>
+
+          <section>
+            <h2>8. Analytics</h2>
+            <p>We may use analytics tools to better understand how users interact with ClothME.</p>
+            <p>These analytics help us improve:</p>
+            <ul>
+              <li>Shopping experiences</li>
+              <li>Product recommendations</li>
+              <li>Platform performance</li>
+              <li>Creator campaigns</li>
+              <li>Brand insights</li>
+            </ul>
+            <p>Analytics provided to brands are generally aggregated or anonymized where appropriate.</p>
+          </section>
+
+          <section>
+            <h2>9. Cookies</h2>
+            <p>We use cookies and similar technologies to:</p>
+            <ul>
+              <li>Keep you signed in</li>
+              <li>Remember preferences</li>
+              <li>Improve performance</li>
+              <li>Measure platform usage</li>
+              <li>Personalize your experience</li>
+            </ul>
+            <p>You may manage cookie preferences through your browser settings.</p>
+          </section>
+
+          <section>
+            <h2>10. Marketing Communications</h2>
+            <p>We may send:</p>
+            <ul>
+              <li>Product updates</li>
+              <li>Newsletters</li>
+              <li>Promotional offers</li>
+              <li>Campaign invitations</li>
+            </ul>
+            <p>You may unsubscribe at any time using the unsubscribe link or by contacting us.</p>
+          </section>
+
+          <section>
+            <h2>11. Data Security</h2>
+            <p>
+              We use commercially reasonable technical and organizational safeguards designed to protect your
+              information, including encryption, secure infrastructure, access controls, and ongoing monitoring.
+            </p>
+            <p>
+              However, no method of electronic storage or transmission is completely secure, and we cannot guarantee
+              absolute security.
+            </p>
+          </section>
+
+          <section>
+            <h2>12. Data Retention</h2>
+            <p>We retain your information only as long as necessary to:</p>
+            <ul>
+              <li>Provide our Services</li>
+              <li>Meet legal obligations</li>
+              <li>Resolve disputes</li>
+              <li>Enforce our agreements</li>
+            </ul>
+            <p>
+              You may request deletion of your account, subject to any legal or operational requirements to retain
+              certain information.
+            </p>
+          </section>
+
+          <section>
+            <h2>13. Your Rights</h2>
+            <p>Depending on where you live, you may have rights to:</p>
+            <ul>
+              <li>Access your personal information</li>
+              <li>Correct inaccurate information</li>
+              <li>Delete your information</li>
+              <li>Restrict or object to certain processing</li>
+              <li>Withdraw consent where applicable</li>
+              <li>Receive a copy of your data where required by law</li>
+            </ul>
+            <p>To exercise these rights, please contact us using the information below.</p>
+          </section>
+
+          <section>
+            <h2>14. Children&apos;s Privacy</h2>
+            <p>
+              ClothME is not intended for children under the age of 13 (or the minimum age required by applicable law).
+            </p>
+            <p>
+              Family Profiles may only be created by a parent or legal guardian for members of their household.
+            </p>
+          </section>
+
+          <section>
+            <h2>15. Third-Party Services</h2>
+            <p>Our Services may integrate with third-party platforms such as:</p>
+            <ul>
+              <li>Shopify</li>
+              <li>Payment providers</li>
+              <li>Social media platforms</li>
+              <li>Analytics services</li>
+            </ul>
+            <p>
+              These services have their own privacy policies, and we encourage you to review them.
+            </p>
+          </section>
+
+          <section>
+            <h2>16. International Users</h2>
+            <p>Your information may be processed and stored in countries other than your own.</p>
+            <p>
+              Where required, we implement appropriate safeguards to protect personal information transferred
+              internationally.
+            </p>
+          </section>
+
+          <section>
+            <h2>17. Changes to This Privacy Policy</h2>
+            <p>We may update this Privacy Policy from time to time.</p>
+            <p>
+              When we make material changes, we will update the &quot;Last Updated&quot; date and, where appropriate,
+              notify users through the Services or by email.
+            </p>
+          </section>
+
+          <section>
+            <h2>18. Contact Us</h2>
+            <p>
+              If you have questions about this Privacy Policy or our privacy practices, please contact us:
+            </p>
+            <p>
+              <strong>ClothME</strong>
+            </p>
+            <p>
+              Email:{" "}
+              <a href="mailto:privacy@clothme.io">privacy@clothme.io</a>
+            </p>
+            <p>
+              Website:{" "}
+              <a href="https://clothme.io" target="_blank" rel="noreferrer">
+                https://clothme.io
+              </a>
+            </p>
+          </section>
+
+          <section>
+            <p>By using ClothME, you acknowledge that you have read and understood this Privacy Policy.</p>
+          </section>
         </article>
       </main>
       <Footer />

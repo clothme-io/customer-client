@@ -4,7 +4,6 @@ import { siteConfig } from "../data/site";
 import { BlueLanding } from "../landing/versions/blue/BlueLanding";
 import { CurrentLanding } from "../landing/versions/current/CurrentLanding";
 import { WhiteLanding } from "../landing/versions/white/WhiteLanding";
-import { apiFetch } from "../lib/api";
 
 const versionMap = {
   current: {
@@ -12,43 +11,27 @@ const versionMap = {
     title: null,
     path: "/"
   },
-  "blue-swap": {
+  blue: {
     Component: BlueLanding,
-    title: "ClothME | Blue color scheme preview",
-    path: "/color-scheme-blue"
+    title: null,
+    path: "/"
+  },
+  black: {
+    Component: WhiteLanding,
+    title: "ClothME | Black home preview",
+    path: "/black"
   },
   white: {
     Component: WhiteLanding,
-    title: null,
-    path: "/"
+    title: "ClothME | Black home preview",
+    path: "/black"
   }
 };
 
-export function HomePage({ version = "current", posts = [] }) {
+export function HomePage({ version = "current" }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = versionMap[version] || versionMap.current;
   const LandingVersion = config.Component;
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const email = new FormData(form).get("email");
-
-    try {
-      await apiFetch("/api/waitlist", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          source: window.location.pathname
-        })
-      });
-    } catch (error) {
-      console.warn("Waitlist API unavailable, showing local confirmation.", error);
-    }
-
-    setIsModalOpen(true);
-    form.reset();
-  }
 
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -79,8 +62,7 @@ export function HomePage({ version = "current", posts = [] }) {
       <LandingVersion
         isModalOpen={isModalOpen}
         onCloseModal={() => setIsModalOpen(false)}
-        onWaitlistSubmit={handleSubmit}
-        posts={posts}
+        onWaitlistSuccess={() => setIsModalOpen(true)}
       />
     </>
   );

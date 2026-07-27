@@ -167,6 +167,7 @@ export interface Media {
   id: number;
   alt: string;
   caption?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -343,6 +344,8 @@ export interface Location {
   createdAt: string;
 }
 /**
+ * Webhook articles arrive here as drafts. Review the content, choose a category, then publish.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cms-posts".
  */
@@ -351,6 +354,9 @@ export interface CmsPost {
   title: string;
   slug: string;
   excerpt: string;
+  /**
+   * Mirrors Payload's publish state. Use the Publish button after choosing a category.
+   */
   status: 'draft' | 'published';
   publishedAt?: string | null;
   location?: (number | null) | Location;
@@ -443,6 +449,10 @@ export interface WebhookEvent {
 export interface WaitlistEntry {
   id: number;
   email: string;
+  /**
+   * Optional US state or Canadian province code
+   */
+  state?: string | null;
   source?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -659,6 +669,7 @@ export interface CmsUsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -881,6 +892,7 @@ export interface WebhookEventsSelect<T extends boolean = true> {
  */
 export interface WaitlistEntriesSelect<T extends boolean = true> {
   email?: T;
+  state?: T;
   source?: T;
   updatedAt?: T;
   createdAt?: T;

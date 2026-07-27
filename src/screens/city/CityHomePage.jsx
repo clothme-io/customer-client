@@ -4,10 +4,10 @@ import { CityHeader } from "../../components/city/CityHeader";
 import { CityFooter } from "../../components/city/CityFooter";
 import { LandingHowItWorks } from "../../landing/shared/LandingHowItWorks";
 import { LandingFamilyNote } from "../../landing/shared/LandingFamilyNote";
+import { WaitlistForm } from "../../components/WaitlistForm";
 import { WaitlistModal } from "../../components/WaitlistModal";
 import { BlogCard } from "../../components/BlogCard";
 import { siteConfig } from "../../data/site";
-import { apiFetch } from "../../lib/api";
 import { track } from "../../lib/track";
 
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL || "#";
@@ -16,22 +16,6 @@ const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL || "#";
 export function CityHomePage({ city, posts = [] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const cityUrl = `https://${city.slug}.${(siteConfig.siteUrl || "").replace(/^https?:\/\//, "")}`;
-
-  async function handleWaitlist(e) {
-    e.preventDefault();
-    const email = new FormData(e.currentTarget).get("email");
-    track("cta_click", { city: city.slug, cta_type: "waitlist", location: "hero" });
-    try {
-      await apiFetch("/api/waitlist", {
-        method: "POST",
-        body: JSON.stringify({ email, source: `city:${city.slug}` }),
-      });
-    } catch {
-      // still show modal even if request fails
-    }
-    setIsModalOpen(true);
-    e.currentTarget.reset();
-  }
 
   const seoHome = city.seo?.home ?? {};
   const metaTitle = seoHome.metaTitle || `ClothME ${city.name} | Shop clothes that fit`;
@@ -113,12 +97,16 @@ export function CityHomePage({ city, posts = [] }) {
               </a>
             </div>
 
-            <form className="waitlist-form" onSubmit={handleWaitlist} style={{ marginTop: "16px" }}>
-              <label className="sr-only" htmlFor="city-email">Email address</label>
-              <input id="city-email" name="email" type="email" placeholder="Enter your email" autoComplete="email" required />
-              <button type="submit">Reserve Your Spot</button>
-            </form>
-            <p className="privacy-note">Early access invites sent by email. No spam.</p>
+            <div style={{ marginTop: "16px" }}>
+              <WaitlistForm
+                id="city-waitlist"
+                source={`city:${city.slug}:hero`}
+                ctaLabel="Reserve Your Spot"
+                note="Early access invites sent by email. No spam."
+                showState
+                onSuccess={() => setIsModalOpen(true)}
+              />
+            </div>
           </div>
 
           <div className="hero-visual" aria-label="ClothME shopping preview">
@@ -302,7 +290,6 @@ export function CityHomePage({ city, posts = [] }) {
   );
 }
 
-// Map a Payload cms-post document to the shape BlogCard expects
 function mapCmsPost(post) {
   return {
     slug: post.slug,

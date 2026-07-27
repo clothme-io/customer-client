@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -H 127.0.0.1",
+    "dev": "next dev -H localhost",
     "build": "payload generate:importmap && next build",
     "start": "next start",
     "cms:generate:importmap": "payload generate:importmap",
@@ -33,5 +33,8 @@
   "devDependencies": {
     "@types/react": "^19.2.17",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "@payloadcms/plugin-cloud-storage": "3.85.1"
   }
 }

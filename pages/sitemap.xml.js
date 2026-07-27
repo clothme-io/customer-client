@@ -58,6 +58,7 @@ export async function getServerSideProps({ res }) {
     { loc: "/", priority: "1.0", changefreq: "weekly" },
     { loc: "/blog", priority: "0.8", changefreq: "weekly" },
     { loc: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
+    { loc: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
     ...mainPosts.map((post) => ({
       loc: `/blog/${post.slug}`,
       priority: "0.7",
