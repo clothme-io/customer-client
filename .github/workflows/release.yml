@@ -233,14 +233,23 @@ jobs:
             echo "value=${{ needs.build.outputs.image_tag }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Require INFRA_REPO_PAT
+        env:
+          INFRA_REPO_PAT: ${{ secrets.INFRA_REPO_PAT }}
+        run: |
+          if [ -z "$INFRA_REPO_PAT" ]; then
+            echo "::error::Secret INFRA_REPO_PAT is missing or empty on clothme-io/customer-client."
+            echo "::error::Create a GitHub PAT with access to clothme-io/clothme_infra_kube (Contents: Read and Write),"
+            echo "::error::then add it as a repository secret named INFRA_REPO_PAT."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           repository: clothme-io/clothme_infra_kube
           token: ${{ secrets.INFRA_REPO_PAT }}
           ref: ${{ env.INFRA_BRANCH }}
           path: infra
-
-      - name: Bump dev migrate image + Job name
         id: bump
         env:
           TAG: ${{ steps.tag.outputs.value }}
