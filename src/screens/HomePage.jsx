@@ -4,7 +4,6 @@ import { siteConfig } from "../data/site";
 import { BlueLanding } from "../landing/versions/blue/BlueLanding";
 import { CurrentLanding } from "../landing/versions/current/CurrentLanding";
 import { WhiteLanding } from "../landing/versions/white/WhiteLanding";
-import { apiFetch } from "../lib/api";
 
 const versionMap = {
   current: {
@@ -33,30 +32,6 @@ export function HomePage({ version = "current" }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = versionMap[version] || versionMap.current;
   const LandingVersion = config.Component;
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const email = data.get("email");
-    const state = String(data.get("state") || "").trim();
-
-    try {
-      await apiFetch("/api/waitlist", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          state: state || undefined,
-          source: window.location.pathname
-        })
-      });
-    } catch (error) {
-      console.warn("Waitlist API unavailable, showing local confirmation.", error);
-    }
-
-    setIsModalOpen(true);
-    form.reset();
-  }
 
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -87,7 +62,7 @@ export function HomePage({ version = "current" }) {
       <LandingVersion
         isModalOpen={isModalOpen}
         onCloseModal={() => setIsModalOpen(false)}
-        onWaitlistSubmit={handleSubmit}
+        onWaitlistSuccess={() => setIsModalOpen(true)}
       />
     </>
   );

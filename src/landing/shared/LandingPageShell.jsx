@@ -12,13 +12,13 @@ import { LandingReveal } from "./LandingReveal";
 import { LandingStatement } from "./LandingStatement";
 import { LandingTrustFaq } from "./LandingTrustFaq";
 
-export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitlistSubmit }) {
+export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitlistSuccess }) {
   const content = (
     <>
       <Header />
       <main id="main" className="mock-landing">
         <LandingReveal className="landing-reveal--hero" eager>
-          <LandingHero onWaitlistSubmit={onWaitlistSubmit} />
+          <LandingHero onWaitlistSuccess={onWaitlistSuccess} />
         </LandingReveal>
         <LandingReveal>
           <LandingBenefits />
@@ -44,7 +44,7 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
           <LandingTrustFaq />
         </LandingReveal>
         <LandingReveal>
-          <LandingFinalCta onWaitlistSubmit={onWaitlistSubmit} />
+          <LandingFinalCta onWaitlistSuccess={onWaitlistSuccess} />
         </LandingReveal>
       </main>
       <Footer />

@@ -768,7 +768,7 @@ export default buildConfig({
     {
       slug: "waitlist-entries",
       access: {
-        create: () => true,
+        create: () => false,
         delete: authenticated,
         read: authenticated,
         update: authenticated

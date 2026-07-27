@@ -18,23 +18,29 @@ export function CityContactPage({ city }) {
   ];
 
   const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus("sending");
+    setError("");
     const form = new FormData(e.currentTarget);
     try {
-      await apiFetch("/api/waitlist", {
+      await apiFetch("/api/contact", {
         method: "POST",
         body: JSON.stringify({
+          name: form.get("name"),
           email: form.get("email"),
+          message: form.get("message"),
+          company: form.get("company"),
           source: `contact:${city.slug}`,
         }),
       });
       setStatus("sent");
       e.currentTarget.reset();
-    } catch {
+    } catch (err) {
       setStatus("error");
+      setError(err?.message || "Something went wrong. Email us directly at talk2us@clothme.io");
     }
   }
 
@@ -59,22 +65,37 @@ export function CityContactPage({ city }) {
             <form className="city-contact-form" onSubmit={handleSubmit}>
               <label>
                 Name
-                <input name="name" type="text" placeholder="Your name" required />
+                <input name="name" type="text" placeholder="Your name" required disabled={status === "sending"} />
               </label>
               <label>
                 Email
-                <input name="email" type="email" placeholder="you@example.com" required />
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  disabled={status === "sending"}
+                />
               </label>
               <label>
                 Message
-                <textarea name="message" placeholder="What's on your mind?" required />
+                <textarea
+                  name="message"
+                  placeholder="What's on your mind?"
+                  required
+                  disabled={status === "sending"}
+                />
               </label>
+              <div className="waitlist-honeypot" aria-hidden="true">
+                <label htmlFor="contact-company">Company</label>
+                <input id="contact-company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+              </div>
               <button type="submit" disabled={status === "sending"}>
                 {status === "sending" ? "Sending…" : "Send message"}
               </button>
               {status === "error" && (
-                <p style={{ color: "#dc2626", fontSize: "14px" }}>
-                  Something went wrong. Email us directly at talk2us@clothme.io
+                <p style={{ color: "#dc2626", fontSize: "14px" }} role="alert">
+                  {error}
                 </p>
               )}
             </form>

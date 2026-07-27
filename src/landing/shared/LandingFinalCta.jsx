@@ -1,6 +1,6 @@
 import { WaitlistForm } from "../../components/WaitlistForm";
 
-export function LandingFinalCta({ onWaitlistSubmit }) {
+export function LandingFinalCta({ onWaitlistSuccess }) {
   return (
     <section className="mock-final-cta" id="join" aria-labelledby="final-cta-title">
       <div className="mock-final-cta-inner">
@@ -9,7 +9,8 @@ export function LandingFinalCta({ onWaitlistSubmit }) {
         </h2>
         <WaitlistForm
           id="waitlist-final"
-          onSubmit={onWaitlistSubmit}
+          source="landing:final"
+          onSuccess={onWaitlistSuccess}
           note="Early access. Exclusive updates. Special perks."
         />
       </div>

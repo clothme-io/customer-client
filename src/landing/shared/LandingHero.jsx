@@ -1,11 +1,11 @@
 import { WaitlistForm } from "../../components/WaitlistForm";
 import { landingImages } from "../../data/landing";
 
-export function LandingHero({ onWaitlistSubmit }) {
+export function LandingHero({ onWaitlistSuccess }) {
   const image = landingImages.hero;
 
   return (
-    <section className="mock-hero" id="top">
+    <section className="mock-hero" id="waitlist">
       <div className="mock-hero-copy">
         <p className="mock-pill">Coming Soon</p>
         <h1 className="mock-display">Shopping That Finally Fits.</h1>
@@ -13,7 +13,7 @@ export function LandingHero({ onWaitlistSubmit }) {
         <p className="mock-hero-text">
           Personalized shopping for the whole family. Discover brands you'll love, shop with confidence, and spend less time guessing what fits.
         </p>
-        <WaitlistForm onSubmit={onWaitlistSubmit} />
+        <WaitlistForm source="landing:hero" onSuccess={onWaitlistSuccess} />
       </div>
 
       <div className="mock-hero-visual">
