@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getPayload } from "payload";
-import config from "@payload-config";
 import { usStatesAndProvinces } from "../../../src/data/landing";
+import { backendApiUrl, getBackendBaseUrl } from "../_utils.mjs";
 
 const ALLOWED_STATES = new Set(usStatesAndProvinces);
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 8;
+const UPSTREAM_TIMEOUT_MS = 20000;
 /** @type {Map<string, number[]>} */
 const rateBuckets = new Map();
 
@@ -27,8 +27,48 @@ function isRateLimited(key) {
   return false;
 }
 
+async function sendConfirmationEmail(email) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+
+  const from = process.env.EMAIL_FROM || "noreply@clothme.io";
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from,
+        to: email,
+        subject: "You're on the ClothME waitlist",
+        html: `
+          <p>Thanks for joining the ClothME waitlist.</p>
+          <p>We'll email you when early access opens.</p>
+          <p>— ClothME</p>
+        `
+      }),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn("[api/waitlist] confirmation email failed:", res.status, text.slice(0, 200));
+    }
+  } catch (emailError) {
+    console.warn("[api/waitlist] confirmation email failed:", emailError.message);
+  }
+}
+
 export async function POST(request) {
   try {
+    if (!getBackendBaseUrl()) {
+      return NextResponse.json(
+        { error: "Waitlist is temporarily unavailable. Please try again later." },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
 
     // Honeypot — bots fill this; humans never see it.
@@ -53,62 +93,55 @@ export async function POST(request) {
       );
     }
 
-    const payload = await getPayload({ config });
-    const existing = await payload.find({
-      collection: "waitlist-entries",
-      where: { email: { equals: email } },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true
+    const upstreamUrl = backendApiUrl("/early-access/waitlist");
+    const res = await fetch(upstreamUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        ...(state ? { stateProvince: state } : {}),
+        ...(source ? { source } : {})
+      }),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)
     });
 
-    let created = false;
-
-    if (existing.docs.length === 0) {
-      await payload.create({
-        collection: "waitlist-entries",
-        data: {
-          email,
-          source,
-          ...(state ? { state } : {})
-        },
-        overrideAccess: true
-      });
-      created = true;
-
-      if (process.env.RESEND_API_KEY) {
-        try {
-          await payload.sendEmail({
-            to: email,
-            subject: "You're on the ClothME waitlist",
-            html: `
-              <p>Thanks for joining the ClothME waitlist.</p>
-              <p>We'll email you when early access opens.</p>
-              <p>— ClothME</p>
-            `
-          });
-        } catch (emailError) {
-          console.warn("[api/waitlist] confirmation email failed:", emailError.message);
-        }
+    const contentType = res.headers.get("content-type") || "";
+    const text = await res.text();
+    let json = null;
+    if (contentType.includes("application/json") && text) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = null;
       }
-    } else if (state) {
-      await payload.update({
-        collection: "waitlist-entries",
-        id: existing.docs[0].id,
-        data: { state },
-        overrideAccess: true
-      });
+    }
+
+    if (!res.ok || (json && json.error)) {
+      const message =
+        json?.error?.message ||
+        json?.message ||
+        (res.status >= 500
+          ? "Waitlist is temporarily unavailable. Please try again later."
+          : "Could not join the waitlist. Please try again.");
+      console.error("[api/waitlist] upstream error:", res.status, text.slice(0, 300));
+      return NextResponse.json(
+        { error: message, message },
+        { status: res.status >= 400 && res.status < 600 ? res.status : 502 }
+      );
+    }
+
+    const created = Boolean(json?.result?.created ?? json?.created);
+    if (created) {
+      await sendConfirmationEmail(email);
     }
 
     return NextResponse.json({ ok: true, created }, { status: 201 });
   } catch (error) {
     console.error("[api/waitlist]", error.message);
-    return NextResponse.json(
-      {
-        error: error.message || "Request failed",
-        message: error.message || "Request failed"
-      },
-      { status: 500 }
-    );
+    const message =
+      error?.name === "TimeoutError"
+        ? "The waitlist service timed out. Please try again."
+        : error.message || "Request failed";
+    return NextResponse.json({ error: message, message }, { status: 502 });
   }
 }

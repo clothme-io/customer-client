@@ -764,39 +764,6 @@ export default buildConfig({
           type: "json"
         }
       ]
-    },
-    {
-      slug: "waitlist-entries",
-      access: {
-        create: () => false,
-        delete: authenticated,
-        read: authenticated,
-        update: authenticated
-      },
-      admin: {
-        defaultColumns: ["email", "state", "source", "createdAt"],
-        group: "Content",
-        useAsTitle: "email"
-      },
-      fields: [
-        {
-          name: "email",
-          type: "email",
-          required: true,
-          unique: true
-        },
-        {
-          name: "state",
-          type: "text",
-          admin: {
-            description: "Optional US state or Canadian province code"
-          }
-        },
-        {
-          name: "source",
-          type: "text"
-        }
-      ]
     }
   ],
   db: postgresAdapter({

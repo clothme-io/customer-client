@@ -54,7 +54,7 @@ env:
   OVERLAY_PATHS_PROD: fleet/bundles/apps/customer-client-web/overlays/prod
   MIGRATE_OVERLAY_DEV: fleet/bundles/apps/customer-client-web-migrate/overlays/dev
   MIGRATE_OVERLAY_PROD: fleet/bundles/apps/customer-client-web-migrate/overlays/prod
-  DEV_HEALTH_URL: https://dv-app.clothme.com/api/health
+  DEV_HEALTH_URL: https://dv-app.clothme.io/api/health
   RELEASE_LABEL: customer-client-web-release
 
 permissions:
@@ -231,6 +231,17 @@ jobs:
             echo "value=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           else
             echo "value=${{ needs.build.outputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require INFRA_REPO_PAT
+        env:
+          INFRA_REPO_PAT: ${{ secrets.INFRA_REPO_PAT }}
+        run: |
+          if [ -z "$INFRA_REPO_PAT" ]; then
+            echo "::error::Secret INFRA_REPO_PAT is missing or empty on clothme-io/customer-client."
+            echo "::error::Create a GitHub PAT with access to clothme-io/clothme_infra_kube (Contents: Read and Write),"
+            echo "::error::then add it as a repository secret named INFRA_REPO_PAT."
+            exit 1
           fi
 
       - uses: actions/checkout@v4
