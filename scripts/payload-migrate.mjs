@@ -9,6 +9,7 @@
  */
 import pg from "pg";
 import { spawnSync } from "node:child_process";
+import { resolveDatabaseUrl } from "../src/lib/databaseUrl.js";
 
 const { Pool } = pg;
 const BASELINE_MIGRATIONS = ["20260626_183444"];
@@ -140,9 +141,11 @@ async function runPayloadMigrate() {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required to run cms:sync");
+  const databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL (or DB_USER + DB_PASS) is required to run cms:sync");
   }
+  process.env.DATABASE_URL = databaseUrl;
 
   const pool = createPool();
   try {
