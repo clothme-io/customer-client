@@ -1,16 +1,18 @@
 import pg from "pg";
 import { json } from "../_utils.mjs";
 import { getBackendHost, probeBackend } from "../../../src/lib/backendApi.js";
+import { resolveDatabaseUrl } from "../../../src/lib/databaseUrl.js";
 
 const { Pool } = pg;
 
 async function probeDatabase() {
-  if (!process.env.DATABASE_URL) {
+  const databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl) {
     return { ok: false, error: "DATABASE_URL is not set" };
   }
 
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
     ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
     connectionTimeoutMillis: 3_000,
     max: 1,

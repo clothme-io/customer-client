@@ -6,6 +6,7 @@ import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { bunnyStorage } from "@seshuk/payload-storage-bunny";
 import { APIError, buildConfig } from "payload";
 import sharp from "sharp";
+import { resolveDatabaseUrl } from "./lib/databaseUrl.js";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -16,15 +17,17 @@ const isBuildTime =
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.npm_lifecycle_event === "build";
 const payloadSecret = process.env.PAYLOAD_SECRET;
+const databaseUrl = resolveDatabaseUrl();
 
 // Fail closed at runtime only — `next build` imports this config without DB secrets.
 if (isProduction && !isBuildTime) {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL must be set in production");
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL (or DB_USER + DB_PASS) must be set in production");
   }
   if (!payloadSecret || payloadSecret === "development-payload-secret-change-me") {
     throw new Error("PAYLOAD_SECRET must be set to a strong value in production");
   }
+  process.env.DATABASE_URL = databaseUrl;
 }
 
 function bunnyHostname() {
@@ -768,7 +771,7 @@ export default buildConfig({
   ],
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl || process.env.DATABASE_URL,
       ssl: databaseSsl
     },
     push: process.env.NODE_ENV === "development",
