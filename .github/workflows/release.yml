@@ -435,10 +435,36 @@ jobs:
     if: needs.bump-dev.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Argo sync
+      - name: Setup kubectl
         run: |
-          echo "Waiting for Argo CD to sync dev (~3 min)..."
-          sleep 180
+          curl -fsSL "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Configure dev kubeconfig
+        run: |
+          if [ -z "${{ secrets.CLOTHME_DEV_KUBECONFIG }}" ]; then
+            echo "::error::Set repository secret CLOTHME_DEV_KUBECONFIG (clothme-dev kubeconfig)."
+            exit 1
+          fi
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.CLOTHME_DEV_KUBECONFIG }}" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: clothme-io/clothme_infra_kube
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          ref: ${{ env.INFRA_BRANCH }}
+          path: infra
+
+      - name: Apply dev app overlay
+        run: |
+          IFS=',' read -ra OVERLAYS <<< "${{ env.OVERLAY_PATHS_DEV }}"
+          for rel in "${OVERLAYS[@]}"; do
+            kubectl apply -k "infra/${rel}"
+            echo "Applied infra/${rel}"
+          done
 
       - name: Verify dev health endpoint
         run: |
@@ -805,12 +831,28 @@ jobs:
           echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
 
+      # App Rollouts are not reliably synced onto the cluster by Argo; apply from CI.
+      - uses: actions/checkout@v4
+        with:
+          repository: clothme-io/clothme_infra_kube
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          ref: ${{ env.INFRA_BRANCH }}
+          path: infra
+
+      - name: Apply prod app overlay
+        run: |
+          IFS=',' read -ra OVERLAYS <<< "${{ env.OVERLAY_PATHS_PROD }}"
+          for rel in "${OVERLAYS[@]}"; do
+            kubectl apply -k "infra/${rel}"
+            echo "Applied infra/${rel}"
+          done
+
       - name: Wait for approved image and preview readiness
         env:
           TAG: ${{ needs.bump-prod.outputs.image_tag }}
         run: |
           EXPECTED="${{ env.IMAGE_REPOSITORY }}:$TAG"
-          echo "Waiting for Argo CD to apply $EXPECTED..."
+          echo "Waiting for rollout image $EXPECTED..."
           for i in $(seq 1 90); do
             CURRENT=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
             echo "Attempt $i: current=$CURRENT expected=$EXPECTED"
@@ -820,10 +862,10 @@ jobs:
             sleep 10
           done
           if [ "$CURRENT" != "$EXPECTED" ]; then
-            echo "::error::Argo did not apply approved image $EXPECTED within 15 minutes (current: $CURRENT)"
+            echo "::error::Rollout did not pick up approved image $EXPECTED within 15 minutes (current: $CURRENT)"
             exit 1
           fi
-          echo "Waiting for blue/green preview pause (not full Healthy — promote is a separate approval)..."
+          echo "Waiting for blue/green preview pause (or Healthy if already active)..."
           for i in $(seq 1 90); do
             PHASE=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.status.phase}' 2>/dev/null || true)
             MSG=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.status.message}' 2>/dev/null || true)
@@ -831,6 +873,10 @@ jobs:
             case "$PHASE" in
               Paused)
                 echo "Preview ready ($MSG)"
+                exit 0
+                ;;
+              Healthy)
+                echo "Rollout Healthy with approved image (preview/active already on $EXPECTED)"
                 exit 0
                 ;;
               Degraded|Error)
