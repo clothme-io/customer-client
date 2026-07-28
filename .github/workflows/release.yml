@@ -334,8 +334,26 @@ jobs:
 
       - name: Apply migrate Job on clothme-dev
         env:
+          TAG: ${{ needs.bump-dev-migrate.outputs.image_tag }}
           JOB: ${{ needs.bump-dev-migrate.outputs.job_name }}
         run: |
+          EXPECTED="${{ env.IMAGE_REPOSITORY }}:$TAG"
+          PHASE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || true)
+          FAILED=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)
+          IMAGE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+          if [ "$PHASE" = "True" ] && [ "$IMAGE" = "$EXPECTED" ]; then
+            echo "Job $JOB already Complete with $EXPECTED — skip apply"
+            exit 0
+          fi
+          if kubectl -n apps get job "$JOB" >/dev/null 2>&1; then
+            if [ "$FAILED" = "True" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
+              echo "Deleting Job $JOB (failed=$FAILED image=$IMAGE) before recreate"
+              kubectl -n apps delete job "$JOB" --wait=true
+            else
+              echo "Job $JOB already exists (image=$IMAGE) — skip apply (pod template immutable)"
+              exit 0
+            fi
+          fi
           kubectl apply -k "infra/${{ env.MIGRATE_OVERLAY_DEV }}"
           echo "Applied migrate overlay; expecting Job $JOB"
 
@@ -667,8 +685,26 @@ jobs:
 
       - name: Apply migrate Job on clothme-prod
         env:
+          TAG: ${{ needs.bump-prod-migrate.outputs.image_tag }}
           JOB: ${{ needs.bump-prod-migrate.outputs.job_name }}
         run: |
+          EXPECTED="${{ env.IMAGE_REPOSITORY }}:$TAG"
+          PHASE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || true)
+          FAILED=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)
+          IMAGE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+          if [ "$PHASE" = "True" ] && [ "$IMAGE" = "$EXPECTED" ]; then
+            echo "Job $JOB already Complete with $EXPECTED — skip apply"
+            exit 0
+          fi
+          if kubectl -n apps get job "$JOB" >/dev/null 2>&1; then
+            if [ "$FAILED" = "True" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
+              echo "Deleting Job $JOB (failed=$FAILED image=$IMAGE) before recreate"
+              kubectl -n apps delete job "$JOB" --wait=true
+            else
+              echo "Job $JOB already exists (image=$IMAGE) — skip apply (pod template immutable)"
+              exit 0
+            fi
+          fi
           kubectl apply -k "infra/${{ env.MIGRATE_OVERLAY_PROD }}"
           echo "Applied migrate overlay; expecting Job $JOB"
 
