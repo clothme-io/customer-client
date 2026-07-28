@@ -324,6 +324,21 @@ jobs:
           echo "${{ secrets.CLOTHME_DEV_KUBECONFIG }}" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
 
+      # Jobs are not reliably synced onto clothme-dev by Argo; apply from CI.
+      - uses: actions/checkout@v4
+        with:
+          repository: clothme-io/clothme_infra_kube
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          ref: ${{ env.INFRA_BRANCH }}
+          path: infra
+
+      - name: Apply migrate Job on clothme-dev
+        env:
+          JOB: ${{ needs.bump-dev-migrate.outputs.job_name }}
+        run: |
+          kubectl apply -k "infra/${{ env.MIGRATE_OVERLAY_DEV }}"
+          echo "Applied migrate overlay; expecting Job $JOB"
+
       - name: Wait for migrate Job Completed on clothme-dev
         env:
           TAG: ${{ needs.bump-dev-migrate.outputs.image_tag }}
@@ -641,6 +656,21 @@ jobs:
           mkdir -p "$HOME/.kube"
           echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+
+      # Jobs are not reliably synced onto the cluster by Argo; apply from CI.
+      - uses: actions/checkout@v4
+        with:
+          repository: clothme-io/clothme_infra_kube
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          ref: ${{ env.INFRA_BRANCH }}
+          path: infra
+
+      - name: Apply migrate Job on clothme-prod
+        env:
+          JOB: ${{ needs.bump-prod-migrate.outputs.job_name }}
+        run: |
+          kubectl apply -k "infra/${{ env.MIGRATE_OVERLAY_PROD }}"
+          echo "Applied migrate overlay; expecting Job $JOB"
 
       - name: Wait for migrate Job Completed on clothme-prod
         env:
