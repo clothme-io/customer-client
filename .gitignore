@@ -4,3 +4,4 @@ dist/
 .env
 .DS_Store
 public/cms-media/
+.tmp-cms-migration/
