@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 const RESERVED_SUBDOMAINS = new Set([
   "www", "blog", "api", "admin", "app", "cdn", "mail", "ftp",
   "dev", "staging", "preview", "demo", "test",
+  // Env / product hosts (not city microsites)
+  "dv-app", "dv-vendor", "pr-app", "pr-vendor"
 ]);
 
 export function middleware(request) {
@@ -19,7 +21,7 @@ export function middleware(request) {
     .split(":")[0]
     .split("/")[0];
 
-  // Never rewrite Next.js internals, static files, or Payload routes
+  // Never rewrite Next.js internals, static files, Payload routes, or ACME challenges
   const { pathname } = url;
   if (pathname === "/admin/cms/collections/cms-posts" && url.searchParams.has("columns")) {
     url.searchParams.delete("columns");
@@ -30,6 +32,7 @@ export function middleware(request) {
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/admin/") ||
+    pathname.startsWith("/.well-known/") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/cms-media/") ||
     pathname.startsWith("/public/")
@@ -37,11 +40,18 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  // If SITE_URL is itself a subdomain host (e.g. dv-app.clothme.io), never treat it as a city.
+  if (hostname === rootDomain || hostname.split(":")[0] === rootDomain) {
+    return NextResponse.next();
+  }
+
   let citySlug = null;
 
-  // Production: vancouver.clothme.app
-  if (hostname !== rootDomain && hostname.endsWith(`.${rootDomain}`)) {
-    const sub = hostname.slice(0, -(rootDomain.length + 1));
+  // Production: vancouver.clothme.app / vancouver.clothme.io
+  // Prefer apex domain for city microsites, not the full SITE_URL host.
+  const apexDomain = rootDomain.split(".").slice(-2).join(".");
+  if (hostname !== apexDomain && hostname.endsWith(`.${apexDomain}`)) {
+    const sub = hostname.slice(0, -(apexDomain.length + 1));
     if (sub && !RESERVED_SUBDOMAINS.has(sub) && !sub.includes(".")) {
       citySlug = sub;
     }

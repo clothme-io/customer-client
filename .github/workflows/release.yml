@@ -54,7 +54,7 @@ env:
   OVERLAY_PATHS_PROD: fleet/bundles/apps/customer-client-web/overlays/prod
   MIGRATE_OVERLAY_DEV: fleet/bundles/apps/customer-client-web-migrate/overlays/dev
   MIGRATE_OVERLAY_PROD: fleet/bundles/apps/customer-client-web-migrate/overlays/prod
-  DEV_HEALTH_URL: https://dv-app.clothme.com/api/health
+  DEV_HEALTH_URL: https://dv-app.clothme.io/api/health
   RELEASE_LABEL: customer-client-web-release
 
 permissions:
@@ -250,6 +250,8 @@ jobs:
           token: ${{ secrets.INFRA_REPO_PAT }}
           ref: ${{ env.INFRA_BRANCH }}
           path: infra
+
+      - name: Bump dev migrate image + Job name
         id: bump
         env:
           TAG: ${{ steps.tag.outputs.value }}

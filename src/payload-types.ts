@@ -72,7 +72,6 @@ export interface Config {
     locations: Location;
     'cms-posts': CmsPost;
     'webhook-events': WebhookEvent;
-    'waitlist-entries': WaitlistEntry;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -86,7 +85,6 @@ export interface Config {
     locations: LocationsSelect<false> | LocationsSelect<true>;
     'cms-posts': CmsPostsSelect<false> | CmsPostsSelect<true>;
     'webhook-events': WebhookEventsSelect<false> | WebhookEventsSelect<true>;
-    'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -444,21 +442,6 @@ export interface WebhookEvent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "waitlist-entries".
- */
-export interface WaitlistEntry {
-  id: number;
-  email: string;
-  /**
-   * Optional US state or Canadian province code
-   */
-  state?: string | null;
-  source?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -592,10 +575,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'webhook-events';
         value: number | WebhookEvent;
-      } | null)
-    | ({
-        relationTo: 'waitlist-entries';
-        value: number | WaitlistEntry;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -883,17 +862,6 @@ export interface WebhookEventsSelect<T extends boolean = true> {
   message?: T;
   payload?: T;
   normalized?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "waitlist-entries_select".
- */
-export interface WaitlistEntriesSelect<T extends boolean = true> {
-  email?: T;
-  state?: T;
-  source?: T;
   updatedAt?: T;
   createdAt?: T;
 }
