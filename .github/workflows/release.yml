@@ -30,13 +30,13 @@ on:
           - rollback-fast
         default: deploy
       promote_to:
-        description: "Target environment (manual deploy only; push to main always runs dev then prod)"
+        description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
         required: false
         type: choice
         options:
           - dev
           - prod
-        default: prod
+        default: dev
       image_tag:
         description: "sha- tag for manual deploy/rollback (optional on deploy — builds from main)"
         required: false
@@ -489,6 +489,12 @@ jobs:
         (
           github.event_name == 'workflow_dispatch' &&
           inputs.action == 'deploy' &&
+          inputs.promote_to == 'dev' &&
+          needs.dev-wait-healthy.result == 'success'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.action == 'deploy' &&
           inputs.promote_to == 'prod' &&
           needs.test.result == 'success' &&
           (needs.build.result == 'success' || needs.build.result == 'skipped')
@@ -537,7 +543,8 @@ jobs:
                 `Image: \`${imageTag}\``,
                 `Dev health: ${process.env.DEV_HEALTH_URL}`,
                 '',
-                'Test dev, then comment **approve** to deploy prod preview.',
+                'Soak on **dev** as long as you need (hours or days).',
+                'When ready, comment **approve** to deploy prod preview.',
                 'Comment **deny** to stop this release.',
                 '',
                 '<!-- release-metadata',
