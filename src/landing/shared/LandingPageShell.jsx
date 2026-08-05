@@ -3,6 +3,7 @@ import { Footer } from "../../components/Footer";
 import { WaitlistModal } from "../../components/WaitlistModal";
 import { LandingBenefits } from "./LandingBenefits";
 // import { LandingBrands } from "./LandingBrands"; // restore when brand logos are ready
+import { LandingBlogPreview } from "./LandingBlogPreview";
 import { LandingFamily } from "./LandingFamily";
 import { LandingFinalCta } from "./LandingFinalCta";
 import { LandingHero } from "./LandingHero";
@@ -42,6 +43,9 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
         </LandingReveal>
         <LandingReveal>
           <LandingTrustFaq />
+        </LandingReveal>
+        <LandingReveal>
+          <LandingBlogPreview />
         </LandingReveal>
         <LandingReveal>
           <LandingFinalCta onWaitlistSuccess={onWaitlistSuccess} />
