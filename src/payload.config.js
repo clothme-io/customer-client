@@ -498,7 +498,7 @@ export default buildConfig({
         update: authenticated
       },
       admin: {
-        defaultColumns: ["title", "category", "createdAt", "updatedAt"],
+        defaultColumns: ["title", "source.provider", "status", "category", "createdAt", "updatedAt"],
         description: "Webhook articles arrive here as drafts. Review the content, choose a category, then publish.",
         enableListViewSelectAPI: true,
         group: "Content",
@@ -669,34 +669,55 @@ export default buildConfig({
           type: "group",
           label: "Webhook Source",
           admin: {
-            disableListColumn: true,
             position: "sidebar"
           },
           fields: [
             {
               name: "provider",
-              type: "text",
-              admin: { readOnly: true }
+              type: "select",
+              label: "Source",
+              defaultValue: "self-publish",
+              options: [
+                { label: "Outrank", value: "outrank" },
+                { label: "BabyLoveGrowth", value: "babylovegrowth" },
+                { label: "Self-publish", value: "self-publish" }
+              ],
+              admin: {
+                description: "Set automatically by webhooks. Manual posts default to Self-publish.",
+                readOnly: true
+              }
             },
             {
               name: "externalId",
               type: "text",
-              admin: { readOnly: true }
+              admin: {
+                disableListColumn: true,
+                readOnly: true
+              }
             },
             {
               name: "publicUrl",
               type: "text",
-              admin: { readOnly: true }
+              admin: {
+                disableListColumn: true,
+                readOnly: true
+              }
             },
             {
               name: "providerCreatedAt",
               type: "date",
-              admin: { readOnly: true }
+              admin: {
+                disableListColumn: true,
+                readOnly: true
+              }
             },
             {
               name: "receivedAt",
               type: "date",
-              admin: { readOnly: true }
+              admin: {
+                disableListColumn: true,
+                readOnly: true
+              }
             }
           ]
         }

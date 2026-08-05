@@ -8,6 +8,7 @@ import * as migration_20260707_000001_repair_cms_post_list_items from './2026070
 import * as migration_20260708_000001_sync_locked_documents_rels from './20260708_000001_sync_locked_documents_rels';
 import * as migration_20260708_000002_repair_stale_homepage_link_labels from './20260708_000002_repair_stale_homepage_link_labels';
 import * as migration_20260723_000001_waitlist_state from './20260723_000001_waitlist_state';
+import * as migration_20260805_000001_cms_posts_source_status_columns from './20260805_000001_cms_posts_source_status_columns';
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20260723_000001_waitlist_state.up,
     down: migration_20260723_000001_waitlist_state.down,
     name: '20260723_000001_waitlist_state'
+  },
+  {
+    up: migration_20260805_000001_cms_posts_source_status_columns.up,
+    down: migration_20260805_000001_cms_posts_source_status_columns.down,
+    name: '20260805_000001_cms_posts_source_status_columns'
   },
 ];
