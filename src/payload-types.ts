@@ -396,7 +396,10 @@ export interface CmsPost {
    */
   aiSummary?: string | null;
   source?: {
-    provider?: string | null;
+    /**
+     * Set automatically by webhooks. Manual posts default to Self-publish.
+     */
+    provider?: ('outrank' | 'babylovegrowth' | 'self-publish') | null;
     externalId?: string | null;
     publicUrl?: string | null;
     providerCreatedAt?: string | null;

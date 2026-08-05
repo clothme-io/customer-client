@@ -368,7 +368,7 @@ export function transformToPayloadPost(article) {
     externalHeroImageUrl: article.featuredImageUrl || "",
     aiSummary: article.metaDescription || "",
     source: {
-      provider: article.provider || "",
+      provider: article.provider || "self-publish",
       externalId: article.externalId || "",
       publicUrl: article.publicUrl || "",
       providerCreatedAt: article.providerCreatedAt || undefined,
