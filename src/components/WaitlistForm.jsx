@@ -9,7 +9,8 @@ export function WaitlistForm({
   className = "",
   ctaLabel = "Join Early Access",
   note = "We respect your privacy. No spam, ever.",
-  showState = true
+  showState = true,
+  stateLabel = "Where are you? (optional)"
 }) {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -55,15 +56,15 @@ export function WaitlistForm({
 
         {showState ? (
           <>
-            <label className="sr-only" htmlFor={`${id}-state`}>State (optional)</label>
+            <label className="sr-only" htmlFor={`${id}-state`}>{stateLabel}</label>
             <select
               id={`${id}-state`}
               name="state"
               defaultValue=""
-              aria-label="State (optional)"
+              aria-label={stateLabel}
               disabled={status === "submitting"}
             >
-              <option value="">State (optional)</option>
+              <option value="">{stateLabel}</option>
               {usStatesAndProvinces.map((code) => (
                 <option key={code} value={code}>{code}</option>
               ))}

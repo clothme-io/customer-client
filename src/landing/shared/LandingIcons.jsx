@@ -78,6 +78,20 @@ export function IconArrow({ className }) {
   );
 }
 
-export const benefitIcons = [IconPerson, IconShirt, IconHeart, IconFamily, IconShield, IconClock];
+export function IconPin({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <path
+        d="M24 40s-11-9.5-11-18a11 11 0 1 1 22 0c0 8.5-11 18-11 18z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <circle cx="24" cy="22" r="3.5" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
+}
+
+export const benefitIcons = [IconShirt, IconFamily, IconBag, IconPin];
 export const stepIcons = [IconPerson, IconShirt, IconBag];
 export const familyPointIcons = [IconPerson, IconFamily, IconHeart, IconBag];

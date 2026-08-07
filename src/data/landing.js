@@ -1,20 +1,52 @@
 /**
  * Homepage landing content — edit this file to swap images, brands, and copy.
- * Brand colors live in src/styles.css under :root (--brand-*).
+ * Brand colors live in src/styles.css under :root / .theme-blue-landing (--brand-*).
  */
 
+export const landingPerk = {
+  text: "First 1,000 members: 5% off every order for your first year.",
+  finePrint: "Not combinable with other discounts."
+};
+
+/** Set to a real count string (e.g. "2,400") when available; null hides the line. */
+export const landingWaitlistMomentum = "Join thousands of shoppers waiting for a better way to buy clothes.";
+
 export const landingImages = {
-  hero: {
-    src: "/hero-family.png?v=2",
-    alt: "Multi-generational family smiling together in coordinated cream and beige knitwear"
+  heroStrip: [
+    {
+      src: "/family-shopping.jpg",
+      alt: "Family shopping together for clothes that fit — ClothME family profiles",
+      slot: "tl"
+    },
+    {
+      src: "/personal-shopping.jpg",
+      alt: "Shopper using phone while browsing — ClothME personalized fit shopping",
+      slot: "tr"
+    },
+    {
+      src: "/personal-shopping.jpg",
+      alt: "Shopper with shopping bag checking phone — ClothME size match shopping",
+      slot: "bl"
+    },
+    {
+      src: "/family-shopping.jpg",
+      alt: "Parent and kids discovering clothes together — ClothME family profiles",
+      slot: "br"
+    }
+  ],
+  /** How-it-works phone — Generate Size screen. Optional demoVideo.src for a clip later. */
+  howPhone: {
+    src: "/phone-generate-size.png",
+    alt: "ClothME Generate Size screen with photo pose instructions for sizing"
+  },
+  demoVideo: {
+    src: null,
+    poster: "/phone-generate-size.png",
+    posterAlt: "ClothME Generate Size screen with photo pose instructions for sizing"
   },
   imagine: {
     src: "/phone-store.png",
     alt: "ClothME store screen showing a product with fit score and add to cart"
-  },
-  imagineBackdrop: {
-    src: "/personal-shopping.jpg",
-    alt: ""
   },
   familyPhone: {
     src: "/phone-account.png",
@@ -54,24 +86,46 @@ export const landingNav = [
 ];
 
 export const landingBenefits = [
-  { title: "Personalized For You", body: "Recommendations that match your style and fit." },
-  { title: "Your Best Fit", body: "See your recommended size before you add to cart." },
-  { title: "Discover Brands", body: "Find new favorites from local to global." },
-  { title: "For The Whole Family", body: "Shop for everyone in one place with family profiles." },
-  { title: "Shop With Confidence", body: "Less guessing. Fewer returns. More confidence." },
-  { title: "Save Time", body: "A better way to shop. All in one app." }
+  {
+    title: "Your Best Fit",
+    body: "See your recommended size in every brand before you buy."
+  },
+  {
+    title: "For The Whole Family",
+    body: "One account, a profile for everyone you shop for."
+  },
+  {
+    title: "Fewer Returns",
+    body: "Know it fits before it ships."
+  },
+  {
+    title: "Local First",
+    body: "Discover brands near you. Reserve and pick up in store, or get it delivered."
+  }
 ];
 
 export const landingSteps = [
-  { title: "Generate Sizes", body: "Add 2 photos and we'll give you sizes to fit any brand." },
-  { title: "Personalized Store", body: "See products and sizes recommended just for you." },
-  { title: "Fast with Less Returns", body: "Know more before you buy. Love what you receive." }
+  {
+    title: "Snap 2 photos",
+    body: "We generate your size profile for every brand — no measuring tape needed."
+  },
+  {
+    title: "Personalized Store",
+    body: "See products and sizes recommended just for you."
+  },
+  {
+    title: "Fast with Less Returns",
+    body: "Know more before you buy. Love what you receive."
+  }
 ];
 
 export const landingImagine = [
   "Never wondering \"Should I buy a Small or a Medium?\" again.",
-  "Finding brands you actually love—without searching hundreds of websites.",
+  "Finding brands you actually love — without searching hundreds of websites.",
+  "Discovering great brands made right in your city.",
+  "Reserving something in your size at a boutique nearby — and picking it up today.",
   "Shopping for your kids in minutes, not hours.",
+  "Buying a gift that actually fits — without asking their size.",
   "Opening one app instead of ten."
 ];
 
@@ -92,7 +146,8 @@ export const landingFamilyProfiles = [
 export const landingPrivacyPoints = [
   "Your data stays yours—always.",
   "We never sell your personal information.",
-  "You control what you share."
+  "You control what you share.",
+  "Photos are processed for sizing only."
 ];
 
 export const landingFaq = [
@@ -115,8 +170,22 @@ export const landingFaq = [
   {
     question: "Which brands are available on ClothME?",
     answer: "We're bringing together boutiques, independent labels, and global brands. Early access members see new brands first."
+  },
+  {
+    question: "What happens to my photos?",
+    answer: "Your photos are used only to generate your size profile. We never sell or share them. You can request deletion of your account and associated photos anytime by emailing talk2us@clothme.io."
+  },
+  {
+    question: "Is my family's data safe?",
+    answer: "Yes. Family profiles are private to your account. Children's data is never sold, and parents control everything — who has a profile, what is shared, and when to remove it."
+  },
+  {
+    question: "Do I have to wait for shipping?",
+    answer: "Not always. For participating local stores, you can reserve your size on ClothME and pick it up in store, or pay on ClothME and have it delivered — options vary by brand."
   }
 ];
+
+export const landingCompanyAddress = "Suite 250 - #1430, 97 Seymour St, Vancouver, BC V6B 3M1, Canada";
 
 export const landingFooterLinks = {
   shop: [

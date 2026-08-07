@@ -1,4 +1,4 @@
-import { landingFooterLinks } from "../data/landing";
+import { landingCompanyAddress, landingFooterLinks } from "../data/landing";
 
 export function Footer() {
   return (
@@ -10,6 +10,7 @@ export function Footer() {
             <span className="brand-word" aria-label="ClothME">C<span className="brand-lower-l">l</span>othME</span>
           </a>
           <p>Better fit. Better shopping.</p>
+          <p className="mock-footer-address">{landingCompanyAddress}</p>
           <div className="mock-socials">
             <a className="social-link" href="https://www.instagram.com/clothme_io" target="_blank" rel="noreferrer" aria-label="ClothME on Instagram">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
