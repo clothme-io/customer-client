@@ -10,7 +10,6 @@ import { LandingHero } from "./LandingHero";
 import { LandingHowItWorks } from "./LandingHowItWorks";
 import { LandingImagine } from "./LandingImagine";
 import { LandingReveal } from "./LandingReveal";
-import { LandingStatement } from "./LandingStatement";
 import { LandingTrustFaq } from "./LandingTrustFaq";
 
 export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitlistSuccess }) {
@@ -22,22 +21,19 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
           <LandingHero onWaitlistSuccess={onWaitlistSuccess} />
         </LandingReveal>
         <LandingReveal>
-          <LandingBenefits />
+          <LandingImagine />
         </LandingReveal>
         <LandingReveal>
           <LandingHowItWorks />
         </LandingReveal>
         <LandingReveal>
-          <LandingImagine />
+          <LandingBenefits />
         </LandingReveal>
         {/* Brands marquee — uncomment when logos are ready
         <LandingReveal>
           <LandingBrands />
         </LandingReveal>
         */}
-        <LandingReveal>
-          <LandingStatement />
-        </LandingReveal>
         <LandingReveal>
           <LandingFamily />
         </LandingReveal>

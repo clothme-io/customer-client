@@ -1,10 +1,16 @@
 import { landingBenefits } from "../../data/landing";
+import { FitScoreBadge } from "./FitScoreBadge";
 import { benefitIcons } from "./LandingIcons";
 
 export function LandingBenefits() {
   return (
     <section className="mock-section mock-benefits" id="why" aria-labelledby="benefits-title">
-      <h2 id="benefits-title" className="mock-section-title">Why shoppers love ClothME</h2>
+      <div className="mock-section-heading">
+        <FitScoreBadge className="fit-score-badge--inline" decorative />
+        <h2 id="benefits-title" className="mock-section-title">
+          Why shoppers love ClothME
+        </h2>
+      </div>
       <div className="mock-benefits-grid">
         {landingBenefits.map((item, index) => {
           const Icon = benefitIcons[index % benefitIcons.length];
