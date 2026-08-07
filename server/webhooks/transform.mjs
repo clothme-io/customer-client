@@ -49,17 +49,60 @@ export function classifyCategory(title, textContent) {
 
 // ── HTML utilities ────────────────────────────────────────────────────────────
 
+/**
+ * Decode HTML entities into real characters for Lexical/plain-text fields.
+ * Order matters: numeric entities first, then named, with &amp; last.
+ */
+export function decodeHtmlEntities(value) {
+  if (typeof value !== "string" || !value.includes("&")) return value || "";
+
+  return value
+    .replace(/&nbsp;/gi, "\u00A0")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    })
+    .replace(/&#(\d+);/g, (_, dec) => {
+      const code = Number(dec);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    })
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&amp;/gi, "&");
+}
+
 export function stripHtml(html) {
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+  return decodeHtmlEntities(
+    (html || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+/** Recursively decode HTML entities inside Lexical text nodes. */
+export function repairLexicalHtmlEntities(node) {
+  if (node == null) return node;
+  if (Array.isArray(node)) return node.map(repairLexicalHtmlEntities);
+  if (typeof node !== "object") return node;
+
+  const next = { ...node };
+  if (next.type === "text" && typeof next.text === "string") {
+    next.text = decodeHtmlEntities(next.text);
+  }
+  if (Array.isArray(next.children)) {
+    next.children = repairLexicalHtmlEntities(next.children);
+  }
+  return next;
+}
+
+function htmlTextNodeValue(node) {
+  if (!node) return "";
+  // node-html-parser: `.text` is entity-decoded; `.rawText` keeps &#39; / &quot;
+  if (typeof node.text === "string") return node.text;
+  return decodeHtmlEntities(node.rawText || "");
 }
 
 export function parseHtmlToSections(html) {
@@ -147,7 +190,15 @@ const FMT_SUBSCRIPT     = 32;
 const FMT_SUPERSCRIPT   = 64;
 
 function makeText(text, format = 0) {
-  return { type: "text", text, detail: 0, format, mode: "normal", style: "", version: 1 };
+  return {
+    type: "text",
+    text: decodeHtmlEntities(text || ""),
+    detail: 0,
+    format,
+    mode: "normal",
+    style: "",
+    version: 1
+  };
 }
 
 function makeNode(type, extra, children) {
@@ -159,7 +210,7 @@ function inlineChildren(el, inheritedFormat = 0) {
   const nodes = [];
   for (const child of el.childNodes) {
     if (child.nodeType === 3 /* TEXT_NODE */) {
-      const text = child.rawText;
+      const text = htmlTextNodeValue(child);
       if (text) nodes.push(makeText(text, inheritedFormat));
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const tag = child.tagName?.toLowerCase();
@@ -202,7 +253,7 @@ function blockNodes(el) {
   const nodes = [];
   for (const child of el.childNodes) {
     if (child.nodeType === 3 /* TEXT_NODE */) {
-      const text = child.rawText.trim();
+      const text = htmlTextNodeValue(child).trim();
       if (text) {
         nodes.push(makeNode("paragraph", {}, [makeText(text)]));
       }
@@ -271,7 +322,7 @@ function blockNodes(el) {
       }
     } else if (tag === "pre") {
       const codeEl = child.querySelector("code");
-      const text = (codeEl || child).innerText || "";
+      const text = htmlTextNodeValue(codeEl || child) || (codeEl || child).innerText || "";
       const lang = codeEl?.getAttribute("class")?.replace(/language-/, "") || "";
       nodes.push({ type: "code", language: lang, children: [makeText(text)], direction: "ltr", format: "", indent: 0, version: 1 });
     } else if (tag === "hr") {
@@ -359,14 +410,14 @@ export function transformToPayloadPost(article) {
   const contentHtml = sanitizeWebhookHtml(article.content);
 
   return {
-    title: article.title.trim(),
+    title: decodeHtmlEntities(article.title.trim()),
     slug: normalizeSlug(article.slug, article.title),
-    excerpt: generateExcerpt(contentHtml, article.metaDescription),
+    excerpt: decodeHtmlEntities(generateExcerpt(contentHtml, article.metaDescription)),
     status: "draft",
     _status: "draft",
     content: htmlToLexical(contentHtml),
     externalHeroImageUrl: article.featuredImageUrl || "",
-    aiSummary: article.metaDescription || "",
+    aiSummary: decodeHtmlEntities(article.metaDescription || ""),
     source: {
       provider: article.provider || "self-publish",
       externalId: article.externalId || "",
@@ -375,8 +426,8 @@ export function transformToPayloadPost(article) {
       receivedAt
     },
     seo: {
-      title: article.metaTitle || article.title || "",
-      description: article.metaDescription || "",
+      title: decodeHtmlEntities(article.metaTitle || article.title || ""),
+      description: decodeHtmlEntities(article.metaDescription || ""),
       keywords: keywordRows(article.tags),
       canonicalUrl: article.publicUrl || ""
     }
