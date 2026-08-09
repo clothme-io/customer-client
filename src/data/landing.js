@@ -78,6 +78,7 @@ export const usStatesAndProvinces = [
 ];
 
 export const landingNav = [
+  { label: "Get your size", href: "/#size-tool" },
   { label: "For You", href: "/#why" },
   { label: "For Your Family", href: "/#family" },
   // { label: "Brands", href: "/#brands" }, // restore with brands section

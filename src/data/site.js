@@ -8,6 +8,10 @@ export const siteConfig = {
   analytics: {
     gaId: process.env.NEXT_PUBLIC_GA_ID || process.env.VITE_GA_ID || "G-8H7MC8EYN1",
     gtmId: process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID || "",
-    plausibleDomain: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || process.env.VITE_PLAUSIBLE_DOMAIN || ""
+    plausibleDomain: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || process.env.VITE_PLAUSIBLE_DOMAIN || "",
+    metaPixelId:
+      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+      process.env.VITE_META_PIXEL_ID ||
+      "1304223921590545"
   }
 };

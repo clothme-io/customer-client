@@ -12,7 +12,7 @@ export function Header() {
           <a key={item.href} href={item.href}>{item.label}</a>
         ))}
       </nav>
-      <a className="header-cta" href="/#waitlist">Join Early Access</a>
+      <a className="header-cta" href="/#size-tool">Get your size</a>
     </header>
   );
 }
