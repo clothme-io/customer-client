@@ -10,6 +10,7 @@ import { LandingHero } from "./LandingHero";
 import { LandingHowItWorks } from "./LandingHowItWorks";
 import { LandingImagine } from "./LandingImagine";
 import { LandingReveal } from "./LandingReveal";
+import { LandingSizeTool } from "./LandingSizeTool";
 import { LandingTrustFaq } from "./LandingTrustFaq";
 
 export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitlistSuccess }) {
@@ -25,6 +26,9 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
         </LandingReveal>
         <LandingReveal>
           <LandingHowItWorks />
+        </LandingReveal>
+        <LandingReveal>
+          <LandingSizeTool />
         </LandingReveal>
         <LandingReveal>
           <LandingBenefits />

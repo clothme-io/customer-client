@@ -170,7 +170,11 @@ export function PrivacyPolicyPage() {
               <li>Creator campaigns</li>
               <li>Brand insights</li>
             </ul>
-            <p>Analytics provided to brands are generally aggregated or anonymized where appropriate.</p>
+            <p>
+              This may include tools such as Google Analytics and the Meta (Facebook) Pixel to measure
+              site visits and conversion events (for example waitlist or Size Tool signups). Analytics
+              provided to brands are generally aggregated or anonymized where appropriate.
+            </p>
           </section>
 
           <section>

@@ -14,7 +14,7 @@ export function normalizeWaitlistState(value) {
  * Submit a waitlist signup. Returns API payload on success; throws on failure.
  * Skips the network call (and returns ok) when the honeypot field is filled.
  */
-export async function submitWaitlist({ email, state, source, honeypot }) {
+export async function submitWaitlist({ email, state, source, honeypot, skipTrack = false }) {
   if (String(honeypot || "").trim()) {
     return { ok: true, created: false, spam: true };
   }
@@ -29,11 +29,13 @@ export async function submitWaitlist({ email, state, source, honeypot }) {
     })
   });
 
-  track("waitlist_submit", {
-    source: String(source || ""),
-    state: normalizedState || undefined,
-    created: Boolean(payload.created)
-  });
+  if (!skipTrack) {
+    track("waitlist_submit", {
+      source: String(source || ""),
+      state: normalizedState || undefined,
+      created: Boolean(payload.created)
+    });
+  }
 
   return payload;
 }
