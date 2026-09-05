@@ -4,11 +4,14 @@ import type {
   CartData,
   DeliveryMethodOption,
   DiscoverBrand,
+  FavouriteBrandListItem,
+  OrderListItem,
   ProductDetail,
   ShopCard,
   ShopResponseData,
   ShopUser,
-  SupportMessage
+  SupportMessage,
+  WishbagListItem
 } from "./types";
 
 const img = (id: string, w = 800, h = 1000) =>
@@ -363,6 +366,7 @@ export const MOCK_ADDRESSES: AccountAddress[] = [
 
 export const MOCK_PROFILE: AccountProfile = {
   accountId: MOCK_SESSION.accountId,
+  accountUserId: MOCK_SESSION.personId,
   firstName: "Maya",
   lastName: "Chen",
   profileAvatar: MOCK_AVATARS[0].profileImage,
@@ -370,12 +374,14 @@ export const MOCK_PROFILE: AccountProfile = {
   city: "Vancouver",
   state: "BC",
   country: "Canada",
-  users: MOCK_AVATARS.map((person) => ({
+  users: MOCK_AVATARS.map((person, index) => ({
     userId: person.userId,
     firstName: person.firstName,
     lastName: person.lastName,
     profileAvatar: person.profileImage,
-    relationship: person.isAccountOwner ? "self" : "family"
+    relationship: person.isAccountOwner ? "self" : index === 1 ? "partner" : "family",
+    gender: person.isAccountOwner || index === 2 ? "female" : "male",
+    city: index === 2 ? "Toronto" : "Vancouver"
   })),
   wishbags: {
     wishbagId: "wishbag-1",
@@ -412,6 +418,92 @@ export const MOCK_PROFILE: AccountProfile = {
       brandId: BRAND_RIVER.id,
       brandName: BRAND_RIVER.name,
       brandLogo: img("photo-1441986300917-64674bd600d8", 240, 240)
+    }
+  ]
+};
+
+export const MOCK_FAVOURITE_BRANDS: FavouriteBrandListItem[] = MOCK_BRANDS.filter(
+  (brand) => brand.isAccountFavorite || brand.id === BRAND_RIVER.id || brand.id === "brand-solace"
+).map((brand, index) => ({
+  id: `fav-${brand.id}`,
+  brandId: brand.id,
+  brandName: brand.name,
+  brandDescription: brand.description,
+  brandLogoUrl: brand.logoUrl,
+  city: brand.city,
+  stateProvince: brand.city === "Toronto" ? "ON" : brand.city === "Montreal" ? "QC" : "BC",
+  country: brand.country,
+  userMatchCount: brand.fitProductCount + index
+}));
+
+export const MOCK_ORDERS: OrderListItem[] = [
+  {
+    orderId: "ord-coat",
+    orderedDate: "2026-08-28T14:22:00.000Z",
+    orderedProductName: "Wool city coat",
+    orderedProductAvatar: img("photo-1539533018447-63fcce2678e3", 400, 520),
+    orderState: true,
+    orderStateText: "Pending"
+  },
+  {
+    orderId: "ord-tee",
+    orderedDate: "2026-07-12T09:04:00.000Z",
+    orderedProductName: "Soft box tee",
+    orderedProductAvatar: img("photo-1521572163474-6864f9cf17ab", 400, 520),
+    orderState: true,
+    orderStateText: "Delivered"
+  },
+  {
+    orderId: "ord-trouser",
+    orderedDate: "2026-06-03T18:40:00.000Z",
+    orderedProductName: "Pleated trouser",
+    orderedProductAvatar: img("photo-1594938298603-c8148c4dae35", 400, 520),
+    orderState: false,
+    orderStateText: "Refunded"
+  }
+];
+
+export const MOCK_WISHBAG: { wishbagId: string; wishbagItems: WishbagListItem[] } = {
+  wishbagId: "wishbag-1",
+  wishbagItems: [
+    {
+      wishbagItemId: "wish-product-tee",
+      productId: "product-tee",
+      productImage: img("photo-1521572163474-6864f9cf17ab", 400, 520),
+      productName: "Soft box tee",
+      productDescription: "Sample product for layout preview.",
+      productAmount: 48,
+      productCity: "Toronto",
+      productState: "ON",
+      productCountry: "Canada",
+      currency: "$",
+      count: 1
+    },
+    {
+      wishbagItemId: "wish-product-coat",
+      productId: "product-coat",
+      productImage: img("photo-1539533018447-63fcce2678e3", 400, 520),
+      productName: "Wool city coat",
+      productDescription: "Sample product for layout preview.",
+      productAmount: 248,
+      productCity: "Vancouver",
+      productState: "BC",
+      productCountry: "Canada",
+      currency: "$",
+      count: 1
+    },
+    {
+      wishbagItemId: "wish-product-trouser",
+      productId: "product-trouser",
+      productImage: img("photo-1594938298603-c8148c4dae35", 400, 520),
+      productName: "Pleated trouser",
+      productDescription: "Sample product for layout preview.",
+      productAmount: 128,
+      productCity: "Vancouver",
+      productState: "BC",
+      productCountry: "Canada",
+      currency: "$",
+      count: 1
     }
   ]
 };
@@ -529,6 +621,16 @@ export function mockApiResponse(
   if (path.includes("/catalog/product-details")) return { product: mockProduct(String(query.id || "")) };
   if (path.includes("/catalog/brand-details")) return { brand: mockBrand(String(query.brandId || "")) };
   if (path.includes("/customer/me")) return MOCK_PROFILE;
+  if (path.includes("/customer/favourites/brands")) {
+    return {
+      favouriteBrands: MOCK_FAVOURITE_BRANDS,
+      pagination: { total: MOCK_FAVOURITE_BRANDS.length, page: 1, limit: 20, totalPages: 1 }
+    };
+  }
+  if (path.includes("/customer/orders")) return { orders: MOCK_ORDERS };
+  if (path.includes("/customer/wishbag") && method === "GET" && !path.includes("/wishbag/items")) {
+    return MOCK_WISHBAG;
+  }
   if (path.includes("/customer/cart") && method === "GET") return MOCK_CART;
   if (path.includes("/addresses") && method === "GET") return { items: MOCK_ADDRESSES };
   if (path.includes("/addresses") && method === "POST") {

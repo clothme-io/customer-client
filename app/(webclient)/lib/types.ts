@@ -200,6 +200,51 @@ export type DeliveryMethodOption = {
   provider: "manual" | "shippo" | "shipbob" | "uber_direct";
 };
 
+export type AccountPerson = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  profileAvatar: string;
+  relationship: string;
+  gender?: string;
+  city?: string;
+};
+
+export type FavouriteBrandListItem = {
+  id: string;
+  brandId: string;
+  brandName: string;
+  brandDescription: string;
+  brandLogoUrl: string;
+  city: string | null;
+  stateProvince: string | null;
+  country: string | null;
+  userMatchCount: number;
+};
+
+export type OrderListItem = {
+  orderId: string;
+  orderedDate: string;
+  orderedProductName: string;
+  orderedProductAvatar: string;
+  orderState: boolean;
+  orderStateText: string;
+};
+
+export type WishbagListItem = {
+  wishbagItemId: string;
+  productId: string;
+  productImage: string;
+  productName: string;
+  productDescription: string;
+  productAmount: number;
+  productCity: string;
+  productState: string;
+  productCountry: string;
+  currency: string;
+  count: number;
+};
+
 export type AccountAddress = {
   addressId: string;
   apartmentNumber?: string;
@@ -222,6 +267,7 @@ export type CheckoutSession = {
 
 export type AccountProfile = {
   accountId: string;
+  accountUserId?: string;
   firstName: string;
   lastName: string;
   profileAvatar: string;
@@ -229,13 +275,7 @@ export type AccountProfile = {
   city: string;
   state: string;
   country: string;
-  users: {
-    userId: string;
-    firstName: string;
-    lastName: string;
-    profileAvatar: string;
-    relationship: string;
-  }[];
+  users: AccountPerson[];
   wishbags: {
     wishbagId: string;
     wishbagItems: {

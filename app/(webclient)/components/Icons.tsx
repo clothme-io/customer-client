@@ -81,6 +81,22 @@ export function HeartIcon({ filled }: { filled?: boolean }) {
   );
 }
 
+export function ChevronBackIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M15 6 9 12l6 6" />
+    </svg>
+  );
+}
+
+export function ChevronForwardIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
 export function BookmarkIcon({ filled }: { filled?: boolean }) {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

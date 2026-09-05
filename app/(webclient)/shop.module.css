@@ -705,6 +705,142 @@
   font-weight: 600;
 }
 
+.subHeader {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  min-height: 52px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--wc-divider);
+}
+
+.subBack,
+.subAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.subTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.listRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--wc-divider);
+  background: var(--wc-elevated);
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+}
+
+.listRowCircle {
+  align-items: center;
+}
+
+.listThumbCircle,
+.listThumbBrand,
+.listThumbProduct,
+.listThumbFallback {
+  flex-shrink: 0;
+  object-fit: cover;
+  background: var(--wc-secondary);
+  border: 1px solid var(--wc-border);
+}
+
+.listThumbCircle {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+}
+
+.listThumbBrand {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--wc-elevated);
+}
+
+.listThumbProduct {
+  width: 70px;
+  height: 100px;
+  border-radius: 8px;
+}
+
+.listBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.listTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.listMeta {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--wc-muted);
+  text-transform: capitalize;
+}
+
+.listDesc {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--wc-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.listFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--wc-muted);
+}
+
+.listChevron {
+  flex-shrink: 0;
+  color: #9ca3af;
+  align-self: center;
+}
+
+.emptyWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 48vh;
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--wc-muted);
+}
+
+.emptyWrap svg {
+  width: 80px;
+  height: 80px;
+  color: #ccc;
+}
+
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--wc-divider);
