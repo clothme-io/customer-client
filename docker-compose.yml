@@ -1,0 +1,59 @@
+name: clothme-web-client
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clothme
+      POSTGRES_PASSWORD: clothme
+      POSTGRES_DB: clothme_web_cms
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clothme -d clothme_web_cms"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    image: clothme-web-client
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      DATABASE_URL: postgresql://clothme:clothme@postgres:5432/clothme_web_cms
+      DATABASE_SSL: "false"
+      RUN_MIGRATIONS: "true"
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-local-docker-payload-secret-change-me}
+      CUSTOMER_API_URL: ${CUSTOMER_API_URL:-https://dv-customer.api-clothme.com}
+      BACKEND_API_URL: ${BACKEND_API_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      SIZE_API_URL: ${SIZE_API_URL:-https://dv-size.api-clothme.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres_data:

@@ -21,6 +21,8 @@
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
     "@seshuk/payload-storage-bunny": "^2.2.0",
+    "@stripe/react-stripe-js": "^6.9.0",
+    "@stripe/stripe-js": "^9.15.0",
     "graphql": "^16.14.2",
     "next": "^15.4.11",
     "node-html-parser": "^8.0.4",
