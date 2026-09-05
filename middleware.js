@@ -1,5 +1,24 @@
 import { NextResponse } from "next/server";
 
+const WEBCLIENT_PATHS = [
+  "/shop",
+  "/discover",
+  "/cart",
+  "/inbox",
+  "/account",
+  "/settings",
+  "/product",
+  "/brand",
+  "/login",
+  "/checkout"
+];
+
+function isWebClientPath(pathname) {
+  return WEBCLIENT_PATHS.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 const RESERVED_SUBDOMAINS = new Set([
   "www", "blog", "api", "admin", "app", "cdn", "mail", "ftp",
   "dev", "staging", "preview", "demo", "test",
@@ -26,6 +45,25 @@ export function middleware(request) {
   if (pathname === "/admin/cms/collections/cms-posts" && url.searchParams.has("columns")) {
     url.searchParams.delete("columns");
     return NextResponse.redirect(url);
+  }
+
+  if (isWebClientPath(pathname)) {
+    const response = NextResponse.next();
+    if (!request.cookies.get("cm_geo")) {
+      const geo = {
+        country: request.headers.get("x-vercel-ip-country") || "",
+        region: request.headers.get("x-vercel-ip-country-region") || "",
+        city: decodeURIComponent(request.headers.get("x-vercel-ip-city") || "")
+      };
+      if (geo.country || geo.city) {
+        response.cookies.set("cm_geo", JSON.stringify(geo), {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+          sameSite: "lax"
+        });
+      }
+    }
+    return response;
   }
 
   if (

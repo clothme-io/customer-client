@@ -3,6 +3,12 @@ import { withPayload } from "@payloadcms/next/withPayload";
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" }
+    ]
+  },
   // Avoid EMFILE on macOS when the process file-watch limit is low.
   // Without this, broken HMR can leave pages blank (Next FOUC hide never clears).
   webpack: (config, { dev }) => {
