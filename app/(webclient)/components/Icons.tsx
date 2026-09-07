@@ -104,3 +104,11 @@ export function BookmarkIcon({ filled }: { filled?: boolean }) {
     </svg>
   );
 }
+
+export function CheckIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+      <path d="m5 12 5 5L20 7" />
+    </svg>
+  );
+}

@@ -12,6 +12,15 @@ export const COOKIE_REFRESH = "cm_refresh";
 export const COOKIE_PERSON = "cm_person";
 export const COOKIE_ACCOUNT = "cm_account";
 export const COOKIE_GEO = "cm_geo";
+export const COOKIE_AUTH_LEVEL = "cm_auth_level";
+export const COOKIE_EMAIL = "cm_email";
+
+export const SIZE_API_URL =
+  stripTrailingSlash(process.env.SIZE_API_URL) ||
+  stripTrailingSlash(process.env.NEXT_PUBLIC_SIZE_API_URL) ||
+  "https://dv-size.api-clothme.com";
+
+export const SIZE_API_TOKEN = process.env.SIZE_API_TOKEN || "token-canada-2026-auth";
 
 export const SITE_NAME = "ClothME";
 

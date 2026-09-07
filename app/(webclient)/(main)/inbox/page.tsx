@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSession } from "../../lib/session";
 import { fetchSupportMessages } from "../../lib/commerce";
 import type { SupportMessage } from "../../lib/types";
@@ -20,10 +19,7 @@ export default async function InboxPage() {
     return (
       <section className={shopStyles.signInGate}>
         <h1 className={styles.pageTitle}>Inbox</h1>
-        <p className={styles.muted}>Sign in to read mails and contact support.</p>
-        <Link className={styles.button} href="/login">
-          Log in
-        </Link>
+        <p className={styles.muted}>Could not start a session. Refresh to try again.</p>
       </section>
     );
   }

@@ -1,6 +1,6 @@
 import { AccountSignInGate } from "../../../../components/AccountSignInGate";
 import { AccountSubHeader } from "../../../../components/AccountSubHeader";
-import { getSession } from "../../../../lib/session";
+import { getSession, isRegistered } from "../../../../lib/session";
 import shopStyles from "../../../../shop.module.css";
 import styles from "../../../../webclient.module.css";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AddUserPage() {
   const session = await getSession();
-  if (!session) return <AccountSignInGate title="Add User" />;
+  if (!session || !isRegistered(session)) return <AccountSignInGate title="Add User" />;
 
   return (
     <section>

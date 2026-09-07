@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { fetchAddresses, fetchCart } from "../../lib/commerce";
-import { getSession } from "../../lib/session";
+import { getSession, hasRealEmail, isRegistered } from "../../lib/session";
 import type { AccountAddress } from "../../lib/types";
 import { CheckoutView } from "../../components/CheckoutView";
 import styles from "../../webclient.module.css";
@@ -19,9 +18,7 @@ export default async function CheckoutPage() {
     return (
       <section className={styles.pagePad}>
         <h1 className={styles.pageTitle}>Checkout</h1>
-        <Link className={styles.button} href="/login">
-          Log in to check out
-        </Link>
+        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
       </section>
     );
   }
@@ -34,7 +31,14 @@ export default async function CheckoutPage() {
     } catch {
       addresses = [];
     }
-    return <CheckoutView cart={cart} addresses={addresses} />;
+    return (
+      <CheckoutView
+        cart={cart}
+        addresses={addresses}
+        contactEmail={hasRealEmail(session) ? session.email : ""}
+        isRegistered={isRegistered(session)}
+      />
+    );
   } catch (error) {
     return (
       <section className={styles.pagePad}>

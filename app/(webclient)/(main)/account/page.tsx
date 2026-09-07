@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { getSession } from "../../lib/session";
+import { getSession, isRegistered } from "../../lib/session";
 import { fetchAccountProfile, householdMembers } from "../../lib/commerce";
 import { PencilIcon, PersonAddIcon } from "../../components/Icons";
+import { AccountSignInGate } from "../../components/AccountSignInGate";
 import styles from "../../webclient.module.css";
 import shopStyles from "../../shop.module.css";
 
@@ -15,16 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function AccountPage() {
   const session = await getSession();
 
-  if (!session) {
-    return (
-      <section className={shopStyles.signInGate}>
-        <h1 className={styles.pageTitle}>Account</h1>
-        <p className={styles.muted}>Sign in to manage profiles, Wishbag, Wardrobe, and orders.</p>
-        <Link className={styles.button} href="/login">
-          Log in
-        </Link>
-      </section>
-    );
+  if (!session || !isRegistered(session)) {
+    return <AccountSignInGate title="Account" allowSizes />;
   }
 
   try {
@@ -65,6 +58,9 @@ export default async function AccountPage() {
           </div>
 
           <div className={shopStyles.quickLinks}>
+            <Link className={shopStyles.chipLink} href="/account/size/policy">
+              Add sizes
+            </Link>
             <Link className={shopStyles.chipLink} href="/account/favorites">
               Fav Brands
             </Link>

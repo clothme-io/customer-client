@@ -2,7 +2,7 @@ import { AccountSignInGate } from "../../../components/AccountSignInGate";
 import { AccountSubHeader } from "../../../components/AccountSubHeader";
 import { OrderListView } from "../../../components/OrderListView";
 import { fetchOrders } from "../../../lib/commerce";
-import { getSession } from "../../../lib/session";
+import { getSession, isRegistered } from "../../../lib/session";
 import styles from "../../../webclient.module.css";
 
 export const metadata = {
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
   const session = await getSession();
-  if (!session) return <AccountSignInGate title="Orders" />;
+  if (!session || !isRegistered(session)) return <AccountSignInGate title="Orders" />;
 
   try {
     const orders = await fetchOrders(session);

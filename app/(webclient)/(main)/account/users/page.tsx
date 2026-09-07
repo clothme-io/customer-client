@@ -4,7 +4,7 @@ import { AccountSignInGate } from "../../../components/AccountSignInGate";
 import { AccountSubHeader } from "../../../components/AccountSubHeader";
 import { ChevronForwardIcon, PersonAddIcon } from "../../../components/Icons";
 import { fetchAccountProfile, householdMembers, personDisplayName } from "../../../lib/commerce";
-import { getSession } from "../../../lib/session";
+import { getSession, isRegistered } from "../../../lib/session";
 import styles from "../../../shop.module.css";
 import shell from "../../../webclient.module.css";
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountUsersPage() {
   const session = await getSession();
-  if (!session) return <AccountSignInGate title="Profiles" />;
+  if (!session || !isRegistered(session)) return <AccountSignInGate title="Profiles" />;
 
   try {
     const profile = await fetchAccountProfile(session);

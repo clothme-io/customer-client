@@ -3,7 +3,7 @@ import { AccountEmpty } from "../../../components/AccountEmpty";
 import { AccountSignInGate } from "../../../components/AccountSignInGate";
 import { AccountSubHeader } from "../../../components/AccountSubHeader";
 import { fetchFavouriteBrands } from "../../../lib/commerce";
-import { getSession } from "../../../lib/session";
+import { getSession, isRegistered } from "../../../lib/session";
 import styles from "../../../shop.module.css";
 import shell from "../../../webclient.module.css";
 
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function FavouriteBrandsPage() {
   const session = await getSession();
-  if (!session) return <AccountSignInGate title="Favourite Brands" />;
+  if (!session || !isRegistered(session)) return <AccountSignInGate title="Favourite Brands" />;
 
   try {
     const brands = await fetchFavouriteBrands(session);

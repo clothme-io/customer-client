@@ -21,7 +21,9 @@ export const MOCK_SESSION = {
   accessToken: "mock-access",
   refreshToken: "mock-refresh",
   accountId: "acc-mock",
-  personId: "person-maya"
+  personId: "person-maya",
+  authLevel: "registered" as const,
+  email: "maya@example.com"
 };
 
 export const MOCK_AVATARS: ShopUser[] = [
@@ -30,21 +32,36 @@ export const MOCK_AVATARS: ShopUser[] = [
     firstName: "Maya",
     lastName: "Chen",
     profileImage: img("photo-1534528741775-53994a69daeb", 240, 240),
-    isAccountOwner: true
+    isAccountOwner: true,
+    relationship: "self",
+    gender: "female",
+    dob: "1996-04-12",
+    topSize: "M",
+    bottomSize: "8"
   },
   {
     userId: "person-leo",
     firstName: "Leo",
     lastName: "Chen",
     profileImage: img("photo-1507003211169-0a1dd7228f2d", 240, 240),
-    isAccountOwner: false
+    isAccountOwner: false,
+    relationship: "child",
+    gender: "male",
+    dob: "2018-03-01",
+    topSize: "S",
+    bottomSize: "S"
   },
   {
     userId: "person-nina",
     firstName: "Nina",
     lastName: "Chen",
     profileImage: img("photo-1524504388940-b1c1722653e1", 240, 240),
-    isAccountOwner: false
+    isAccountOwner: false,
+    relationship: "child",
+    gender: "female",
+    dob: "2021-06-10",
+    topSize: "XS",
+    bottomSize: "XS"
   }
 ];
 
@@ -374,14 +391,17 @@ export const MOCK_PROFILE: AccountProfile = {
   city: "Vancouver",
   state: "BC",
   country: "Canada",
-  users: MOCK_AVATARS.map((person, index) => ({
+  users: MOCK_AVATARS.map((person) => ({
     userId: person.userId,
     firstName: person.firstName,
     lastName: person.lastName,
     profileAvatar: person.profileImage,
-    relationship: person.isAccountOwner ? "self" : index === 1 ? "partner" : "family",
-    gender: person.isAccountOwner || index === 2 ? "female" : "male",
-    city: index === 2 ? "Toronto" : "Vancouver"
+    relationship: person.relationship || (person.isAccountOwner ? "self" : "family"),
+    gender: person.gender,
+    city: person.userId === "person-nina" ? "Toronto" : "Vancouver",
+    dob: person.dob,
+    topSize: person.topSize,
+    bottomSize: person.bottomSize
   })),
   wishbags: {
     wishbagId: "wishbag-1",

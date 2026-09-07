@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { fetchShopAvatars, fetchShopData, shopCards } from "../../lib/catalog";
+import { fetchShopAvatars, fetchShopData, mergeShopProfiles, shopCards } from "../../lib/catalog";
+import { fetchAccountProfile } from "../../lib/commerce";
 import { getSession } from "../../lib/session";
 import { UserAvatarList } from "../../components/UserAvatarList";
 import { ShopItemCard } from "../../components/ShopItemCard";
@@ -20,12 +20,7 @@ export default async function ShopPage() {
     return (
       <section className={shopStyles.signInGate}>
         <h1 className={styles.pageTitle}>Shop</h1>
-        <p className={styles.muted}>Sign in to see your personalized feed and Fit Score.</p>
-        <p>
-          <Link className={styles.button} href="/login">
-            Log in
-          </Link>
-        </p>
+        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
       </section>
     );
   }
@@ -35,11 +30,12 @@ export default async function ShopPage() {
   let error = "";
 
   try {
-    const [avatarData, shopData] = await Promise.all([
+    const [avatarData, shopData, profile] = await Promise.all([
       fetchShopAvatars(session),
-      fetchShopData(session)
+      fetchShopData(session),
+      fetchAccountProfile(session).catch(() => null)
     ]);
-    avatars = Array.isArray(avatarData) ? avatarData : [];
+    avatars = mergeShopProfiles(Array.isArray(avatarData) ? avatarData : [], profile?.users);
     cards = shopCards(shopData);
   } catch (err) {
     error = err instanceof Error ? err.message : "Could not load Shop";

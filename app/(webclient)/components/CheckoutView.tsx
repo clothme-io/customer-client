@@ -134,12 +134,67 @@ function PayForm({
   );
 }
 
+function SignInInline({
+  email,
+  onEmail,
+  onDone,
+  onError
+}: {
+  email: string;
+  onEmail: (value: string) => void;
+  onDone: () => void;
+  onError: (message: string) => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    onError("");
+    try {
+      const response = await fetch("/api/webclient/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signin", email, password })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || "Sign in failed");
+      onDone();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Sign in failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className={styles.addressForm}>
+      <label className={shell.field}>
+        Email
+        <input type="email" value={email} onChange={(event) => onEmail(event.target.value)} required />
+      </label>
+      <label className={shell.field}>
+        Password
+        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+      </label>
+      <button className={shell.button} type="submit" disabled={busy}>
+        {busy ? "Signing in…" : "Sign in"}
+      </button>
+    </form>
+  );
+}
+
 export function CheckoutView({
   cart,
-  addresses
+  addresses,
+  contactEmail = "",
+  isRegistered = false
 }: {
   cart: CartData;
   addresses: AccountAddress[];
+  contactEmail?: string;
+  isRegistered?: boolean;
 }) {
   const router = useRouter();
   const items = cart.cartItems || [];
@@ -149,6 +204,10 @@ export function CheckoutView({
   const readyToShip = shippingComplete(cart);
   const defaultAddress = addresses.find((row) => row.isDefault) || addresses[0];
   const [addressId, setAddressId] = useState(defaultAddress?.addressId || "");
+  const [email, setEmail] = useState(contactEmail);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [session, setSession] = useState<CheckoutSession | null>(
     WEBCLIENT_MOCK
       ? {
@@ -173,14 +232,38 @@ export function CheckoutView({
       setError("Add a shipping address to continue.");
       return;
     }
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      setError("Add an email so we can send your receipt and track the order.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
+      if (!isRegistered && password.trim()) {
+        const auth = await fetch("/api/webclient/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "signup", email: trimmedEmail, password: password.trim() })
+        });
+        const authBody = await auth.json().catch(() => ({}));
+        if (!auth.ok) throw new Error(authBody.message || "Could not create account");
+      } else if (!isRegistered) {
+        const attached = await fetch("/api/webclient/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "attachEmail", email: trimmedEmail })
+        });
+        const attachedBody = await attached.json().catch(() => ({}));
+        if (!attached.ok) throw new Error(attachedBody.message || "Could not save email");
+      }
+
       const result = await postAction({
         action: "initCheckout",
         useCredits: false,
         shippingAddressId: addressId,
-        billingAddressId: addressId
+        billingAddressId: addressId,
+        email: trimmedEmail
       });
       const next: CheckoutSession = {
         clientSecret: result.clientSecret,
@@ -332,12 +415,72 @@ export function CheckoutView({
 
       {error ? <p className={shell.error}>{error}</p> : null}
 
+      <h2 className={styles.sectionLabel}>Order contact</h2>
+      <p className={shell.muted} style={{ margin: "0 0 12px" }}>
+        We need an email to send your receipt and let you track this order.
+      </p>
+      <label className={shell.field}>
+        Email
+        <input
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          readOnly={isRegistered}
+          required
+        />
+      </label>
+      {!isRegistered ? (
+        <>
+          <button
+            type="button"
+            className={`${shell.button} ${shell.ghostButton}`}
+            onClick={() => setShowPassword((open) => !open)}
+          >
+            {showPassword ? "Skip account for now" : "Create an account (optional)"}
+          </button>
+          {showPassword ? (
+            <>
+              <p className={shell.muted} style={{ margin: "8px 0 12px" }}>
+                Add a password to open this order and your sizes in the ClothME app.
+              </p>
+              <label className={shell.field}>
+                Password
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  minLength={8}
+                />
+              </label>
+            </>
+          ) : null}
+          <p className={shell.muted} style={{ margin: "8px 0 16px" }}>
+            Already have an account?{" "}
+            <button type="button" className={styles.locationCount} onClick={() => setShowSignIn((open) => !open)}>
+              Sign in
+            </button>
+          </p>
+          {showSignIn ? (
+            <SignInInline
+              email={email}
+              onEmail={setEmail}
+              onDone={() => {
+                router.refresh();
+              }}
+              onError={setError}
+            />
+          ) : null}
+        </>
+      ) : null}
+
       {!session ? (
         <button
           type="button"
           className={shell.button}
           style={{ width: "100%", marginTop: 20 }}
-          disabled={busy || !addressId}
+          disabled={busy || !addressId || !email.trim()}
           onClick={startPayment}
         >
           {busy ? "Starting checkout…" : "Continue to payment"}

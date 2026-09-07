@@ -5,6 +5,11 @@ export type ShopUser = {
   profileImage: string;
   isAccountOwner: boolean;
   updatedAt?: string;
+  relationship?: string;
+  gender?: string;
+  dob?: string;
+  topSize?: string;
+  bottomSize?: string;
 };
 
 export type ShopFitVariant = {
@@ -208,6 +213,10 @@ export type AccountPerson = {
   relationship: string;
   gender?: string;
   city?: string;
+  dob?: string;
+  height?: number;
+  topSize?: string;
+  bottomSize?: string;
 };
 
 export type FavouriteBrandListItem = {
