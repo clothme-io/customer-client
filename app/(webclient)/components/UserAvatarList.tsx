@@ -18,69 +18,69 @@ export function UserAvatarList({
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const node = scrollerRef.current;
-    if (!node) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
     let pointerId: number | null = null;
     let startX = 0;
     let startScroll = 0;
     let dragged = false;
 
-    node.scrollLeft = 0;
+    scroller.scrollLeft = 0;
 
-    function onWheel(event: WheelEvent) {
+    const onWheel = (event: WheelEvent) => {
       const delta = event.deltaY + event.deltaX;
       if (!delta) return;
       event.preventDefault();
-      node.scrollLeft += delta;
-    }
+      scroller.scrollLeft += delta;
+    };
 
-    function onPointerDown(event: PointerEvent) {
+    const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
       pointerId = event.pointerId;
       startX = event.clientX;
-      startScroll = node.scrollLeft;
+      startScroll = scroller.scrollLeft;
       dragged = false;
-      node.setPointerCapture(event.pointerId);
-    }
+      scroller.setPointerCapture(event.pointerId);
+    };
 
-    function onPointerMove(event: PointerEvent) {
+    const onPointerMove = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
       const dx = event.clientX - startX;
       if (Math.abs(dx) < 4) return;
       dragged = true;
-      node.scrollLeft = startScroll - dx;
-    }
+      scroller.scrollLeft = startScroll - dx;
+    };
 
-    function onPointerUp(event: PointerEvent) {
+    const onPointerUp = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
       pointerId = null;
       if (dragged) {
-        node.dataset.dragged = "1";
+        scroller.dataset.dragged = "1";
         window.setTimeout(() => {
-          delete node.dataset.dragged;
+          delete scroller.dataset.dragged;
         }, 0);
       }
-    }
+    };
 
-    function onClickCapture(event: MouseEvent) {
-      if (!node.dataset.dragged) return;
+    const onClickCapture = (event: MouseEvent) => {
+      if (!scroller.dataset.dragged) return;
       event.preventDefault();
       event.stopPropagation();
-    }
+    };
 
-    node.addEventListener("wheel", onWheel, { passive: false });
-    node.addEventListener("pointerdown", onPointerDown);
-    node.addEventListener("pointermove", onPointerMove);
-    node.addEventListener("pointerup", onPointerUp);
-    node.addEventListener("pointercancel", onPointerUp);
-    node.addEventListener("click", onClickCapture, true);
+    scroller.addEventListener("wheel", onWheel, { passive: false });
+    scroller.addEventListener("pointerdown", onPointerDown);
+    scroller.addEventListener("pointermove", onPointerMove);
+    scroller.addEventListener("pointerup", onPointerUp);
+    scroller.addEventListener("pointercancel", onPointerUp);
+    scroller.addEventListener("click", onClickCapture, true);
     return () => {
-      node.removeEventListener("wheel", onWheel);
-      node.removeEventListener("pointerdown", onPointerDown);
-      node.removeEventListener("pointermove", onPointerMove);
-      node.removeEventListener("pointerup", onPointerUp);
-      node.removeEventListener("pointercancel", onPointerUp);
-      node.removeEventListener("click", onClickCapture, true);
+      scroller.removeEventListener("wheel", onWheel);
+      scroller.removeEventListener("pointerdown", onPointerDown);
+      scroller.removeEventListener("pointermove", onPointerMove);
+      scroller.removeEventListener("pointerup", onPointerUp);
+      scroller.removeEventListener("pointercancel", onPointerUp);
+      scroller.removeEventListener("click", onClickCapture, true);
     };
   }, []);
 
