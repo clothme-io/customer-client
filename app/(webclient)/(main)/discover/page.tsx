@@ -18,10 +18,7 @@ export default async function DiscoverPage() {
     return (
       <section className={shopStyles.signInGate}>
         <h1 className={styles.pageTitle}>Discover</h1>
-        <p className={styles.muted}>Sign in to browse brands matched to your profiles.</p>
-        <Link className={styles.button} href="/login">
-          Log in
-        </Link>
+        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
       </section>
     );
   }

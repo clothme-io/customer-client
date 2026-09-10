@@ -345,9 +345,10 @@ jobs:
             echo "Job $JOB already Complete with $EXPECTED — skip apply"
             exit 0
           fi
+          SCHEDULED=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.conditions[?(@.type=="PodScheduled")].status}' 2>/dev/null || true)
           if kubectl -n apps get job "$JOB" >/dev/null 2>&1; then
-            if [ "$FAILED" = "True" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
-              echo "Deleting Job $JOB (failed=$FAILED image=$IMAGE) before recreate"
+            if [ "$FAILED" = "True" ] || [ "$SCHEDULED" = "False" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
+              echo "Deleting Job $JOB (failed=$FAILED scheduled=$SCHEDULED image=$IMAGE) before recreate"
               kubectl -n apps delete job "$JOB" --wait=true
             else
               echo "Job $JOB already exists (image=$IMAGE) — skip apply (pod template immutable)"
@@ -368,10 +369,18 @@ jobs:
             PHASE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || true)
             FAILED=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)
             IMAGE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
-            echo "Attempt $i: job=$JOB image=$IMAGE complete=$PHASE failed=$FAILED"
+            POD_PHASE=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
+            SCHEDULED=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.conditions[?(@.type=="PodScheduled")].status}' 2>/dev/null || true)
+            echo "Attempt $i: job=$JOB image=$IMAGE complete=$PHASE failed=$FAILED pod=$POD_PHASE scheduled=$SCHEDULED"
             if [ "$FAILED" = "True" ]; then
               echo "::error::Migrate Job $JOB Failed"
               kubectl -n apps logs "job/$JOB" --tail=80 || true
+              kubectl -n apps describe pods -l job-name="$JOB" || true
+              exit 1
+            fi
+            if [ "$SCHEDULED" = "False" ] && [ "$i" -ge 6 ]; then
+              echo "::error::Migrate pod for $JOB is unschedulable"
+              kubectl -n apps describe pods -l job-name="$JOB" || true
               exit 1
             fi
             if [ "$PHASE" = "True" ] && [ "$IMAGE" = "$EXPECTED" ]; then
@@ -382,6 +391,7 @@ jobs:
           done
           echo "::error::Timed out waiting for Completed Job $JOB ($EXPECTED)"
           kubectl -n apps get job "$JOB" -o yaml || true
+          kubectl -n apps describe pods -l job-name="$JOB" || true
           exit 1
 
   bump-dev:
@@ -729,9 +739,10 @@ jobs:
             echo "Job $JOB already Complete with $EXPECTED — skip apply"
             exit 0
           fi
+          SCHEDULED=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.conditions[?(@.type=="PodScheduled")].status}' 2>/dev/null || true)
           if kubectl -n apps get job "$JOB" >/dev/null 2>&1; then
-            if [ "$FAILED" = "True" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
-              echo "Deleting Job $JOB (failed=$FAILED image=$IMAGE) before recreate"
+            if [ "$FAILED" = "True" ] || [ "$SCHEDULED" = "False" ] || { [ -n "$IMAGE" ] && [ "$IMAGE" != "$EXPECTED" ]; }; then
+              echo "Deleting Job $JOB (failed=$FAILED scheduled=$SCHEDULED image=$IMAGE) before recreate"
               kubectl -n apps delete job "$JOB" --wait=true
             else
               echo "Job $JOB already exists (image=$IMAGE) — skip apply (pod template immutable)"
@@ -752,10 +763,18 @@ jobs:
             PHASE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || true)
             FAILED=$(kubectl -n apps get job "$JOB" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)
             IMAGE=$(kubectl -n apps get job "$JOB" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
-            echo "Attempt $i: job=$JOB image=$IMAGE complete=$PHASE failed=$FAILED"
+            POD_PHASE=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.phase}' 2>/dev/null || true)
+            SCHEDULED=$(kubectl -n apps get pods -l job-name="$JOB" -o jsonpath='{.items[0].status.conditions[?(@.type=="PodScheduled")].status}' 2>/dev/null || true)
+            echo "Attempt $i: job=$JOB image=$IMAGE complete=$PHASE failed=$FAILED pod=$POD_PHASE scheduled=$SCHEDULED"
             if [ "$FAILED" = "True" ]; then
               echo "::error::Migrate Job $JOB Failed"
               kubectl -n apps logs "job/$JOB" --tail=80 || true
+              kubectl -n apps describe pods -l job-name="$JOB" || true
+              exit 1
+            fi
+            if [ "$SCHEDULED" = "False" ] && [ "$i" -ge 6 ]; then
+              echo "::error::Migrate pod for $JOB is unschedulable"
+              kubectl -n apps describe pods -l job-name="$JOB" || true
               exit 1
             fi
             if [ "$PHASE" = "True" ] && [ "$IMAGE" = "$EXPECTED" ]; then
@@ -766,6 +785,7 @@ jobs:
           done
           echo "::error::Timed out waiting for Completed Job $JOB ($EXPECTED)"
           kubectl -n apps get job "$JOB" -o yaml || true
+          kubectl -n apps describe pods -l job-name="$JOB" || true
           exit 1
 
   bump-prod:

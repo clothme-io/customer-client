@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { getSession } from "../../lib/session";
-import { fetchAccountProfile } from "../../lib/commerce";
+import { getSession, isRegistered } from "../../lib/session";
+import { fetchAccountProfile, householdMembers } from "../../lib/commerce";
 import { PencilIcon, PersonAddIcon } from "../../components/Icons";
+import { AccountSignInGate } from "../../components/AccountSignInGate";
 import styles from "../../webclient.module.css";
 import shopStyles from "../../shop.module.css";
 
@@ -15,16 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function AccountPage() {
   const session = await getSession();
 
-  if (!session) {
-    return (
-      <section className={shopStyles.signInGate}>
-        <h1 className={styles.pageTitle}>Account</h1>
-        <p className={styles.muted}>Sign in to manage profiles, Wishbag, Wardrobe, and orders.</p>
-        <Link className={styles.button} href="/login">
-          Log in
-        </Link>
-      </section>
-    );
+  if (!session || !isRegistered(session)) {
+    return <AccountSignInGate title="Account" allowSizes />;
   }
 
   try {
@@ -34,7 +27,7 @@ export default async function AccountPage() {
     const wishItems = profile.wishbags?.wishbagItems ?? [];
     const brands = profile.favoriteBrands ?? [];
     const people = profile.users ?? [];
-    const userCount = people.length;
+    const userCount = householdMembers(profile).length;
 
     return (
       <section>
@@ -54,24 +47,27 @@ export default async function AccountPage() {
           {location ? <p className={shopStyles.profileLocation}>{location}</p> : null}
 
           <div className={shopStyles.statsRow}>
-            <Link className={shopStyles.statsButton} href="#profiles">
+            <Link className={shopStyles.statsButton} href="/account/users">
               Users
               <span className={shopStyles.statsBadge}>{userCount}</span>
             </Link>
-            <Link className={shopStyles.statsButton} href="#profiles">
+            <Link className={shopStyles.statsButton} href="/account/users/new">
               Add User
               <PersonAddIcon />
             </Link>
           </div>
 
           <div className={shopStyles.quickLinks}>
-            <Link className={shopStyles.chipLink} href="#favorite-brands">
+            <Link className={shopStyles.chipLink} href="/account/size/policy">
+              Add sizes
+            </Link>
+            <Link className={shopStyles.chipLink} href="/account/favorites">
               Fav Brands
             </Link>
-            <Link className={shopStyles.chipLink} href="#wishbag">
+            <Link className={shopStyles.chipLink} href="/account/orders">
               Orders
             </Link>
-            <Link className={shopStyles.chipLink} href="#wishbag">
+            <Link className={shopStyles.chipLink} href="/account/wishbag">
               Wish Bag
             </Link>
           </div>

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../../webclient.module.css";
 
 export function LoginForm() {
   const router = useRouter();
+  const search = useSearchParams();
+  const next = search?.get("next") || "/shop";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,14 +21,14 @@ export function LoginForm() {
       const response = await fetch("/api/webclient/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ action: "signin", email, password })
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         setError(body.message || "Sign in failed");
         return;
       }
-      router.replace("/shop");
+      router.replace(next.startsWith("/") ? next : "/shop");
       router.refresh();
     } catch {
       setError("Sign in failed. Please try again.");
@@ -39,7 +41,7 @@ export function LoginForm() {
     <form className={styles.authCard} onSubmit={onSubmit}>
       <h1>Log in</h1>
       <p className={styles.muted} style={{ textAlign: "center", marginBottom: 24 }}>
-        Use your ClothME account to shop with Fit Score.
+        Use your ClothME account to pick up orders and sizes on the web and in the app.
       </p>
       {error ? <p className={styles.error}>{error}</p> : null}
       <div className={styles.field}>

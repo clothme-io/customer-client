@@ -146,7 +146,8 @@ export async function POST(request: Request) {
         body: {
           useCredits: Boolean(body.useCredits),
           shippingAddressId: body.shippingAddressId,
-          billingAddressId: body.billingAddressId || body.shippingAddressId
+          billingAddressId: body.billingAddressId || body.shippingAddressId,
+          ...(body.email ? { email: String(body.email) } : {})
         }
       });
       return NextResponse.json(result);
