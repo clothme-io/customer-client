@@ -18,6 +18,17 @@ const META_CUSTOM = {
   size_tool_result: "SizeToolResult"
 };
 
+const POSTHOG_ALLOWED_HOSTS = (process.env.NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS || "clothme.io,www.clothme.io")
+  .split(",")
+  .map((host) => host.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAllowedAnalyticsHost() {
+  if (typeof window === "undefined") return false;
+
+  return POSTHOG_ALLOWED_HOSTS.includes(window.location.hostname.toLowerCase());
+}
+
 function fireMeta(eventName) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") return;
 
@@ -43,7 +54,7 @@ export function track(eventName, properties = {}) {
     ...properties,
   };
 
-  if (payload.environment !== "production") return;
+  if (payload.environment !== "production" || !isAllowedAnalyticsHost()) return;
 
   if (window.posthog && typeof window.posthog.capture === "function") {
     window.posthog.capture(eventName, payload);
