@@ -9,6 +9,8 @@ export const siteConfig = {
     gaId: process.env.NEXT_PUBLIC_GA_ID || process.env.VITE_GA_ID || "G-8H7MC8EYN1",
     gtmId: process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID || "",
     plausibleDomain: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || process.env.VITE_PLAUSIBLE_DOMAIN || "",
+    posthogKey: process.env.NEXT_PUBLIC_POSTHOG_KEY || "",
+    posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     metaPixelId:
       process.env.NEXT_PUBLIC_META_PIXEL_ID ||
       process.env.VITE_META_PIXEL_ID ||

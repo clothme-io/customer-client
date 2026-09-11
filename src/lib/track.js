@@ -37,16 +37,28 @@ function fireMeta(eventName) {
 export function track(eventName, properties = {}) {
   if (typeof window === "undefined") return;
 
+  const payload = {
+    app: "clothme_customer_web",
+    environment: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "development",
+    ...properties,
+  };
+
+  if (payload.environment !== "production") return;
+
+  if (window.posthog && typeof window.posthog.capture === "function") {
+    window.posthog.capture(eventName, payload);
+  }
+
   if (typeof window.gtag === "function") {
-    window.gtag("event", eventName, properties);
+    window.gtag("event", eventName, payload);
   }
 
   if (typeof window.plausible === "function") {
-    window.plausible(eventName, { props: properties });
+    window.plausible(eventName, { props: payload });
   }
 
   if (Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({ event: eventName, ...properties });
+    window.dataLayer.push({ event: eventName, ...payload });
   }
 
   fireMeta(eventName);
