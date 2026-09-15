@@ -713,14 +713,21 @@ jobs:
           sudo mv kubectl /usr/local/bin/kubectl
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
-          if [ -z "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" ]; then
+          if [ -z "$PROD_KUBECONFIG" ]; then
             echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
             exit 1
           fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get jobs.batch -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production jobs.batch. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       # Jobs are not reliably synced onto the cluster by Argo; apply from CI.
       - uses: actions/checkout@v4
@@ -853,14 +860,21 @@ jobs:
           sudo mv kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
-          if [ -z "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" ]; then
+          if [ -z "$PROD_KUBECONFIG" ]; then
             echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
             exit 1
           fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get rollouts.argoproj.io -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production rollouts.argoproj.io. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       # App Rollouts are not reliably synced onto the cluster by Argo; apply from CI.
       - uses: actions/checkout@v4
@@ -982,10 +996,21 @@ jobs:
           sudo mv kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
+          if [ -z "$PROD_KUBECONFIG" ]; then
+            echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
+            exit 1
+          fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get rollouts.argoproj.io -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production rollouts.argoproj.io. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       - name: Promote rollout
         run: |
@@ -1068,10 +1093,21 @@ jobs:
           sudo mv kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
+          if [ -z "$PROD_KUBECONFIG" ]; then
+            echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
+            exit 1
+          fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get rollouts.argoproj.io -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production rollouts.argoproj.io. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       - name: Undo rollout (fast rollback)
         run: |
@@ -1145,10 +1181,21 @@ jobs:
           sudo mv kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
+          if [ -z "$PROD_KUBECONFIG" ]; then
+            echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
+            exit 1
+          fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get rollouts.argoproj.io -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production rollouts.argoproj.io. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       - name: Wait for git rollback rollout
         run: |
@@ -1171,10 +1218,21 @@ jobs:
           sudo mv kubectl-argo-rollouts /usr/local/bin/kubectl-argo-rollouts
 
       - name: Configure prod kubeconfig
+        env:
+          PROD_KUBECONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
         run: |
+          if [ -z "$PROD_KUBECONFIG" ]; then
+            echo "::error::Set repository secret CLOTHME_PROD_KUBECONFIG (clothme-prod kubeconfig)."
+            exit 1
+          fi
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.CLOTHME_PROD_KUBECONFIG }}" > "$HOME/.kube/config"
+          umask 077
+          printf '%s' "$PROD_KUBECONFIG" > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          if ! kubectl --request-timeout=20s get rollouts.argoproj.io -n "${{ env.ROLLOUT_NAMESPACE }}" -o name; then
+            echo "::error::Cannot read production rollouts.argoproj.io. Check CLOTHME_PROD_KUBECONFIG credentials, Rancher access, and connectivity before retrying."
+            exit 1
+          fi
 
       - name: Confirm rollout healthy after fast rollback
         run: |
