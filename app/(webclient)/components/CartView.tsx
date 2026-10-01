@@ -1,10 +1,16 @@
 "use client";
 
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CartData, CartItem } from "../lib/types";
-import { cartVendorSections, shippingComplete, shippingTotal } from "../lib/cart-utils";
+import {
+  cartVendorSections,
+  shippingComplete,
+  shippingTotal,
+} from "../lib/cart-utils";
 import { VendorShippingSelector } from "./VendorShippingSelector";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
@@ -13,20 +19,22 @@ async function updateQty(cartItemId: string, quantity: number) {
   const response = await fetch("/api/webclient/action", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "updateCartItem", cartItemId, quantity })
+    body: JSON.stringify({ action: "updateCartItem", cartItemId, quantity }),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || "Could not update cart");
 }
 
 function money(symbol: string, amount: number) {
-  return `${symbol}${Number(amount || 0).toFixed(2).replace(/\.00$/, "")}`;
+  return `${symbol}${Number(amount || 0)
+    .toFixed(2)
+    .replace(/\.00$/, "")}`;
 }
 
 function CartProduct({
   item,
   symbol,
-  onQty
+  onQty,
 }: {
   item: CartItem;
   symbol: string;
@@ -49,11 +57,19 @@ function CartProduct({
         </p>
       </div>
       <div className={styles.qty}>
-        <button type="button" onClick={() => onQty(item.cartItemId, item.productQuantity - 1)} aria-label="Decrease">
+        <button
+          type="button"
+          onClick={() => onQty(item.cartItemId, item.productQuantity - 1)}
+          aria-label="Decrease"
+        >
           −
         </button>
         <span>{item.productQuantity}</span>
-        <button type="button" onClick={() => onQty(item.cartItemId, item.productQuantity + 1)} aria-label="Increase">
+        <button
+          type="button"
+          onClick={() => onQty(item.cartItemId, item.productQuantity + 1)}
+          aria-label="Increase"
+        >
           +
         </button>
       </div>
@@ -92,46 +108,60 @@ export function CartView({ cart }: { cart: CartData }) {
           Cart
         </h1>
         {sections.map((section) => {
-        const shipping = cart.vendorShipping?.find((row) => row.vendorId === section.vendorId);
-        const itemsTotal = section.items.reduce(
-          (sum, item) => sum + item.productAmount * item.productQuantity,
-          0
-        );
-        const shippingAmount = shipping?.shippingAmount ?? 0;
-        const sectionTotal = itemsTotal + shippingAmount;
+          const shipping = cart.vendorShipping?.find(
+            (row) => row.vendorId === section.vendorId,
+          );
+          const itemsTotal = section.items.reduce(
+            (sum, item) => sum + item.productAmount * item.productQuantity,
+            0,
+          );
+          const shippingAmount = shipping?.shippingAmount ?? 0;
+          const sectionTotal = itemsTotal + shippingAmount;
 
-        return (
-          <section key={section.vendorId || section.brandName} className={styles.cartSection}>
-            {section.items.map((item) => (
-              <CartProduct key={item.cartItemId} item={item} symbol={symbol} onQty={changeQty} />
-            ))}
+          return (
+            <section
+              key={section.vendorId || section.brandName}
+              className={styles.cartSection}
+            >
+              {section.items.map((item) => (
+                <CartProduct
+                  key={item.cartItemId}
+                  item={item}
+                  symbol={symbol}
+                  onQty={changeQty}
+                />
+              ))}
 
-            {section.vendorId ? (
-              <VendorShippingSelector
-                vendorId={section.vendorId}
-                brandId={section.brandId}
-                brandName={section.brandName}
-                selected={shipping}
-              />
-            ) : null}
+              {section.vendorId ? (
+                <VendorShippingSelector
+                  vendorId={section.vendorId}
+                  brandId={section.brandId}
+                  brandName={section.brandName}
+                  selected={shipping}
+                />
+              ) : null}
 
-            <div className={styles.sectionTotal}>
-              <div className={styles.summaryRow}>
-                <span>Items</span>
-                <span>{money(symbol, itemsTotal)}</span>
+              <div className={styles.sectionTotal}>
+                <div className={styles.summaryRow}>
+                  <span>Items</span>
+                  <span>{money(symbol, itemsTotal)}</span>
+                </div>
+                <div className={styles.summaryRow}>
+                  <span>Shipping</span>
+                  <span>
+                    {shippingAmount === 0
+                      ? "Free"
+                      : money(symbol, shippingAmount)}
+                  </span>
+                </div>
+                <div className={styles.summaryRow}>
+                  <strong>{section.brandName} total</strong>
+                  <strong>{money(symbol, sectionTotal)}</strong>
+                </div>
               </div>
-              <div className={styles.summaryRow}>
-                <span>Shipping</span>
-                <span>{shippingAmount === 0 ? "Free" : money(symbol, shippingAmount)}</span>
-              </div>
-              <div className={styles.summaryRow}>
-                <strong>{section.brandName} total</strong>
-                <strong>{money(symbol, sectionTotal)}</strong>
-              </div>
-            </div>
-          </section>
-        );
-      })}
+            </section>
+          );
+        })}
       </div>
 
       <div className={styles.summary}>
@@ -170,11 +200,20 @@ export function CartView({ cart }: { cart: CartData }) {
           </strong>
         </div>
         {canCheckout ? (
-          <Link className={shell.button} href="/checkout" style={{ width: "100%", marginTop: 12 }}>
+          <Link
+            className={shell.button}
+            href="/checkout"
+            style={{ width: "100%", marginTop: 12 }}
+          >
             Checkout
           </Link>
         ) : (
-          <button type="button" className={shell.button} disabled style={{ width: "100%", marginTop: 12 }}>
+          <button
+            type="button"
+            className={shell.button}
+            disabled
+            style={{ width: "100%", marginTop: 12 }}
+          >
             Checkout
           </button>
         )}

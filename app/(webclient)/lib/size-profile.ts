@@ -16,6 +16,8 @@ export type SizePhotos = {
   side: string;
   frontTask: string;
   sideTask: string;
+  frontReceipt: string;
+  sideReceipt: string;
   profile: SizeProfile;
 };
 
@@ -27,34 +29,27 @@ export function emptySizeProfile(): SizeProfile {
     weight: "",
     city: "",
     country: "",
-    provinceState: ""
+    provinceState: "",
   };
+}
+
+function profileKey() {
+  return `${SIZE_PROFILE_KEY}:${sessionStorage.getItem("cm_size_scope") || "unscoped"}`;
 }
 
 export function loadSizeProfile(): SizeProfile {
   try {
-    return { ...emptySizeProfile(), ...JSON.parse(sessionStorage.getItem(SIZE_PROFILE_KEY) || "{}") };
+    return {
+      ...emptySizeProfile(),
+      ...JSON.parse(sessionStorage.getItem(profileKey()) || "{}"),
+    };
   } catch {
     return emptySizeProfile();
   }
 }
 
 export function saveSizeProfile(profile: SizeProfile) {
-  sessionStorage.setItem(SIZE_PROFILE_KEY, JSON.stringify(profile));
-}
-
-export function loadSizePhotos(): SizePhotos | null {
-  try {
-    const raw = sessionStorage.getItem(SIZE_PHOTOS_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SizePhotos;
-    return {
-      ...parsed,
-      profile: { ...emptySizeProfile(), ...(parsed.profile || {}) }
-    };
-  } catch {
-    return null;
-  }
+  sessionStorage.setItem(profileKey(), JSON.stringify(profile));
 }
 
 export function dataUrlToBlob(dataUrl: string) {

@@ -2,8 +2,11 @@ import { useEffect } from "react";
 import posthog from "posthog-js";
 import { siteConfig } from "../data/site";
 
-const APP_ENV = process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "development";
-const POSTHOG_ALLOWED_HOSTS = (process.env.NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS || "clothme.io,www.clothme.io")
+const APP_ENV =
+  process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "development";
+const POSTHOG_ALLOWED_HOSTS = (
+  process.env.NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS || "clothme.io,www.clothme.io"
+)
   .split(",")
   .map((host) => host.trim().toLowerCase())
   .filter(Boolean);
@@ -14,15 +17,19 @@ function isAllowedAnalyticsHost() {
   return POSTHOG_ALLOWED_HOSTS.includes(window.location.hostname.toLowerCase());
 }
 
-export function Analytics() {
+export function Analytics({ privacyMode = false }) {
   useEffect(() => {
-    const { gaId, gtmId, plausibleDomain, posthogKey, posthogHost } = siteConfig.analytics;
-    const isProductionAnalytics = APP_ENV === "production" && isAllowedAnalyticsHost();
+    const { gaId, gtmId, plausibleDomain, posthogKey, posthogHost } =
+      siteConfig.analytics;
+    const isProductionAnalytics =
+      APP_ENV === "production" && isAllowedAnalyticsHost();
 
     if (isProductionAnalytics && posthogKey && !posthog.__loaded) {
       posthog.init(posthogKey, {
         api_host: posthogHost,
-        capture_pageview: true,
+        capture_pageview: !privacyMode,
+        autocapture: !privacyMode,
+        disable_session_recording: privacyMode,
         loaded: (client) => {
           client.register({
             app: "clothme_customer_web",
@@ -33,7 +40,19 @@ export function Analytics() {
       window.posthog = posthog;
     }
 
-    if (isProductionAnalytics && gaId && !document.querySelector(`script[src*="${gaId}"]`)) {
+    if (isProductionAnalytics && privacyMode && posthog.__loaded) {
+      posthog.set_config({
+        autocapture: false,
+        capture_pageview: false,
+        disable_session_recording: true,
+      });
+      posthog.stopSessionRecording();
+    }
+    if (
+      isProductionAnalytics &&
+      gaId &&
+      !document.querySelector(`script[src*="${gaId}"]`)
+    ) {
       const gtagScript = document.createElement("script");
       gtagScript.async = true;
       gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
@@ -49,7 +68,11 @@ export function Analytics() {
       document.head.appendChild(configScript);
     }
 
-    if (isProductionAnalytics && gtmId && !document.querySelector(`script[data-gtm-id="${gtmId}"]`)) {
+    if (
+      isProductionAnalytics &&
+      gtmId &&
+      !document.querySelector(`script[data-gtm-id="${gtmId}"]`)
+    ) {
       const gtmScript = document.createElement("script");
       gtmScript.dataset.gtmId = gtmId;
       gtmScript.textContent = `
@@ -62,14 +85,18 @@ export function Analytics() {
       document.head.appendChild(gtmScript);
     }
 
-    if (isProductionAnalytics && plausibleDomain && !document.querySelector(`script[data-domain="${plausibleDomain}"]`)) {
+    if (
+      isProductionAnalytics &&
+      plausibleDomain &&
+      !document.querySelector(`script[data-domain="${plausibleDomain}"]`)
+    ) {
       const plausibleScript = document.createElement("script");
       plausibleScript.defer = true;
       plausibleScript.dataset.domain = plausibleDomain;
       plausibleScript.src = "https://plausible.io/js/script.js";
       document.head.appendChild(plausibleScript);
     }
-  }, []);
+  }, [privacyMode]);
 
   return null;
 }

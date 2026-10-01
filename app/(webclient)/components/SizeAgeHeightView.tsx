@@ -2,15 +2,21 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { sizeIdentity } from "../lib/size-flow";
 import { AccountSubHeader } from "./AccountSubHeader";
-import { emptySizeProfile, loadSizeProfile, saveSizeProfile, type SizeProfile } from "../lib/size-profile";
+import {
+  emptySizeProfile,
+  loadSizeProfile,
+  saveSizeProfile,
+  type SizeProfile,
+} from "../lib/size-profile";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
 export function SizeAgeHeightView({
   city = "",
   country = "",
-  provinceState = ""
+  provinceState = "",
 }: {
   city?: string;
   country?: string;
@@ -21,14 +27,24 @@ export function SizeAgeHeightView({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const saved = loadSizeProfile();
-    setProfile({
-      ...emptySizeProfile(),
-      ...saved,
-      city: saved.city || city,
-      country: saved.country || country,
-      provinceState: saved.provinceState || provinceState
-    });
+    let cancelled = false;
+    sizeIdentity()
+      .then((key) => {
+        if (cancelled) return;
+        sessionStorage.setItem("cm_size_scope", key);
+        const saved = loadSizeProfile();
+        setProfile({
+          ...emptySizeProfile(),
+          ...saved,
+          city: saved.city || city,
+          country: saved.country || country,
+          provinceState: saved.provinceState || provinceState,
+        });
+      })
+      .catch((err) => setError(err.message));
+    return () => {
+      cancelled = true;
+    };
   }, [city, country, provinceState]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -37,7 +53,13 @@ export function SizeAgeHeightView({
     const dob = String(form.get("dob") || "");
     const height = String(form.get("height") || "").trim();
     const gender = String(form.get("gender") || "");
-    if (!dob || !height || !gender) {
+    if (
+      !dob ||
+      !height ||
+      !gender ||
+      !Number.isFinite(Date.parse(dob)) ||
+      Date.parse(dob) > Date.now()
+    ) {
       setError("Date of birth, height, and gender are required.");
       return;
     }
@@ -52,8 +74,8 @@ export function SizeAgeHeightView({
       gender,
       weight: String(form.get("weight") || "").trim(),
       city: String(form.get("city") || city).trim(),
-      country: String(form.get("country") || country || "Canada").trim(),
-      provinceState: String(form.get("provinceState") || provinceState).trim()
+      country: String(form.get("country") || country).trim(),
+      provinceState: String(form.get("provinceState") || provinceState).trim(),
     });
     router.push("/account/size/capture");
   }
@@ -61,20 +83,36 @@ export function SizeAgeHeightView({
   return (
     <section>
       <AccountSubHeader title="Age & height" backHref="/account/size/policy" />
+      {!profile && error ? <p className={shell.error}>{error}</p> : null}
       {profile ? (
         <form className={styles.sizeCopy} onSubmit={onSubmit}>
-          <p className={shell.muted}>We use this with your photos to calculate clothing sizes.</p>
+          <p className={shell.muted}>
+            We use this with your photos to calculate clothing sizes.
+          </p>
           <label className={shell.field}>
             Date of birth
             <input name="dob" type="date" required defaultValue={profile.dob} />
           </label>
           <label className={shell.field}>
             Height (cm)
-            <input name="height" type="number" min={80} max={250} step={1} required defaultValue={profile.height} />
+            <input
+              name="height"
+              type="number"
+              min={80}
+              max={250}
+              step={1}
+              required
+              defaultValue={profile.height}
+            />
           </label>
           <label className={shell.field}>
             Gender
-            <select name="gender" required defaultValue={profile.gender || ""} className={styles.sizeSelect}>
+            <select
+              name="gender"
+              required
+              defaultValue={profile.gender || ""}
+              className={styles.sizeSelect}
+            >
               <option value="" disabled>
                 Select
               </option>
@@ -84,13 +122,59 @@ export function SizeAgeHeightView({
           </label>
           <label className={shell.field}>
             Weight (kg, optional)
-            <input name="weight" type="number" min={20} max={250} step={0.1} defaultValue={profile.weight} />
+            <input
+              name="weight"
+              type="number"
+              min={20}
+              max={250}
+              step={0.1}
+              defaultValue={profile.weight}
+            />
           </label>
-          <input type="hidden" name="city" defaultValue={profile.city || city} />
-          <input type="hidden" name="country" defaultValue={profile.country || country} />
-          <input type="hidden" name="provinceState" defaultValue={profile.provinceState || provinceState} />
+          <label className={shell.field}>
+            Country
+            <select
+              name="country"
+              required
+              defaultValue={profile.country || country}
+            >
+              <option value="">Select country</option>
+              {[
+                "Canada",
+                "United States",
+                "United Kingdom",
+                "Australia",
+                "France",
+                "Germany",
+              ].map((value) => (
+                <option key={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          <label className={shell.field}>
+            Province / state{" "}
+            <input
+              name="provinceState"
+              required
+              defaultValue={profile.provinceState || provinceState}
+              autoComplete="address-level1"
+            />
+          </label>
+          <label className={shell.field}>
+            City{" "}
+            <input
+              name="city"
+              required
+              defaultValue={profile.city || city}
+              autoComplete="address-level2"
+            />
+          </label>
           {error ? <p className={shell.error}>{error}</p> : null}
-          <button className={shell.button} type="submit" style={{ width: "100%", marginTop: 8 }}>
+          <button
+            className={shell.button}
+            type="submit"
+            style={{ width: "100%", marginTop: 8 }}
+          >
             Continue
           </button>
         </form>
@@ -98,4 +182,3 @@ export function SizeAgeHeightView({
     </section>
   );
 }
-

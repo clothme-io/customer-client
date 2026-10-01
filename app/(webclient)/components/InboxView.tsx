@@ -1,5 +1,7 @@
 "use client";
 
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { WEBCLIENT_MOCK } from "../lib/config";
@@ -10,7 +12,7 @@ import shell from "../webclient.module.css";
 
 export function InboxView({
   messages,
-  signedIn
+  signedIn,
 }: {
   messages: SupportMessage[];
   signedIn: boolean;
@@ -28,7 +30,7 @@ export function InboxView({
       const response = await fetch("/api/webclient/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sendSupport", message: draft.trim() })
+        body: JSON.stringify({ action: "sendSupport", message: draft.trim() }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Could not send");
@@ -61,7 +63,11 @@ export function InboxView({
         WEBCLIENT_MOCK ? (
           <div>
             {MOCK_MAILS.map((mail) => (
-              <article key={mail.id} className={styles.cartItem} style={{ gridTemplateColumns: "1fr" }}>
+              <article
+                key={mail.id}
+                className={styles.cartItem}
+                style={{ gridTemplateColumns: "1fr" }}
+              >
                 <div>
                   <strong>{mail.title}</strong>
                   <p className={shell.muted} style={{ margin: "4px 0 0" }}>
@@ -73,7 +79,8 @@ export function InboxView({
           </div>
         ) : (
           <p className={styles.empty}>
-            Mails from Novu will show here. Support chat is available in the Support tab.
+            Mails from Novu will show here. Support chat is available in the
+            Support tab.
           </p>
         )
       ) : (
@@ -105,7 +112,11 @@ export function InboxView({
               </button>
             </form>
           ) : null}
-          {error ? <p className={shell.error} style={{ padding: "0 16px 16px" }}>{error}</p> : null}
+          {error ? (
+            <p className={shell.error} style={{ padding: "0 16px 16px" }}>
+              {error}
+            </p>
+          ) : null}
         </>
       )}
     </section>

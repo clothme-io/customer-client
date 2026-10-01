@@ -6,7 +6,7 @@ import {
   COOKIE_EMAIL,
   COOKIE_PERSON,
   COOKIE_REFRESH,
-  WEBCLIENT_MOCK
+  WEBCLIENT_MOCK,
 } from "./config";
 import { MOCK_SESSION } from "./mock";
 
@@ -25,7 +25,7 @@ const cookieBase = {
   httpOnly: true,
   sameSite: "lax" as const,
   path: "/",
-  secure: process.env.NODE_ENV === "production"
+  secure: process.env.NODE_ENV === "production",
 };
 
 export function isSyntheticEmail(email: string, accountId: string) {
@@ -42,7 +42,9 @@ export function isRegistered(session: WebClientSession | null | undefined) {
   return session?.authLevel === "registered";
 }
 
-export async function getSession(): Promise<WebClientSession | null> {
+export async function getSession(
+  allowExpired = false,
+): Promise<WebClientSession | null> {
   if (WEBCLIENT_MOCK) {
     const store = await cookies();
     const personId = store.get(COOKIE_PERSON)?.value || MOCK_SESSION.personId;
@@ -54,27 +56,61 @@ export async function getSession(): Promise<WebClientSession | null> {
   const refreshToken = store.get(COOKIE_REFRESH)?.value || "";
   const accountId = store.get(COOKIE_ACCOUNT)?.value || "";
   const personId = store.get(COOKIE_PERSON)?.value || "";
-  const authLevel = (store.get(COOKIE_AUTH_LEVEL)?.value as AuthLevel) || "guest";
+  const authLevel =
+    (store.get(COOKIE_AUTH_LEVEL)?.value as AuthLevel) || "guest";
   const email = store.get(COOKIE_EMAIL)?.value || "";
 
-  if (!accessToken) return null;
+  if (
+    (!accessToken && !(allowExpired && refreshToken)) ||
+    !accountId ||
+    !personId
+  )
+    return null;
 
-  return { accessToken, refreshToken, accountId, personId, authLevel, email };
+  return {
+    accessToken: accessToken || "",
+    refreshToken,
+    accountId,
+    personId,
+    authLevel,
+    email,
+  };
 }
 
 export async function setSession(session: WebClientSession) {
   const store = await cookies();
-  store.set(COOKIE_ACCESS, session.accessToken, { ...cookieBase, maxAge: 60 * 30 });
-  store.set(COOKIE_REFRESH, session.refreshToken, { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-  store.set(COOKIE_ACCOUNT, session.accountId, { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-  store.set(COOKIE_PERSON, session.personId, { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-  store.set(COOKIE_AUTH_LEVEL, session.authLevel || "guest", { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-  store.set(COOKIE_EMAIL, session.email || "", { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
+  store.set(COOKIE_ACCESS, session.accessToken, {
+    ...cookieBase,
+    maxAge: 60 * 30,
+  });
+  store.set(COOKIE_REFRESH, session.refreshToken, {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  store.set(COOKIE_ACCOUNT, session.accountId, {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  store.set(COOKIE_PERSON, session.personId, {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  store.set(COOKIE_AUTH_LEVEL, session.authLevel || "guest", {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  store.set(COOKIE_EMAIL, session.email || "", {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
 }
 
 export async function setPersonId(personId: string) {
   const store = await cookies();
-  store.set(COOKIE_PERSON, personId, { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
+  store.set(COOKIE_PERSON, personId, {
+    ...cookieBase,
+    maxAge: 60 * 60 * 24 * 30,
+  });
 }
 
 export async function clearSession() {
@@ -85,7 +121,7 @@ export async function clearSession() {
     COOKIE_ACCOUNT,
     COOKIE_PERSON,
     COOKIE_AUTH_LEVEL,
-    COOKIE_EMAIL
+    COOKIE_EMAIL,
   ]) {
     store.delete(name);
   }

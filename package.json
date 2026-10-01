@@ -12,7 +12,9 @@
     "cms:migrate": "payload migrate",
     "cms:migrate:create": "payload migrate:create",
     "cms:push": "node scripts/payload-push.mjs",
-    "cms:sync": "node scripts/payload-migrate.mjs"
+    "cms:sync": "node scripts/payload-migrate.mjs",
+    "test:webclient": "node --experimental-strip-types --test tests/webclient/*.test.ts",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",

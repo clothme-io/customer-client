@@ -1,29 +1,46 @@
 "use client";
 
+import { commerceEvent } from "../lib/commerce-events";
+
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SizeCameraModal } from "./SizeCameraModal";
-import { SIZE_PHOTOS_KEY, dataUrlToBlob, loadSizeProfile } from "../lib/size-profile";
+import { dataUrlToBlob, loadSizeProfile } from "../lib/size-profile";
+import { stagePhotos, sizeIdentity } from "../lib/size-flow";
+import { normalizeSizeImage } from "../lib/size-images";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
 type Pose = "front" | "side";
 type Validation = "pending" | "success" | "error" | null;
 
-async function pollValidation(type: Pose, id: string) {
-  for (let i = 0; i < 30; i += 1) {
-    const response = await fetch(`/api/webclient/size?action=validateResult&type=${type}&id=${encodeURIComponent(id)}`);
+async function pollValidation(
+  type: Pose,
+  id: string,
+  receipt: string,
+  signal: AbortSignal,
+) {
+  for (let i = 0; i < 90; i += 1) {
+    const response = await fetch(
+      `/api/webclient/size?action=validateResult&type=${type}&id=${encodeURIComponent(id)}`,
+      { signal, headers: { "X-Size-Receipt": receipt } },
+    );
     const body = await response.json().catch(() => ({}));
-    const status = Number(body.status || response.status);
-    if (status === 202) {
+    if (body.state === "processing") {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       continue;
     }
-    if (status >= 400 || body.error) {
-      throw new Error(body.error?.message || body.message || "Pose validation failed");
+    if (!response.ok || body.state === "failed") {
+      throw new Error(
+        body.error?.message || body.message || "Pose validation failed",
+      );
     }
-    return String(body.data?.prediction_id || body.task_id || id);
+    if (!body.predictionId)
+      throw new Error("Photo validation did not finish. Please retake it.");
+    return { id: body.predictionId as string, receipt: body.receipt as string };
   }
   throw new Error("Validation timed out");
 }
@@ -31,6 +48,22 @@ async function pollValidation(type: Pose, id: string) {
 export function SizeCaptureView() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const validations = useRef<Partial<Record<Pose, AbortController>>>({});
+  const identity = useRef("");
+  useEffect(() => {
+    sizeIdentity()
+      .then((key) => {
+        identity.current = key;
+        if (sessionStorage.getItem("cm_size_scope") !== key)
+          router.replace("/account/size/age-height");
+      })
+      .catch((err) => setError(err.message));
+    return () => {
+      Object.values(validations.current).forEach((controller) =>
+        controller?.abort(),
+      );
+    };
+  }, [router]);
   const [front, setFront] = useState<string | null>(null);
   const [side, setSide] = useState<string | null>(null);
   const [frontState, setFrontState] = useState<Validation>(null);
@@ -39,6 +72,8 @@ export function SizeCaptureView() {
   const [sideMsg, setSideMsg] = useState("Validating pose…");
   const [frontTask, setFrontTask] = useState("");
   const [sideTask, setSideTask] = useState("");
+  const [frontReceipt, setFrontReceipt] = useState("");
+  const [sideReceipt, setSideReceipt] = useState("");
   const [sourcePose, setSourcePose] = useState<Pose | null>(null);
   const [cameraPose, setCameraPose] = useState<Pose | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,19 +86,19 @@ export function SizeCaptureView() {
     }
   }, [router]);
 
-  async function validate(pose: Pose, dataUrl: string) {
+  async function validate(pose: Pose, dataUrl: string, signal: AbortSignal) {
     const profile = loadSizeProfile();
     const form = new FormData();
     form.append("action", pose === "front" ? "validateFront" : "validateSide");
     form.append("image", dataUrlToBlob(dataUrl), "size_image.jpg");
     form.append("type", pose);
-    form.append("dob", profile.dob || "1996-01-01");
-    form.append("gender", profile.gender || "female");
-    form.append("genderDemography", profile.gender || "female");
-    form.append("height", profile.height || "170");
+    form.append("dob", profile.dob);
+    form.append("gender", profile.gender);
+    form.append("genderDemography", profile.gender);
+    form.append("height", profile.height);
     form.append("weight", profile.weight || "");
     form.append("city", profile.city || "");
-    form.append("country", profile.country || "Canada");
+    form.append("country", profile.country);
     form.append("provinceState", profile.provinceState || "");
     if (pose === "front") {
       setFrontState("pending");
@@ -72,33 +107,59 @@ export function SizeCaptureView() {
       setSideState("pending");
       setSideMsg("Validating pose…");
     }
-    const response = await fetch("/api/webclient/size", { method: "POST", body: form });
+    const response = await fetch("/api/webclient/size", {
+      method: "POST",
+      body: form,
+      signal,
+    });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || "Could not upload pose");
-    const taskId = String(body.task_id || body.taskId || body.data?.task_id || "");
+    const taskId = String(body.taskId || "");
     if (!taskId) throw new Error("Validation did not return a task");
-    const predictionId = await pollValidation(pose, taskId);
+    const predictionId = await pollValidation(
+      pose,
+      taskId,
+      body.receipt,
+      signal,
+    );
+    if (signal.aborted) return;
     if (pose === "front") {
-      setFrontTask(predictionId);
+      setFrontTask(predictionId.id);
+      setFrontReceipt(predictionId.receipt);
       setFrontState("success");
       setFrontMsg("Pose looks good");
     } else {
-      setSideTask(predictionId);
+      setSideTask(predictionId.id);
+      setSideReceipt(predictionId.receipt);
       setSideState("success");
       setSideMsg("Pose looks good");
     }
   }
 
   async function onPhoto(pose: Pose, dataUrl: string) {
+    validations.current[pose]?.abort();
+    const controller = new AbortController();
+    validations.current[pose] = controller;
+    if (pose === "front") {
+      setFrontTask("");
+      setFrontState("pending");
+    } else {
+      setSideTask("");
+      setSideState("pending");
+    }
     setError("");
     if (pose === "front") setFront(dataUrl);
     else setSide(dataUrl);
     setCameraPose(null);
     setSourcePose(null);
     try {
-      await validate(pose, dataUrl);
+      if (!identity.current || (await sizeIdentity()) !== identity.current)
+        throw new Error("Your profile changed. Return to age and height.");
+      await validate(pose, dataUrl, controller.signal);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed, retake pose";
+      if (controller.signal.aborted) return;
+      const message =
+        err instanceof Error ? err.message : "Failed, retake pose";
       if (pose === "front") {
         setFrontState("error");
         setFrontMsg(message);
@@ -117,15 +178,26 @@ export function SizeCaptureView() {
   }
 
   async function generate() {
-    if (frontState !== "success" || sideState !== "success" || !front || !side) return;
+    if (frontState !== "success" || sideState !== "success" || !front || !side)
+      return;
     setBusy(true);
     setError("");
     try {
       const profile = loadSizeProfile();
-      sessionStorage.setItem(
-        SIZE_PHOTOS_KEY,
-        JSON.stringify({ front, side, frontTask, sideTask, profile })
-      );
+      commerceEvent("size_capture_completed");
+      if ((await sizeIdentity()) !== identity.current)
+        throw new Error(
+          "Your selected profile changed. Return to age and height.",
+        );
+      await stagePhotos({
+        front,
+        side,
+        frontTask,
+        sideTask,
+        frontReceipt,
+        sideReceipt,
+        profile,
+      });
       router.push("/account/size/results");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate sizes");
@@ -137,10 +209,14 @@ export function SizeCaptureView() {
   return (
     <section>
       <p className={shell.muted} style={{ padding: "12px 16px 0" }}>
-        Before we can calculate your sizes, we need two photos. Follow every instruction.
+        Before we can calculate your sizes, we need two photos. Follow every
+        instruction.
       </p>
       <ol className={styles.instructionList}>
-        <li>Take 2 photos in the same posture. Full body visible, feet flat, camera level with your waist.</li>
+        <li>
+          Take 2 photos in the same posture. Full body visible, feet flat,
+          camera level with your waist.
+        </li>
         <li>Wear tight clothes, like sports or yoga wear.</li>
         <li>Tie hair back, away from your neck.</li>
         <li>Stand in front of a plain backdrop.</li>
@@ -152,12 +228,29 @@ export function SizeCaptureView() {
           const state = pose === "front" ? frontState : sideState;
           const message = pose === "front" ? frontMsg : sideMsg;
           return (
-            <button key={pose} type="button" className={styles.poseCard} onClick={() => setSourcePose(pose)}>
-              {photo ? <img src={photo} alt="" /> : <div className={styles.posePlaceholder}>{pose === "front" ? "Front" : "Side"}</div>}
+            <button
+              key={pose}
+              type="button"
+              className={styles.poseCard}
+              onClick={() => setSourcePose(pose)}
+            >
+              {photo ? (
+                <img src={photo} alt="" />
+              ) : (
+                <div className={styles.posePlaceholder}>
+                  {pose === "front" ? "Front" : "Side"}
+                </div>
+              )}
               <span>{pose === "front" ? "Front Image" : "Side Image"}</span>
               {state ? (
-                <span className={`${styles.poseOverlay} ${state === "success" ? styles.poseOk : state === "error" ? styles.poseErr : ""}`}>
-                  {state === "pending" ? message : state === "success" ? "✓" : "Failed, retake pose"}
+                <span
+                  className={`${styles.poseOverlay} ${state === "success" ? styles.poseOk : state === "error" ? styles.poseErr : ""}`}
+                >
+                  {state === "pending"
+                    ? message
+                    : state === "success"
+                      ? "✓"
+                      : message}
                 </span>
               ) : null}
             </button>
@@ -165,7 +258,11 @@ export function SizeCaptureView() {
         })}
       </div>
 
-      {error ? <p className={shell.error} style={{ padding: "0 16px" }}>{error}</p> : null}
+      {error ? (
+        <p className={shell.error} style={{ padding: "0 16px" }}>
+          {error}
+        </p>
+      ) : null}
 
       <div style={{ padding: 16 }}>
         <button
@@ -188,20 +285,28 @@ export function SizeCaptureView() {
         type="file"
         accept="image/*"
         hidden
-        onChange={(event) => {
+        onChange={async (event) => {
           const file = event.target.files?.[0];
-          const pose = (event.currentTarget.getAttribute("data-pose") || "front") as Pose;
+          const pose = (event.currentTarget.getAttribute("data-pose") ||
+            "front") as Pose;
           event.currentTarget.value = "";
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => onPhoto(pose, String(reader.result || ""));
-          reader.readAsDataURL(file);
+          try {
+            await onPhoto(pose, await normalizeSizeImage(file));
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "Could not open photo",
+            );
+          }
         }}
       />
 
       {sourcePose ? (
         <div className={styles.sheetRoot} onClick={() => setSourcePose(null)}>
-          <div className={styles.sheet} onClick={(event) => event.stopPropagation()}>
+          <div
+            className={styles.sheet}
+            onClick={(event) => event.stopPropagation()}
+          >
             <p className={styles.sheetTitle}>Select Photo Source</p>
             <button
               type="button"
@@ -213,10 +318,18 @@ export function SizeCaptureView() {
             >
               Take Photo
             </button>
-            <button type="button" className={styles.sheetRow} onClick={() => pickFile(sourcePose)}>
+            <button
+              type="button"
+              className={styles.sheetRow}
+              onClick={() => pickFile(sourcePose)}
+            >
               Choose from Library
             </button>
-            <button type="button" className={styles.sheetRow} onClick={() => setSourcePose(null)}>
+            <button
+              type="button"
+              className={styles.sheetRow}
+              onClick={() => setSourcePose(null)}
+            >
               Cancel
             </button>
           </div>
@@ -224,7 +337,11 @@ export function SizeCaptureView() {
       ) : null}
 
       {cameraPose ? (
-        <SizeCameraModal pose={cameraPose} onClose={() => setCameraPose(null)} onCapture={(dataUrl) => onPhoto(cameraPose, dataUrl)} />
+        <SizeCameraModal
+          pose={cameraPose}
+          onClose={() => setCameraPose(null)}
+          onCapture={(dataUrl) => onPhoto(cameraPose, dataUrl)}
+        />
       ) : null}
     </section>
   );

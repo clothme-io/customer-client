@@ -1,8 +1,13 @@
 "use client";
 
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { DeliveryMethodOption, VendorShippingSelection } from "../lib/types";
+import type {
+  DeliveryMethodOption,
+  VendorShippingSelection,
+} from "../lib/types";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
@@ -10,7 +15,7 @@ export function VendorShippingSelector({
   vendorId,
   brandId,
   brandName,
-  selected
+  selected,
 }: {
   vendorId: string;
   brandId: string;
@@ -24,12 +29,19 @@ export function VendorShippingSelector({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/webclient/delivery-methods?vendorId=${encodeURIComponent(vendorId)}&brandId=${encodeURIComponent(brandId)}`)
+    fetch(
+      `/api/webclient/delivery-methods?vendorId=${encodeURIComponent(vendorId)}&brandId=${encodeURIComponent(brandId)}`,
+    )
       .then((response) => response.json())
       .then((body) => {
         if (!cancelled) {
           const methods = Array.isArray(body.methods) ? body.methods : [];
-          setOptions(methods.filter((option: DeliveryMethodOption) => option.provider !== "uber_direct"));
+          setOptions(
+            methods.filter(
+              (option: DeliveryMethodOption) =>
+                option.provider !== "uber_direct",
+            ),
+          );
         }
       })
       .catch(() => {
@@ -58,8 +70,8 @@ export function VendorShippingSelector({
         shippingAmount: option.price,
         currency: option.currency,
         estimatedMinDays: option.estimatedMinDays,
-        estimatedMaxDays: option.estimatedMaxDays
-      })
+        estimatedMaxDays: option.estimatedMaxDays,
+      }),
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -82,7 +94,8 @@ export function VendorShippingSelector({
         options.map((option) => {
           const isSelected =
             selected?.rateId === option.id ||
-            (option.provider === "uber_direct" && selected?.provider === "uber_direct");
+            (option.provider === "uber_direct" &&
+              selected?.provider === "uber_direct");
           const days =
             option.estimatedMinDays != null && option.estimatedMaxDays != null
               ? `${option.estimatedMinDays}–${option.estimatedMaxDays} days`
@@ -98,7 +111,9 @@ export function VendorShippingSelector({
                 {option.carrier} {option.service}
                 {days ? <small> · {days}</small> : null}
               </span>
-              <strong>{option.price === 0 ? "Free" : `$${option.price.toFixed(2)}`}</strong>
+              <strong>
+                {option.price === 0 ? "Free" : `$${option.price.toFixed(2)}`}
+              </strong>
             </button>
           );
         })

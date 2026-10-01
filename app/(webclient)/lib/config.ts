@@ -3,7 +3,9 @@ const stripTrailingSlash = (url?: string) => url?.replace(/\/$/, "") || "";
 export const CUSTOMER_API_URL =
   stripTrailingSlash(process.env.CUSTOMER_API_URL) ||
   stripTrailingSlash(process.env.NEXT_PUBLIC_CUSTOMER_API_URL) ||
-  "https://dv-customer.api-clothme.com";
+  (process.env.NODE_ENV === "production"
+    ? ""
+    : "https://dv-customer.api-clothme.com");
 
 export const PERSON_ID_HEADER = "X-Person-Id";
 
@@ -18,13 +20,16 @@ export const COOKIE_EMAIL = "cm_email";
 export const SIZE_API_URL =
   stripTrailingSlash(process.env.SIZE_API_URL) ||
   stripTrailingSlash(process.env.NEXT_PUBLIC_SIZE_API_URL) ||
-  "https://dv-size.api-clothme.com";
+  (process.env.NODE_ENV === "production"
+    ? ""
+    : "https://dv-size.api-clothme.com");
 
-export const SIZE_API_TOKEN = process.env.SIZE_API_TOKEN || "token-canada-2026-auth";
+export const SIZE_API_TOKEN = process.env.SIZE_API_TOKEN || "";
 
 export const SITE_NAME = "ClothME";
 
 /** Preview sample data instead of the customer API. On in `next dev`; set NEXT_PUBLIC_WEBCLIENT_MOCK=0 to hit live APIs. */
 export const WEBCLIENT_MOCK =
   process.env.NEXT_PUBLIC_WEBCLIENT_MOCK === "1" ||
-  (process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_WEBCLIENT_MOCK !== "0");
+  (process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_WEBCLIENT_MOCK !== "0");

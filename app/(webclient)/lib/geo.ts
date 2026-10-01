@@ -15,19 +15,42 @@ export async function getGeoHint(): Promise<GeoHint> {
   if (saved) {
     try {
       const parsed = JSON.parse(saved) as GeoHint;
-      if (parsed.country || parsed.city) return parsed;
+      if (parsed.country || parsed.city)
+        return {
+          ...parsed,
+          country:
+            (
+              {
+                CA: "Canada",
+                US: "United States",
+                GB: "United Kingdom",
+                AU: "Australia",
+                FR: "France",
+                DE: "Germany",
+              } as Record<string, string>
+            )[parsed.country] || parsed.country,
+        };
     } catch {
       // fall through to request headers
     }
   }
 
+  const countries: Record<string, string> = {
+    CA: "Canada",
+    US: "United States",
+    GB: "United Kingdom",
+    AU: "Australia",
+    FR: "France",
+    DE: "Germany",
+  };
+  const countryCode =
+    headerStore.get("x-vercel-ip-country") ||
+    headerStore.get("cf-ipcountry") ||
+    "";
   return {
-    country:
-      headerStore.get("x-vercel-ip-country") ||
-      headerStore.get("cf-ipcountry") ||
-      "",
+    country: countries[countryCode] || countryCode,
     region: headerStore.get("x-vercel-ip-country-region") || "",
-    city: headerStore.get("x-vercel-ip-city") || ""
+    city: headerStore.get("x-vercel-ip-city") || "",
   };
 }
 
@@ -38,7 +61,7 @@ export function pickClosestLocation<
     city?: string;
     stateProvince?: string;
     country?: string;
-  }
+  },
 >(locations: T[], geo: GeoHint): T | undefined {
   if (!locations.length) return undefined;
 
@@ -48,8 +71,12 @@ export function pickClosestLocation<
 
   return (
     locations.find((item) => city && item.city?.toLowerCase() === city) ||
-    locations.find((item) => region && item.stateProvince?.toLowerCase() === region) ||
-    locations.find((item) => country && item.country?.toLowerCase() === country) ||
+    locations.find(
+      (item) => region && item.stateProvince?.toLowerCase() === region,
+    ) ||
+    locations.find(
+      (item) => country && item.country?.toLowerCase() === country,
+    ) ||
     locations[0]
   );
 }

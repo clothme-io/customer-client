@@ -20,7 +20,11 @@ export class CustomerApiError extends Error {
 }
 
 function unwrap<T>(body: Envelope<T> | T): T {
-  if (body && typeof body === "object" && ("result" in body || "data" in body)) {
+  if (
+    body &&
+    typeof body === "object" &&
+    ("result" in body || "data" in body)
+  ) {
     const envelope = body as Envelope<T>;
     return (envelope.result ?? envelope.data ?? body) as T;
   }
@@ -31,7 +35,11 @@ function errorMessage(body: unknown, fallback: string) {
   if (!body || typeof body !== "object") return fallback;
   const record = body as Envelope<unknown>;
   if (typeof record.error === "string") return record.error;
-  if (record.error && typeof record.error === "object" && record.error.message) {
+  if (
+    record.error &&
+    typeof record.error === "object" &&
+    record.error.message
+  ) {
     return record.error.message;
   }
   return fallback;
@@ -45,21 +53,30 @@ export async function customerFetch<T>(
     personId?: string;
     body?: unknown;
     query?: Record<string, string | number | boolean | undefined>;
-  } = {}
+  } = {},
 ): Promise<T> {
   if (WEBCLIENT_MOCK) {
     return mockApiResponse(path, options) as T;
   }
 
+  if (!CUSTOMER_API_URL)
+    throw new CustomerApiError(
+      "Shopping is not configured. Please contact support.",
+      503,
+    );
+
   const query = Object.entries(options.query || {})
     .filter(([, value]) => value !== undefined && value !== "")
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
+    )
     .join("&");
 
   const url = `${CUSTOMER_API_URL}${path.startsWith("/") ? path : `/${path}`}${query ? `?${query}` : ""}`;
   const headers: Record<string, string> = {
     Accept: "application/json",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
   };
 
   if (options.accessToken) {
@@ -78,7 +95,8 @@ export async function customerFetch<T>(
     method: options.method || "GET",
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    cache: "no-store"
+    signal: AbortSignal.timeout(30_000),
+    cache: "no-store",
   });
 
   if (response.status === 204) {
@@ -86,10 +104,14 @@ export async function customerFetch<T>(
   }
 
   const body = (await response.json().catch(() => ({}))) as Envelope<T>;
-  const status = typeof body.status === "number" ? body.status : response.status;
+  const status =
+    typeof body.status === "number" ? body.status : response.status;
 
   if (!response.ok || status > 209) {
-    throw new CustomerApiError(errorMessage(body, "Request failed"), status || response.status);
+    throw new CustomerApiError(
+      errorMessage(body, "Request failed"),
+      status || response.status,
+    );
   }
 
   return unwrap<T>(body);

@@ -12,8 +12,14 @@ type SetupResult = {
   wishbagId?: string;
 };
 
-function unwrapSetup(data: SetupResult | { result?: SetupResult; data?: SetupResult }) {
-  if (data && typeof data === "object" && ("result" in data || "data" in data)) {
+function unwrapSetup(
+  data: SetupResult | { result?: SetupResult; data?: SetupResult },
+) {
+  if (
+    data &&
+    typeof data === "object" &&
+    ("result" in data || "data" in data)
+  ) {
     const envelope = data as { result?: SetupResult; data?: SetupResult };
     return envelope.result || envelope.data || (data as SetupResult);
   }
@@ -47,18 +53,18 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
         deviceId,
         deviceModel: "web",
         deviceOs: "web",
-        deviceType: "browser"
-      }
-    }
+        deviceType: "browser",
+      },
+    },
   );
 
   const result = unwrapSetup(raw);
   const resolvedAccountId = result.accountId || accountId;
   const accessToken = result.accessToken;
   const refreshToken = result.refreshToken || result.token || "";
-  const personId = result.accountUserId || resolvedAccountId;
+  const personId = result.accountUserId;
 
-  if (!accessToken) {
+  if (!accessToken || !personId) {
     throw new Error("Guest setup did not return a session");
   }
 
@@ -68,6 +74,6 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
     accountId: resolvedAccountId,
     personId,
     authLevel: "guest" as AuthLevel,
-    email
+    email,
   };
 }

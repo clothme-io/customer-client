@@ -1,5 +1,7 @@
 "use client";
 
+import { clearSizeFlows } from "../../lib/size-flow";
+import { clearPurchaseIntent } from "../../lib/purchase-intent";
 import { useRouter } from "next/navigation";
 import styles from "../../webclient.module.css";
 
@@ -7,7 +9,7 @@ const THEMES = [
   { key: "light", label: "Light" },
   { key: "dark", label: "Dark" },
   { key: "pink", label: "Pink" },
-  { key: "blue", label: "Blue" }
+  { key: "blue", label: "Blue" },
 ];
 
 export function SettingsForm({ signedIn }: { signedIn: boolean }) {
@@ -19,6 +21,10 @@ export function SettingsForm({ signedIn }: { signedIn: boolean }) {
 
   async function logout() {
     await fetch("/api/webclient/session", { method: "DELETE" });
+    await clearSizeFlows().catch(() => {});
+    clearPurchaseIntent();
+    for (const key of Object.keys(sessionStorage))
+      if (key.startsWith("cm_size_")) sessionStorage.removeItem(key);
     router.replace("/login");
     router.refresh();
   }
@@ -42,13 +48,17 @@ export function SettingsForm({ signedIn }: { signedIn: boolean }) {
       </div>
 
       <p className={styles.muted}>
-        Notification, privacy, payment methods, and shipping addresses will sync with the same person settings API as
-        mobile.
+        Notification, privacy, payment methods, and shipping addresses will sync
+        with the same person settings API as mobile.
       </p>
 
       {signedIn ? (
         <p style={{ marginTop: 32 }}>
-          <button type="button" className={`${styles.button} ${styles.ghostButton}`} onClick={logout}>
+          <button
+            type="button"
+            className={`${styles.button} ${styles.ghostButton}`}
+            onClick={logout}
+          >
             Log out
           </button>
         </p>
