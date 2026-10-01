@@ -16,8 +16,6 @@ export type SizePhotos = {
   side: string;
   frontTask: string;
   sideTask: string;
-  frontReceipt: string;
-  sideReceipt: string;
   profile: SizeProfile;
 };
 

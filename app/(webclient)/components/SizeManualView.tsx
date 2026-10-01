@@ -2,15 +2,13 @@
 
 import { sessionFetch as fetch } from "../lib/session-client";
 
-import { FormEvent, useRef, useState } from "react";
-import { loadSizeProfile } from "../lib/size-profile";
+import { FormEvent, useState } from "react";
 import { readPurchaseIntent } from "../lib/purchase-intent";
 import { AccountSubHeader } from "./AccountSubHeader";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
 export function SizeManualView() {
-  const operationId = useRef("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,11 +16,6 @@ export function SizeManualView() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     form.append("action", "manual");
-    operationId.current ||= crypto.randomUUID();
-    form.set("operationId", operationId.current);
-    const profile = loadSizeProfile();
-    for (const [key, value] of Object.entries(profile))
-      if (!form.has(key)) form.set(key, value);
     setBusy(true);
     setError("");
     try {
@@ -68,28 +61,6 @@ export function SizeManualView() {
           If you know the measurements, enter them and we will use them to
           generate your size.
         </p>
-        <label className={shell.field}>
-          Country{" "}
-          <select name="country" required defaultValue="Canada">
-            {[
-              "Canada",
-              "United States",
-              "United Kingdom",
-              "Australia",
-              "France",
-              "Germany",
-            ].map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
-        </label>
-        <label className={shell.field}>
-          Gender{" "}
-          <select name="gender" required>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-          </select>
-        </label>
         <h2>Top measurements</h2>
         <label className={shell.field}>
           Top size

@@ -60,10 +60,8 @@ async function validate(pose) {
     body: form,
   });
   assert.equal(queued.response.status, 202);
-  assert.ok(queued.body.receipt);
   const complete = await request(
     `/api/webclient/size?action=validateResult&type=${pose}&id=${queued.body.taskId}`,
-    { headers: { "X-Size-Receipt": queued.body.receipt } },
   );
   assert.equal(complete.body.state, "complete");
   return complete.body;
@@ -78,7 +76,6 @@ for (const [pose, validation] of [
   ["side", side],
 ]) {
   form.set(`${pose}TaskId`, validation.predictionId);
-  form.set(`${pose}Receipt`, validation.receipt);
   form.set(
     `${pose}Image`,
     new Blob(["mock-image"], { type: "image/jpeg" }),
@@ -91,27 +88,11 @@ const generated = await request("/api/webclient/size", {
 });
 assert.equal(generated.response.status, 202);
 const ticket = generated.body;
-const rejected = await request(
-  `/api/webclient/size?action=generateResult&id=${ticket.taskId}`,
-  { headers: { "X-Size-Receipt": ticket.receipt + "tampered" } },
-);
-assert.ok(rejected.response.status >= 400);
 const result = await request(
   `/api/webclient/size?action=generateResult&id=${ticket.taskId}`,
-  { headers: { "X-Size-Receipt": ticket.receipt } },
 );
 assert.equal(result.body.state, "complete");
 assert.ok(result.body.result.measurements.waist);
-assert.equal(
-  (await request("/api/webclient/fit-profile")).body.ready,
-  false,
-  "Generation alone must not mark a profile saved",
-);
-const saved = await post("/api/webclient/fit-profile/save", {
-  taskId: ticket.taskId,
-  receipt: ticket.receipt,
-});
-assert.equal(saved.body.ready, true);
 assert.equal((await request("/api/webclient/fit-profile")).body.ready, true);
 assert.equal(
   (
@@ -124,5 +105,23 @@ assert.equal(
   200,
 );
 console.log(
-  "PASS: purchase gate → signed validation → generation → save → purchase, with tampered receipts rejected",
+  "PASS: purchase gate → mobile validation/generation flow → saved-size check → purchase",
 );
+
+const manual = new FormData();
+for (const [key, value] of Object.entries({
+  action: "manual",
+  topSize: "M",
+  chest: "90",
+  waist: "70",
+  bottomSize: "8",
+  hips: "95",
+  legLength: "80",
+}))
+  manual.set(key, value);
+assert.equal(
+  (await request("/api/webclient/size", { method: "POST", body: manual }))
+    .response.status,
+  200,
+);
+console.log("PASS: mobile manual-size request shape");

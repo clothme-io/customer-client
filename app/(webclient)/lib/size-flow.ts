@@ -8,7 +8,6 @@ export type SizeFlow = {
   key: string;
   expires: number;
   taskId?: string;
-  receipt?: string;
   submitting?: boolean;
   result?: Record<string, any>;
   photos?: Omit<SizePhotos, "front" | "side"> & { front: Blob; side: Blob };
@@ -130,8 +129,6 @@ async function submit(key: string): Promise<SizeFlow> {
   form.set("action", "generate");
   form.set("frontTaskId", photos.frontTask);
   form.set("sideTaskId", photos.sideTask);
-  form.set("frontReceipt", photos.frontReceipt);
-  form.set("sideReceipt", photos.sideReceipt);
   for (const [name, value] of Object.entries(photos.profile))
     form.set(name, value);
   form.set("genderDemography", photos.profile.gender);
@@ -151,7 +148,6 @@ async function submit(key: string): Promise<SizeFlow> {
     throw new Error(body.message || "Could not start measurement generation.");
   }
   flow.taskId = body.taskId;
-  flow.receipt = body.receipt;
   flow.submitting = false;
   // Images are no longer needed once the server accepted generation.
   delete flow.photos;

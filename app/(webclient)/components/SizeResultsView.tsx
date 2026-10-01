@@ -92,7 +92,6 @@ export function SizeResultsView() {
               `/api/webclient/size?action=generateResult&id=${encodeURIComponent(flow.taskId!)}`,
               {
                 signal: controller.signal,
-                headers: { "X-Size-Receipt": flow.receipt || "" },
               },
             );
             const body = await poll.json();
@@ -120,25 +119,7 @@ export function SizeResultsView() {
               "Your measurements are still processing. Resume below to check the same job.",
             );
         }
-        setSavingMessage(
-          "Saving your measurements and matching available products…",
-        );
-        const saved = await fetch("/api/webclient/fit-profile/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ taskId: flow.taskId, receipt: flow.receipt }),
-          signal: controller.signal,
-        });
-        const saveStatus = await saved.json();
-        if (!saved.ok)
-          throw new Error(
-            saveStatus.message ||
-              "Measurements calculated, but saving or matching needs another attempt. Resume without retaking photos.",
-          );
-        if (!saveStatus.ready)
-          throw new Error("Your profile is still processing. Resume shortly.");
-        // Read the exact saved operation, not an older profile.
-
+        setSavingMessage("Checking your saved sizes…");
         for (let i = 0; i < 30; i += 1) {
           const response = await fetch("/api/webclient/fit-profile", {
             signal: controller.signal,
@@ -151,20 +132,11 @@ export function SizeResultsView() {
             );
           if (`${profile.accountId}:${profile.personId}` !== key)
             throw new Error("Your selected profile changed.");
-          if (
-            profile.ready &&
-            (profile.source === "mock" ||
-              profile.operationId === saveStatus.operationId)
-          ) {
+          if (profile.ready) {
             setSaved(true);
             commerceEvent("fit_profile_saved");
-            commerceEvent("matching_completed", {
-              count: saveStatus.matchCount || 0,
-            });
             setSavingMessage(
-              saveStatus.matchCount > 0
-                ? `Your profile is saved. ${saveStatus.matchCount} product options match your measurements.`
-                : "Your profile is saved. No currently available product options matched. You do not need to retake your photos.",
+              "Your sizes are available in your account. Continue shopping to see product recommendations.",
             );
             return;
           }

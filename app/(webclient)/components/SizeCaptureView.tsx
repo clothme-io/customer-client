@@ -17,16 +17,11 @@ import shell from "../webclient.module.css";
 type Pose = "front" | "side";
 type Validation = "pending" | "success" | "error" | null;
 
-async function pollValidation(
-  type: Pose,
-  id: string,
-  receipt: string,
-  signal: AbortSignal,
-) {
+async function pollValidation(type: Pose, id: string, signal: AbortSignal) {
   for (let i = 0; i < 90; i += 1) {
     const response = await fetch(
       `/api/webclient/size?action=validateResult&type=${type}&id=${encodeURIComponent(id)}`,
-      { signal, headers: { "X-Size-Receipt": receipt } },
+      { signal },
     );
     const body = await response.json().catch(() => ({}));
     if (body.state === "processing") {
@@ -40,7 +35,7 @@ async function pollValidation(
     }
     if (!body.predictionId)
       throw new Error("Photo validation did not finish. Please retake it.");
-    return { id: body.predictionId as string, receipt: body.receipt as string };
+    return { id: body.predictionId as string };
   }
   throw new Error("Validation timed out");
 }
@@ -72,8 +67,6 @@ export function SizeCaptureView() {
   const [sideMsg, setSideMsg] = useState("Validating pose…");
   const [frontTask, setFrontTask] = useState("");
   const [sideTask, setSideTask] = useState("");
-  const [frontReceipt, setFrontReceipt] = useState("");
-  const [sideReceipt, setSideReceipt] = useState("");
   const [sourcePose, setSourcePose] = useState<Pose | null>(null);
   const [cameraPose, setCameraPose] = useState<Pose | null>(null);
   const [busy, setBusy] = useState(false);
@@ -116,21 +109,14 @@ export function SizeCaptureView() {
     if (!response.ok) throw new Error(body.message || "Could not upload pose");
     const taskId = String(body.taskId || "");
     if (!taskId) throw new Error("Validation did not return a task");
-    const predictionId = await pollValidation(
-      pose,
-      taskId,
-      body.receipt,
-      signal,
-    );
+    const predictionId = await pollValidation(pose, taskId, signal);
     if (signal.aborted) return;
     if (pose === "front") {
       setFrontTask(predictionId.id);
-      setFrontReceipt(predictionId.receipt);
       setFrontState("success");
       setFrontMsg("Pose looks good");
     } else {
       setSideTask(predictionId.id);
-      setSideReceipt(predictionId.receipt);
       setSideState("success");
       setSideMsg("Pose looks good");
     }
@@ -194,8 +180,6 @@ export function SizeCaptureView() {
         side,
         frontTask,
         sideTask,
-        frontReceipt,
-        sideReceipt,
         profile,
       });
       router.push("/account/size/results");
