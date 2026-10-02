@@ -10,20 +10,34 @@ const WEBCLIENT_PATHS = [
   "/product",
   "/brand",
   "/login",
-  "/checkout"
+  "/checkout",
 ];
 
 function isWebClientPath(pathname) {
   return WEBCLIENT_PATHS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
 const RESERVED_SUBDOMAINS = new Set([
-  "www", "blog", "api", "admin", "app", "cdn", "mail", "ftp",
-  "dev", "staging", "preview", "demo", "test",
+  "www",
+  "blog",
+  "api",
+  "admin",
+  "app",
+  "cdn",
+  "mail",
+  "ftp",
+  "dev",
+  "staging",
+  "preview",
+  "demo",
+  "test",
   // Env / product hosts (not city microsites)
-  "dv-app", "dv-vendor", "pr-app", "pr-vendor"
+  "dv-app",
+  "dv-vendor",
+  "pr-app",
+  "pr-vendor",
 ]);
 
 export function middleware(request) {
@@ -42,7 +56,10 @@ export function middleware(request) {
 
   // Never rewrite Next.js internals, static files, Payload routes, or ACME challenges
   const { pathname } = url;
-  if (pathname === "/admin/cms/collections/cms-posts" && url.searchParams.has("columns")) {
+  if (
+    pathname === "/admin/cms/collections/cms-posts" &&
+    url.searchParams.has("columns")
+  ) {
     url.searchParams.delete("columns");
     return NextResponse.redirect(url);
   }
@@ -53,21 +70,26 @@ export function middleware(request) {
       const geo = {
         country: request.headers.get("x-vercel-ip-country") || "",
         region: request.headers.get("x-vercel-ip-country-region") || "",
-        city: decodeURIComponent(request.headers.get("x-vercel-ip-city") || "")
+        city: decodeURIComponent(request.headers.get("x-vercel-ip-city") || ""),
       };
       if (geo.country || geo.city) {
         response.cookies.set("cm_geo", JSON.stringify(geo), {
           path: "/",
           maxAge: 60 * 60 * 24 * 7,
-          sameSite: "lax"
+          sameSite: "lax",
         });
       }
     }
 
     const mockOn =
       process.env.NEXT_PUBLIC_WEBCLIENT_MOCK === "1" ||
-      (process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_WEBCLIENT_MOCK !== "0");
+      (process.env.NODE_ENV !== "production" &&
+        process.env.NEXT_PUBLIC_WEBCLIENT_MOCK !== "0");
     const skipGuest =
+      pathname === "/brand" ||
+      pathname.startsWith("/brand/") ||
+      pathname === "/product" ||
+      pathname.startsWith("/product/") ||
       pathname === "/login" ||
       pathname.startsWith("/login/") ||
       pathname.startsWith("/api/");

@@ -1,5 +1,6 @@
 "use client";
 
+import { safeInternalPath } from "../../lib/size-contract";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../../webclient.module.css";
@@ -21,14 +22,14 @@ export function LoginForm() {
       const response = await fetch("/api/webclient/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "signin", email, password })
+        body: JSON.stringify({ action: "signin", email, password }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         setError(body.message || "Sign in failed");
         return;
       }
-      router.replace(next.startsWith("/") ? next : "/shop");
+      router.replace(safeInternalPath(next));
       router.refresh();
     } catch {
       setError("Sign in failed. Please try again.");
@@ -40,8 +41,13 @@ export function LoginForm() {
   return (
     <form className={styles.authCard} onSubmit={onSubmit}>
       <h1>Log in</h1>
-      <p className={styles.muted} style={{ textAlign: "center", marginBottom: 24 }}>
-        Use your ClothME account to pick up orders and sizes on the web and in the app.
+      <p
+        className={styles.muted}
+        style={{ textAlign: "center", marginBottom: 24 }}
+      >
+        Use your ClothME account to pick up orders and sizes on the web and in
+        the app. Signing in opens that account’s cart and fit profiles; guest
+        selections are not transferred.
       </p>
       {error ? <p className={styles.error}>{error}</p> : null}
       <div className={styles.field}>
@@ -66,7 +72,12 @@ export function LoginForm() {
           required
         />
       </div>
-      <button className={styles.button} type="submit" disabled={pending} style={{ width: "100%" }}>
+      <button
+        className={styles.button}
+        type="submit"
+        disabled={pending}
+        style={{ width: "100%" }}
+      >
         {pending ? "Signing in…" : "Log in"}
       </button>
     </form>

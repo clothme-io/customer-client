@@ -1,6 +1,11 @@
+import { fetchFitProfile } from "../../../(webclient)/lib/fit-profile";
+import { fetchCart } from "../../../(webclient)/lib/commerce";
 import { NextResponse } from "next/server";
 import { customerFetch } from "../../../(webclient)/lib/api";
-import { actionError, requireSession } from "../../../(webclient)/lib/require-session";
+import {
+  actionError,
+  requireSession,
+} from "../../../(webclient)/lib/require-session";
 
 export async function POST(request: Request) {
   const { session, error } = await requireSession();
@@ -10,28 +15,64 @@ export async function POST(request: Request) {
   const action = String(body.action || "");
 
   try {
+    if (action === "addToCart" || action === "initCheckout") {
+      const personIds =
+        action === "initCheckout"
+          ? [
+              ...new Set(
+                (await fetchCart(session)).cartItems.map(
+                  (item) => item.userId || session.personId,
+                ),
+              ),
+            ]
+          : [session.personId];
+      for (const personId of personIds) {
+        if (!(await fetchFitProfile({ ...session, personId })).ready) {
+          return NextResponse.json(
+            {
+              code: "FIT_PROFILE_REQUIRED",
+              personId,
+              message: "Add a fit profile before buying.",
+              next: "/account/size/policy",
+            },
+            { status: 409 },
+          );
+        }
+      }
+    }
     if (action === "like") {
       const productId = String(body.productId || "");
-      const result = await customerFetch(`/v1/customer/likes/products/${productId}`, {
-        method: "POST",
-        accessToken: session.accessToken,
-        personId: session.personId,
-        body: {}
-      });
+      const result = await customerFetch(
+        `/v1/customer/likes/products/${productId}`,
+        {
+          method: "POST",
+          accessToken: session.accessToken,
+          personId: session.personId,
+          body: {},
+        },
+      );
       return NextResponse.json(result);
     }
 
     if (action === "addToCart") {
       const variantId = String(body.variantId || "");
       const quantity = Number(body.quantity || 1);
-      if (!variantId) {
-        return NextResponse.json({ message: "Select a product option" }, { status: 400 });
+      if (
+        !variantId ||
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        quantity > 20
+      ) {
+        return NextResponse.json(
+          { message: "Select a product option" },
+          { status: 400 },
+        );
       }
       const result = await customerFetch("/v1/customer/cart/items", {
         method: "POST",
         accessToken: session.accessToken,
         personId: session.personId,
-        body: { variantId, quantity }
+        body: { variantId, quantity },
       });
       return NextResponse.json(result);
     }
@@ -40,7 +81,10 @@ export async function POST(request: Request) {
       const cartItemId = String(body.cartItemId || "");
       const quantity = Number(body.quantity);
       if (!cartItemId || !Number.isFinite(quantity)) {
-        return NextResponse.json({ message: "Missing cart item" }, { status: 400 });
+        return NextResponse.json(
+          { message: "Missing cart item" },
+          { status: 400 },
+        );
       }
       const path = `/v1/customer/cart/items/${cartItemId}`;
       const result =
@@ -48,13 +92,13 @@ export async function POST(request: Request) {
           ? await customerFetch(path, {
               method: "DELETE",
               accessToken: session.accessToken,
-              personId: session.personId
+              personId: session.personId,
             })
           : await customerFetch(path, {
               method: "PATCH",
               accessToken: session.accessToken,
               personId: session.personId,
-              body: { quantity }
+              body: { quantity },
             });
       return NextResponse.json(result ?? { ok: true });
     }
@@ -67,8 +111,8 @@ export async function POST(request: Request) {
         body: {
           productId: body.productId,
           ...(body.variantId ? { variantId: body.variantId } : {}),
-          quantity: 1
-        }
+          quantity: 1,
+        },
       });
       return NextResponse.json(result);
     }
@@ -81,8 +125,8 @@ export async function POST(request: Request) {
           method: "PATCH",
           accessToken: session.accessToken,
           personId: session.personId,
-          body: { quantity: 1 }
-        }
+          body: { quantity: 1 },
+        },
       );
       return NextResponse.json(result);
     }
@@ -92,29 +136,32 @@ export async function POST(request: Request) {
         method: "POST",
         accessToken: session.accessToken,
         personId: session.personId,
-        body: { message: String(body.message || "") }
+        body: { message: String(body.message || "") },
       });
       return NextResponse.json(result);
     }
 
     if (action === "addAddress") {
-      const result = await customerFetch(`/v1/customer/persons/${session.personId}/addresses`, {
-        method: "POST",
-        accessToken: session.accessToken,
-        personId: session.personId,
-        body: {
-          apartmentNumber: String(body.apartmentNumber || ""),
-          streetNumber: String(body.streetNumber || ""),
-          streetName: String(body.streetName || ""),
-          city: String(body.city || ""),
-          country: String(body.country || ""),
-          provinceState: String(body.provinceState || ""),
-          postalZipcode: String(body.postalZipcode || ""),
-          latitude: String(body.latitude || "0"),
-          longitude: String(body.longitude || "0"),
-          isPrimary: Boolean(body.isPrimary)
-        }
-      });
+      const result = await customerFetch(
+        `/v1/customer/persons/${session.personId}/addresses`,
+        {
+          method: "POST",
+          accessToken: session.accessToken,
+          personId: session.personId,
+          body: {
+            apartmentNumber: String(body.apartmentNumber || ""),
+            streetNumber: String(body.streetNumber || ""),
+            streetName: String(body.streetName || ""),
+            city: String(body.city || ""),
+            country: String(body.country || ""),
+            provinceState: String(body.provinceState || ""),
+            postalZipcode: String(body.postalZipcode || ""),
+            latitude: String(body.latitude || "0"),
+            longitude: String(body.longitude || "0"),
+            isPrimary: Boolean(body.isPrimary),
+          },
+        },
+      );
       return NextResponse.json(result);
     }
 
@@ -132,8 +179,8 @@ export async function POST(request: Request) {
           estimatedDaysMin: body.estimatedMinDays,
           estimatedDaysMax: body.estimatedMaxDays,
           provider: body.provider,
-          rateId: body.rateId
-        }
+          rateId: body.rateId,
+        },
       });
       return NextResponse.json(result);
     }
@@ -147,20 +194,23 @@ export async function POST(request: Request) {
           useCredits: Boolean(body.useCredits),
           shippingAddressId: body.shippingAddressId,
           billingAddressId: body.billingAddressId || body.shippingAddressId,
-          ...(body.email ? { email: String(body.email) } : {})
-        }
+          ...(body.email ? { email: String(body.email) } : {}),
+        },
       });
       return NextResponse.json(result);
     }
 
     if (action === "confirmPayment") {
       const orderId = String(body.orderId || "");
-      const result = await customerFetch(`/v1/customer/orders/${orderId}/confirm-payment`, {
-        method: "POST",
-        accessToken: session.accessToken,
-        personId: session.personId,
-        body: { providerPaymentId: body.paymentIntentId }
-      });
+      const result = await customerFetch(
+        `/v1/customer/orders/${orderId}/confirm-payment`,
+        {
+          method: "POST",
+          accessToken: session.accessToken,
+          personId: session.personId,
+          body: { providerPaymentId: body.paymentIntentId },
+        },
+      );
       return NextResponse.json(result);
     }
 

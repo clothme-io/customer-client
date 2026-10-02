@@ -3,12 +3,20 @@ import { getSession } from "./session";
 import type { WebClientSession } from "./session";
 
 export async function requireSession(): Promise<
-  { session: WebClientSession; error?: undefined } | { session?: undefined; error: NextResponse }
+  | { session: WebClientSession; error?: undefined }
+  | { session?: undefined; error: NextResponse }
 > {
   const session = await getSession();
   if (!session) {
     return {
-      error: NextResponse.json({ message: "Not signed in" }, { status: 401 })
+      error: NextResponse.json(
+        {
+          code: "SESSION_EXPIRED",
+          message:
+            "Your session expired. Sign in to continue with your saved profile.",
+        },
+        { status: 401 },
+      ),
     };
   }
   return { session };

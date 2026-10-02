@@ -1,5 +1,7 @@
 "use client";
 
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { shopProfileLines } from "../lib/catalog";
@@ -9,7 +11,7 @@ import styles from "../shop.module.css";
 
 export function UserAvatarList({
   avatars,
-  selectedUserId
+  selectedUserId,
 }: {
   avatars: ShopUser[];
   selectedUserId?: string;
@@ -88,14 +90,19 @@ export function UserAvatarList({
     await fetch("/api/webclient/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personId: userId })
+      body: JSON.stringify({ personId: userId }),
     });
     router.refresh();
   }
 
   return (
     <div className={styles.profileRail}>
-      <div ref={scrollerRef} className={styles.profileCards} role="list" aria-label="Profiles">
+      <div
+        ref={scrollerRef}
+        className={styles.profileCards}
+        role="list"
+        aria-label="Profiles"
+      >
         {avatars.map((avatar) => {
           const selected = avatar.userId === selectedUserId;
           const lines = shopProfileLines(avatar);
@@ -108,12 +115,18 @@ export function UserAvatarList({
               aria-pressed={selected}
             >
               {avatar.profileImage ? (
-                <img src={avatar.profileImage} alt="" className={styles.profileCardAvatar} />
+                <img
+                  src={avatar.profileImage}
+                  alt=""
+                  className={styles.profileCardAvatar}
+                />
               ) : (
                 <div className={styles.profileCardAvatar} />
               )}
               <div className={styles.profileCardCopy}>
-                <strong className={styles.profileCardName}>{avatar.firstName || "Profile"}</strong>
+                <strong className={styles.profileCardName}>
+                  {avatar.firstName || "Profile"}
+                </strong>
                 <span>{lines.category}</span>
                 {lines.size ? <span>{lines.size}</span> : null}
               </div>

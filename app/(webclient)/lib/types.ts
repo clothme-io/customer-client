@@ -108,7 +108,17 @@ export type DiscoverBrand = {
   isProfilesFavorite?: { id: string; firstName: string; lastName: string }[];
 };
 
+export type ProductFit = {
+  locationId: string;
+  colorId?: string;
+  sizeLabel: string;
+  fitType?: string;
+  score: number;
+};
+
 export type ProductDetail = {
+  userFit?: ProductFit;
+  userFitSizes?: ProductFit[];
   id: string;
   name: string;
   description: string;
@@ -122,7 +132,12 @@ export type ProductDetail = {
   refundPolicy?: string;
   deliveryInformation?: string;
   brand?: { id?: string; name?: string; logoUrl?: string };
-  locations?: { city?: string; stateProvince?: string; country?: string; address?: string }[];
+  locations?: {
+    city?: string;
+    stateProvince?: string;
+    country?: string;
+    address?: string;
+  }[];
   color?: { id: string; name: string; hex: string }[];
   sizes?: { id: string; size: string; quantity: number }[];
   variantLocations?: {
@@ -307,4 +322,22 @@ export type SupportMessage = {
   senderType: "user" | "support";
   message: string;
   createdAt: string;
+};
+
+export type BrandPayload = {
+  brand?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    brandDescription?: string;
+    logoUrl?: string;
+    city?: string;
+    country?: string;
+    products?: {
+      id: string;
+      name: string;
+      amount: number;
+      images: string[];
+    }[];
+  };
 };

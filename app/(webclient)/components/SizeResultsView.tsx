@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { commerceEvent, purchaseEvent } from "../lib/commerce-events";
+
+import { sessionFetch as fetch } from "../lib/session-client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AccountSubHeader } from "./AccountSubHeader";
-import { dataUrlToBlob, loadSizePhotos } from "../lib/size-profile";
+import {
+  sizeIdentity,
+  startGeneration,
+  saveFlow,
+  loadFlow,
+} from "../lib/size-flow";
+import { readPurchaseIntent } from "../lib/purchase-intent";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
@@ -15,7 +25,10 @@ type Result = {
   measurements?: Record<string, { cm?: number; in?: number }>;
   body_profile?: { shape?: string; shape_label?: string; description?: string };
   insights?: {
-    body_type_analysis?: { body_type?: string; fit_recommendations?: string | { tops?: string; bottoms?: string } };
+    body_type_analysis?: {
+      body_type?: string;
+      fit_recommendations?: string | { tops?: string; bottoms?: string };
+    };
   };
 };
 
@@ -23,7 +36,7 @@ const REGION_LABELS: Record<string, string> = {
   US_CAD: "North America",
   EU: "Europe",
   UK: "UK",
-  AUS: "Australia / Asia"
+  AUS: "Australia / Asia",
 };
 
 const MEASUREMENT_LABELS: Record<string, string> = {
@@ -31,87 +44,121 @@ const MEASUREMENT_LABELS: Record<string, string> = {
   waist: "Waist",
   inseam: "Inseam",
   "chest/bust": "Chest / Bust",
-  "leg_length": "Leg Length",
-  sleeve: "Sleeve"
+  leg_length: "Leg Length",
+  sleeve: "Sleeve",
 };
 
 function sizeLabel(value: unknown) {
   if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.filter((item) => typeof item === "string").join("/") || "—";
+  if (Array.isArray(value))
+    return value.filter((item) => typeof item === "string").join("/") || "—";
   return "—";
 }
 
 export function SizeResultsView() {
   const router = useRouter();
-  const started = useRef(false);
+  const [attempt, setAttempt] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const [returnTo, setReturnTo] = useState("/shop");
+  const [savingMessage, setSavingMessage] = useState(
+    "Checking your saved profile…",
+  );
   const [progress, setProgress] = useState("Calculating your sizes…");
   const [percent, setPercent] = useState(0);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const photos = loadSizePhotos();
-    if (!photos?.front || !photos.side || !photos.frontTask || !photos.sideTask) {
-      router.replace("/account/size/capture");
-      return;
-    }
-    const payload = photos;
-
     let cancelled = false;
-
+    const controller = new AbortController();
+    setError("");
     async function run() {
       try {
-        const form = new FormData();
-        form.append("action", "generate");
-        form.append("frontTaskId", payload.frontTask);
-        form.append("sideTaskId", payload.sideTask);
-        form.append("height", payload.profile.height || "");
-        form.append("gender", payload.profile.gender || "");
-        form.append("dob", payload.profile.dob || "");
-        form.append("weight", payload.profile.weight || "");
-        form.append("genderDemography", payload.profile.gender || "");
-        form.append("city", payload.profile.city || "");
-        form.append("country", payload.profile.country || "");
-        form.append("provinceState", payload.profile.provinceState || "");
-        form.append("frontImage", dataUrlToBlob(payload.front), "front.jpg");
-        form.append("sideImage", dataUrlToBlob(payload.side), "side.jpg");
-
-        const posted = await fetch("/api/webclient/size", { method: "POST", body: form });
-        const postedBody = await posted.json().catch(() => ({}));
-        if (!posted.ok) throw new Error(postedBody.message || "Could not start size generation");
-        const taskId = String(postedBody.task_id || postedBody.taskId || "");
-        if (!taskId) throw new Error("Size generation did not return a task");
-
-        for (let i = 0; i < 45; i += 1) {
-          const poll = await fetch(`/api/webclient/size?action=generateResult&id=${encodeURIComponent(taskId)}`);
-          const body = await poll.json().catch(() => ({}));
-          if (cancelled) return;
-          const status = Number(body.status || poll.status);
-          setPercent(Number(body.percentage_done || 0));
-          setProgress(body.message || "Analyzing your measurements…");
-          if (status === 202) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            continue;
-          }
-          if (status >= 400 || body.error) {
-            throw new Error(body.error?.message || body.message || "ClothME could not calculate your sizes");
-          }
-          setResult((body.data?.result || body.result || null) as Result);
+        const key = await sizeIdentity();
+        const intent = readPurchaseIntent();
+        if (intent && `${intent.accountId}:${intent.personId}` === key)
+          setReturnTo(intent.returnTo);
+        const existing = await loadFlow(key);
+        if (!existing) {
+          router.replace("/account/size/capture");
           return;
         }
-        throw new Error("Size generation timed out");
+        const flow = await startGeneration(key);
+        if (cancelled) return;
+        if (flow.result) setResult(flow.result as Result);
+        else {
+          for (let i = 0; i < 150; i += 1) {
+            const poll = await fetch(
+              `/api/webclient/size?action=generateResult&id=${encodeURIComponent(flow.taskId!)}`,
+              {
+                signal: controller.signal,
+              },
+            );
+            const body = await poll.json();
+            if (cancelled) return;
+            setPercent(body.percent || 0);
+            setProgress(body.message || "Calculating measurements…");
+            if (!poll.ok)
+              throw new Error(body.message || "Could not calculate sizes");
+            if (body.state === "complete" && body.result) {
+              if ((await sizeIdentity()) !== key)
+                throw new Error(
+                  "Your selected profile changed. Return to your account.",
+                );
+              flow.result = body.result;
+              await saveFlow(flow);
+              setResult(body.result);
+              commerceEvent("measurement_generated");
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            if (cancelled) return;
+          }
+          if (!flow.result)
+            throw new Error(
+              "Your measurements are still processing. Resume below to check the same job.",
+            );
+        }
+        setSavingMessage("Checking your saved sizes…");
+        for (let i = 0; i < 30; i += 1) {
+          const response = await fetch("/api/webclient/fit-profile", {
+            signal: controller.signal,
+          });
+          const profile = await response.json();
+          if (cancelled) return;
+          if (!response.ok)
+            throw new Error(
+              profile.message || "Could not verify your saved profile.",
+            );
+          if (`${profile.accountId}:${profile.personId}` !== key)
+            throw new Error("Your selected profile changed.");
+          if (profile.ready) {
+            setSaved(true);
+            commerceEvent("fit_profile_saved");
+            setSavingMessage(
+              "Your sizes are available in your account. Continue shopping to see product recommendations.",
+            );
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          if (cancelled) return;
+        }
+        setSavingMessage(
+          "Your measurements were calculated, but we cannot confirm a saved shopping profile yet. Check again shortly; you do not need to retake your photos.",
+        );
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not calculate sizes");
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Could not calculate sizes",
+          );
       }
     }
-
     run();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [router]);
+  }, [router, attempt]);
 
   const recs = result?.size_recommendations || {};
   const measurements = result?.measurements || {};
@@ -123,20 +170,37 @@ export function SizeResultsView() {
         {error ? (
           <>
             <p className={shell.error}>{error}</p>
-            <p className={shell.muted}>This will not stop ClothME from helping you find products.</p>
-            <Link className={shell.button} href="/account/size/capture" style={{ width: "100%", textAlign: "center" }}>
-              Try again
+            <p className={shell.muted}>
+              Your existing job will be checked again without submitting new
+              photos.
+            </p>
+            <button
+              type="button"
+              className={shell.button}
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              Resume
+            </button>
+            <Link
+              className={shell.button}
+              href="/account/size/capture"
+              style={{ width: "100%", textAlign: "center" }}
+            >
+              Retake photos
             </Link>
           </>
         ) : !result ? (
           <div className={styles.sizeLoading}>
             <p>{progress}</p>
-            {percent > 0 ? <p className={styles.sizePercent}>{percent}%</p> : null}
+            {percent > 0 ? (
+              <p className={styles.sizePercent}>{percent}%</p>
+            ) : null}
           </div>
         ) : (
           <>
             <p className={shell.muted}>
-              We have calculated sizes based on your photos. Actual fit may vary slightly by brand.
+              We have calculated sizes based on your photos. Actual fit may vary
+              slightly by brand.
             </p>
 
             {Object.keys(measurements).length > 0 ? (
@@ -160,13 +224,18 @@ export function SizeResultsView() {
                 <h2>Recommended sizes</h2>
                 {Object.entries(recs).map(([region, data]) => (
                   <div key={region} className={styles.sizeRegion}>
-                    <p className={styles.sizeRegionLabel}>{REGION_LABELS[region] || region}</p>
+                    <p className={styles.sizeRegionLabel}>
+                      {REGION_LABELS[region] || region}
+                    </p>
                     <p>
-                      Tops {sizeLabel(data.tops?.regular?.size)} · Bottoms {sizeLabel(data.bottoms?.regular?.size)}
+                      Tops {sizeLabel(data.tops?.regular?.size)} · Bottoms{" "}
+                      {sizeLabel(data.bottoms?.regular?.size)}
                     </p>
                     <p className={shell.muted}>
-                      Fitted {sizeLabel(data.tops?.fitted?.size)} / {sizeLabel(data.bottoms?.fitted?.size)} · Relaxed{" "}
-                      {sizeLabel(data.tops?.relaxed?.size)} / {sizeLabel(data.bottoms?.relaxed?.size)}
+                      Fitted {sizeLabel(data.tops?.fitted?.size)} /{" "}
+                      {sizeLabel(data.bottoms?.fitted?.size)} · Relaxed{" "}
+                      {sizeLabel(data.tops?.relaxed?.size)} /{" "}
+                      {sizeLabel(data.bottoms?.relaxed?.size)}
                     </p>
                   </div>
                 ))}
@@ -175,22 +244,46 @@ export function SizeResultsView() {
 
             {result.body_profile ? (
               <>
-                <h2>{result.body_profile.shape_label || result.body_profile.shape || "Body shape"}</h2>
-                {result.body_profile.description ? <p>{result.body_profile.description}</p> : null}
+                <h2>
+                  {result.body_profile.shape_label ||
+                    result.body_profile.shape ||
+                    "Body shape"}
+                </h2>
+                {result.body_profile.description ? (
+                  <p>{result.body_profile.description}</p>
+                ) : null}
               </>
             ) : null}
 
             {result.insights?.body_type_analysis ? (
               <p>
-                {typeof result.insights.body_type_analysis.fit_recommendations === "string"
+                {typeof result.insights.body_type_analysis
+                  .fit_recommendations === "string"
                   ? result.insights.body_type_analysis.fit_recommendations
-                  : result.insights.body_type_analysis.fit_recommendations?.tops}
+                  : result.insights.body_type_analysis.fit_recommendations
+                      ?.tops}
               </p>
             ) : null}
 
-            <Link className={shell.button} href="/shop" style={{ width: "100%", textAlign: "center", marginTop: 16 }}>
-              Continue shopping
-            </Link>
+            <p role="status">{savingMessage}</p>
+            {!saved ? (
+              <button
+                type="button"
+                className={shell.button}
+                onClick={() => setAttempt((value) => value + 1)}
+              >
+                Check saved profile again
+              </button>
+            ) : null}
+            <a
+              className={shell.button}
+              href={returnTo}
+              style={{ width: "100%", textAlign: "center", marginTop: 16 }}
+            >
+              {returnTo === "/shop"
+                ? "Continue shopping"
+                : "Return to your selection"}
+            </a>
           </>
         )}
       </div>

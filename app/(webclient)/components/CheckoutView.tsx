@@ -1,12 +1,22 @@
 "use client";
 
+import { commerceEvent, purchaseEvent } from "../lib/commerce-events";
+
+import { sessionFetch as fetch } from "../lib/session-client";
+
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import type { AccountAddress, CartData, CheckoutSession } from "../lib/types";
 import { shippingComplete, shippingTotal } from "../lib/cart-utils";
+import { ensureFitProfile } from "../lib/purchase-intent";
 import { WEBCLIENT_MOCK } from "../lib/config";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
@@ -22,7 +32,13 @@ function stripeFor(publishableKey: string) {
 }
 
 function formatAddress(address: AccountAddress) {
-  const line = [address.apartmentNumber, address.streetNumber, address.streetName].filter(Boolean).join(" ");
+  const line = [
+    address.apartmentNumber,
+    address.streetNumber,
+    address.streetName,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return `${line}, ${address.city}, ${address.provinceState} ${address.postalZipcode}`;
 }
 
@@ -30,7 +46,7 @@ async function postAction(payload: Record<string, unknown>) {
   const response = await fetch("/api/webclient/action", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -57,7 +73,11 @@ function MockPayForm({ totalLabel }: { totalLabel: string }) {
       </p>
       <label className={shell.field}>
         Card number
-        <input defaultValue="4242 4242 4242 4242" readOnly aria-label="Card number" />
+        <input
+          defaultValue="4242 4242 4242 4242"
+          readOnly
+          aria-label="Card number"
+        />
       </label>
       <div className={styles.payRow}>
         <label className={shell.field}>
@@ -69,7 +89,12 @@ function MockPayForm({ totalLabel }: { totalLabel: string }) {
           <input defaultValue="123" readOnly aria-label="CVC" />
         </label>
       </div>
-      <button className={shell.button} type="submit" disabled={busy} style={{ width: "100%", marginTop: 8 }}>
+      <button
+        className={shell.button}
+        type="submit"
+        disabled={busy}
+        style={{ width: "100%", marginTop: 8 }}
+      >
         {busy ? "Processing…" : `Pay ${totalLabel}`}
       </button>
     </form>
@@ -79,7 +104,7 @@ function MockPayForm({ totalLabel }: { totalLabel: string }) {
 function PayForm({
   orderId,
   clientSecret,
-  totalLabel
+  totalLabel,
 }: {
   orderId: string;
   clientSecret: string;
@@ -100,20 +125,25 @@ function PayForm({
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/checkout/complete?orderId=${encodeURIComponent(orderId)}`
+          return_url: `${window.location.origin}/checkout/complete?orderId=${encodeURIComponent(orderId)}`,
         },
-        redirect: "if_required"
+        redirect: "if_required",
       });
       if (result.error) {
         throw new Error(result.error.message || "Payment failed");
       }
       const paymentIntentId =
         result.paymentIntent?.id || clientSecret.split("_secret_")[0];
-      await postAction({
+      const confirmation = await postAction({
         action: "confirmPayment",
         orderId,
-        paymentIntentId
+        paymentIntentId,
       });
+      if (confirmation.status !== "paid")
+        throw new Error(
+          "Payment is still being confirmed. Please check your orders before retrying.",
+        );
+      purchaseEvent(orderId);
       sessionStorage.removeItem("cm_checkout_order");
       router.push("/checkout/thank-you");
     } catch (err) {
@@ -127,7 +157,12 @@ function PayForm({
     <form onSubmit={onSubmit} className={styles.payBox}>
       <PaymentElement />
       {error ? <p className={shell.error}>{error}</p> : null}
-      <button className={shell.button} type="submit" disabled={busy || !stripe} style={{ width: "100%", marginTop: 16 }}>
+      <button
+        className={shell.button}
+        type="submit"
+        disabled={busy || !stripe}
+        style={{ width: "100%", marginTop: 16 }}
+      >
         {busy ? "Processing…" : `Pay ${totalLabel}`}
       </button>
     </form>
@@ -138,7 +173,7 @@ function SignInInline({
   email,
   onEmail,
   onDone,
-  onError
+  onError,
 }: {
   email: string;
   onEmail: (value: string) => void;
@@ -156,7 +191,7 @@ function SignInInline({
       const response = await fetch("/api/webclient/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "signin", email, password })
+        body: JSON.stringify({ action: "signin", email, password }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Sign in failed");
@@ -172,11 +207,21 @@ function SignInInline({
     <form onSubmit={onSubmit} className={styles.addressForm}>
       <label className={shell.field}>
         Email
-        <input type="email" value={email} onChange={(event) => onEmail(event.target.value)} required />
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => onEmail(event.target.value)}
+          required
+        />
       </label>
       <label className={shell.field}>
         Password
-        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
       </label>
       <button className={shell.button} type="submit" disabled={busy}>
         {busy ? "Signing in…" : "Sign in"}
@@ -189,7 +234,7 @@ export function CheckoutView({
   cart,
   addresses,
   contactEmail = "",
-  isRegistered = false
+  isRegistered = false,
 }: {
   cart: CartData;
   addresses: AccountAddress[];
@@ -213,9 +258,9 @@ export function CheckoutView({
       ? {
           clientSecret: "pi_mock_secret_mock",
           orderId: "ord-mock",
-          publishableKey: "pk_test_mock"
+          publishableKey: "pk_test_mock",
         }
-      : null
+      : null,
   );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -224,10 +269,11 @@ export function CheckoutView({
 
   const stripePromise = useMemo(
     () => (session?.publishableKey ? stripeFor(session.publishableKey) : null),
-    [session?.publishableKey]
+    [session?.publishableKey],
   );
 
   async function startPayment() {
+    if (busy) return;
     if (!addressId) {
       setError("Add a shipping address to continue.");
       return;
@@ -240,22 +286,32 @@ export function CheckoutView({
     setBusy(true);
     setError("");
     try {
+      if (!(await ensureFitProfile({ returnTo: "/checkout" }))) {
+        router.push("/account/size/policy");
+        return;
+      }
       if (!isRegistered && password.trim()) {
         const auth = await fetch("/api/webclient/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "signup", email: trimmedEmail, password: password.trim() })
+          body: JSON.stringify({
+            action: "signup",
+            email: trimmedEmail,
+            password: password.trim(),
+          }),
         });
         const authBody = await auth.json().catch(() => ({}));
-        if (!auth.ok) throw new Error(authBody.message || "Could not create account");
+        if (!auth.ok)
+          throw new Error(authBody.message || "Could not create account");
       } else if (!isRegistered) {
         const attached = await fetch("/api/webclient/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "attachEmail", email: trimmedEmail })
+          body: JSON.stringify({ action: "attachEmail", email: trimmedEmail }),
         });
         const attachedBody = await attached.json().catch(() => ({}));
-        if (!attached.ok) throw new Error(attachedBody.message || "Could not save email");
+        if (!attached.ok)
+          throw new Error(attachedBody.message || "Could not save email");
       }
 
       const result = await postAction({
@@ -263,19 +319,20 @@ export function CheckoutView({
         useCredits: false,
         shippingAddressId: addressId,
         billingAddressId: addressId,
-        email: trimmedEmail
+        email: trimmedEmail,
       });
       const next: CheckoutSession = {
         clientSecret: result.clientSecret,
         ephemeralKey: result.ephemeralKey,
         customerId: result.customerId,
         orderId: result.orderId,
-        publishableKey: result.publishableKey
+        publishableKey: result.publishableKey,
       };
       if (!next.clientSecret || !next.orderId || !next.publishableKey) {
         throw new Error("Checkout did not return a payment session");
       }
       sessionStorage.setItem("cm_checkout_order", next.orderId);
+      commerceEvent("begin_checkout", { orderId: next.orderId });
       setSession(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start checkout");
@@ -299,9 +356,11 @@ export function CheckoutView({
         provinceState: form.get("provinceState") || "",
         postalZipcode: form.get("postalZipcode") || "",
         country: form.get("country") || "",
-        isPrimary: savedAddresses.length === 0
+        isPrimary: savedAddresses.length === 0,
       });
-      const created = (result.addressId ? result : result.result || result) as AccountAddress;
+      const created = (
+        result.addressId ? result : result.result || result
+      ) as AccountAddress;
       const nextAddress: AccountAddress = {
         addressId: created.addressId,
         apartmentNumber: String(form.get("apartmentNumber") || ""),
@@ -311,7 +370,7 @@ export function CheckoutView({
         provinceState: String(form.get("provinceState") || ""),
         postalZipcode: String(form.get("postalZipcode") || ""),
         country: String(form.get("country") || ""),
-        isDefault: savedAddresses.length === 0
+        isDefault: savedAddresses.length === 0,
       };
       setSavedAddresses((current) => [...current, nextAddress]);
       setAddressId(nextAddress.addressId);
@@ -340,7 +399,9 @@ export function CheckoutView({
     return (
       <section className={shell.pagePad}>
         <h1 className={shell.pageTitle}>Checkout</h1>
-        <p className={shell.muted}>Choose a shipping option for each brand in your cart first.</p>
+        <p className={shell.muted}>
+          Choose a shipping option for each brand in your cart first.
+        </p>
         <Link className={shell.button} href="/cart" style={{ marginTop: 16 }}>
           Back to cart
         </Link>
@@ -373,7 +434,11 @@ export function CheckoutView({
           <span>{address.country}</span>
         </button>
       ))}
-      <button type="button" className={`${shell.button} ${shell.ghostButton}`} onClick={() => setShowForm((open) => !open)}>
+      <button
+        type="button"
+        className={`${shell.button} ${shell.ghostButton}`}
+        onClick={() => setShowForm((open) => !open)}
+      >
         {showForm ? "Cancel" : "Add address"}
       </button>
 
@@ -437,12 +502,15 @@ export function CheckoutView({
             className={`${shell.button} ${shell.ghostButton}`}
             onClick={() => setShowPassword((open) => !open)}
           >
-            {showPassword ? "Skip account for now" : "Create an account (optional)"}
+            {showPassword
+              ? "Skip account for now"
+              : "Create an account (optional)"}
           </button>
           {showPassword ? (
             <>
               <p className={shell.muted} style={{ margin: "8px 0 12px" }}>
-                Add a password to open this order and your sizes in the ClothME app.
+                Add a password to open this order and your sizes in the ClothME
+                app.
               </p>
               <label className={shell.field}>
                 Password
@@ -458,7 +526,11 @@ export function CheckoutView({
           ) : null}
           <p className={shell.muted} style={{ margin: "8px 0 16px" }}>
             Already have an account?{" "}
-            <button type="button" className={styles.locationCount} onClick={() => setShowSignIn((open) => !open)}>
+            <button
+              type="button"
+              className={styles.locationCount}
+              onClick={() => setShowSignIn((open) => !open)}
+            >
               Sign in
             </button>
           </p>
@@ -493,10 +565,17 @@ export function CheckoutView({
           stripe={stripePromise}
           options={{
             clientSecret: session.clientSecret,
-            appearance: { theme: "stripe", variables: { colorPrimary: "#0a7ea4" } }
+            appearance: {
+              theme: "stripe",
+              variables: { colorPrimary: "#0a7ea4" },
+            },
           }}
         >
-          <PayForm orderId={session.orderId} clientSecret={session.clientSecret} totalLabel={totalLabel} />
+          <PayForm
+            orderId={session.orderId}
+            clientSecret={session.clientSecret}
+            totalLabel={totalLabel}
+          />
         </Elements>
       ) : null}
     </section>
