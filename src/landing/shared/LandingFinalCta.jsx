@@ -15,6 +15,7 @@ export function LandingFinalCta({ onWaitlistSuccess }) {
         <WaitlistForm
           id="waitlist-final"
           source="landing:final"
+          ctaLabel="Send me a download link"
           onSuccess={onWaitlistSuccess}
           showState={false}
           note="Your photos are used for sizing only — never shared, never sold."
