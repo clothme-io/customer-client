@@ -16,8 +16,7 @@ export function LandingFinalCta({ onWaitlistSuccess }) {
           id="waitlist-final"
           source="landing:final"
           onSuccess={onWaitlistSuccess}
-          showState
-          stateLabel="Where are you? (optional)"
+          showState={false}
           note="Your photos are used for sizing only — never shared, never sold."
         />
       </div>
