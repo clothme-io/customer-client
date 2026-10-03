@@ -107,23 +107,47 @@ export function startGeneration(key: string) {
   }
   return pending;
 }
+// IndexedDB serializes read/write transactions across connections and tabs.
+// Read and claim in the same transaction, before sending any network request.
+async function claimGeneration(key: string): Promise<SizeFlow> {
+  const db = await database();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction("flows", "readwrite");
+      const store = tx.objectStore("flows");
+      const request = store.get(key);
+      let flow: SizeFlow;
+      let failure: Error | undefined;
+      request.onsuccess = () => {
+        flow = request.result;
+        if (!flow || flow.expires < Date.now())
+          failure = new Error("Your photo session expired. Please take your photos again.");
+        else if (flow.taskId || flow.result) return;
+        else if (flow.submitting)
+          failure = new Error("The previous submission may still be processing. Please contact support before starting another measurement.");
+        else if (!flow.photos)
+          failure = new Error("Both validated photos are required.");
+        if (failure) {
+          tx.abort();
+          return;
+        }
+        flow.submitting = true;
+        store.put(flow);
+      };
+      tx.oncomplete = () => resolve(flow);
+      tx.onabort = () => reject(failure || tx.error || new Error("Could not claim your sizing session."));
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
 async function submit(key: string): Promise<SizeFlow> {
-  const flow = await loadFlow(key);
-  if (!flow)
-    throw new Error(
-      "Your photo session expired. Please take your photos again.",
-    );
-  if (flow.taskId || flow.result) return flow;
-  if (flow.submitting)
-    throw new Error(
-      "The previous submission may still be processing. Please contact support before starting another measurement.",
-    );
-  const photos = flow.photos;
-  if (!photos) throw new Error("Both validated photos are required.");
   if ((await sizeIdentity()) !== key)
     throw new Error("Your selected profile changed. Return to the photo step.");
-  flow.submitting = true;
-  await saveFlow(flow);
+  const flow = await claimGeneration(key);
+  if (flow.taskId || flow.result) return flow;
+  const photos = flow.photos!;
   const form = new FormData();
   form.set("action", "generate");
   form.set("frontTaskId", photos.frontTask);

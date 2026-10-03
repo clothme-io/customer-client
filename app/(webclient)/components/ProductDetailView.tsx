@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ensureFitProfile,
-  readPurchaseIntent,
+  readPurchaseIntentForProfile,
   clearPurchaseIntent,
 } from "../lib/purchase-intent";
 import { selectVariant } from "../lib/variant-selection";
@@ -63,15 +63,17 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
 
   const [pending, setPending] = useState(false);
   useEffect(() => {
-    const intent = readPurchaseIntent();
-    if (intent?.productId === product.id) {
+    let cancelled = false;
+    readPurchaseIntentForProfile(product.id).then((intent) => {
+      if (cancelled || !intent) return;
       if (locations.some((loc) => loc.id === intent.locationId))
         setLocationId(intent.locationId!);
       if (intent.colorId) setColorId(intent.colorId);
       setMessage(
         "Your selection is saved. Review your size before adding it to your cart.",
       );
-    }
+    });
+    return () => { cancelled = true; };
   }, [product.id]);
 
   useEffect(() => {

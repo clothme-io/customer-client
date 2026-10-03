@@ -102,3 +102,65 @@ for (const scenario of [
     assert.equal(destination, "/account/size/capture");
   });
 }
+
+test("separate tabs atomically claim one generation job and reuse its result", async () => {
+  const indexedDB = new IDBFactory();
+  let posts = 0;
+  const sessionFetch = async (url: string) => {
+    if (url.endsWith("/session")) return { json: async () => ({ authenticated: true, accountId: "a", personId: "p" }) };
+    posts++;
+    await new Promise(resolve => setTimeout(resolve, 30));
+    return { ok: true, json: async () => ({ taskId: "single-job" }) };
+  };
+  const tab = () => loadModule("../../app/(webclient)/lib/size-flow.ts", {
+    "./session-client": { sessionFetch }, "./size-profile": {},
+  }, { indexedDB, FormData });
+  const first = tab(), second = tab();
+  await first.saveFlow({ key: "a:p", expires: Date.now() + 60_000, photos: {
+    front: new Blob(["front"]), side: new Blob(["side"]),
+    frontTask: "front", sideTask: "side", profile: { gender: "female" },
+  } });
+  const outcomes = await Promise.allSettled([first.startGeneration("a:p"), second.startGeneration("a:p")]);
+  assert.equal(posts, 1, "Independent module maps must not permit duplicate requests");
+  assert.ok(outcomes.some(result => result.status === "fulfilled"));
+  assert.equal((await second.startGeneration("a:p")).taskId, "single-job");
+  assert.equal(posts, 1, "Reloading the accepted job must not resubmit it");
+});
+
+test("an ambiguous network failure leaves a persistent claim for another tab", async () => {
+  const indexedDB = new IDBFactory();
+  let posts = 0;
+  const tab = () => loadModule("../../app/(webclient)/lib/size-flow.ts", {
+    "./session-client": { sessionFetch: async (url: string) => {
+      if (url.endsWith("/session")) return { json: async () => ({ authenticated: true, accountId: "a", personId: "p" }) };
+      posts++;
+      throw new Error("Connection lost");
+    } }, "./size-profile": {},
+  }, { indexedDB, FormData });
+  const first = tab();
+  await first.saveFlow({ key: "a:p", expires: Date.now() + 60_000, photos: {
+    front: new Blob(["front"]), side: new Blob(["side"]),
+    frontTask: "front", sideTask: "side", profile: { gender: "female" },
+  } });
+  await assert.rejects(first.startGeneration("a:p"), /Connection lost/);
+  await assert.rejects(tab().startGeneration("a:p"), /previous submission/);
+  assert.equal(posts, 1);
+});
+
+for (const scenario of [
+  { accountId: "a", personId: "p", authenticated: true, restore: true },
+  { accountId: "a", personId: "other", authenticated: true, restore: false },
+  { accountId: "other", personId: "p", authenticated: true, restore: false },
+  { accountId: "a", personId: "p", authenticated: false, restore: false },
+]) {
+  test(`purchase restoration requires matching authenticated identity: ${JSON.stringify(scenario)}`, async () => {
+    const { readPurchaseIntentForProfile } = loadModule("../../app/(webclient)/lib/purchase-intent.ts", {
+      "./commerce-events": {}, "./size-contract": { safeInternalPath: (path: string) => path },
+      "./session-client": { sessionFetch: async () => ({ ok: true, json: async () => scenario }) },
+    }, { sessionStorage: { getItem: () => JSON.stringify({
+      accountId: "a", personId: "p", productId: "product", createdAt: Date.now(), returnTo: "/product/product",
+    }) } });
+    assert.equal(!!(await readPurchaseIntentForProfile("product")), scenario.restore);
+    assert.equal(await readPurchaseIntentForProfile("different-product"), null);
+  });
+}
