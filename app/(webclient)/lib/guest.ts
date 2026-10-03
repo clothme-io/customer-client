@@ -44,7 +44,8 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
         lastName: "Shopper",
         gender: "unspecified",
         relationship: "self",
-        dob: "",
+        // Match mobile's pre-profile setup sentinel; sizing supplies the real DOB.
+        dob: "dob",
         weight: 0,
         height: 0,
         email,

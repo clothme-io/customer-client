@@ -27,6 +27,21 @@ function flowStore() {
   }, { indexedDB: new IDBFactory() });
 }
 
+test("guest setup matches mobile's nonempty pre-profile DOB contract", async () => {
+  let sent: any;
+  const { bootstrapGuestSession } = loadModule("../../app/(webclient)/lib/guest.ts", {
+    "./api": { customerFetch: async (_path: string, options: any) => {
+      sent = options.body;
+      if (!sent.dob) throw new Error("dob should not be empty");
+      return { accountId: "account", accountUserId: "person", accessToken: "access", refreshToken: "refresh" };
+    } },
+  });
+  const session = await bootstrapGuestSession();
+  assert.equal(sent.dob, "dob");
+  assert.equal(session.personId, "person");
+  assert.equal(session.accessToken, "access");
+});
+
 test("switching profiles preserves other profiles' photos and measurement jobs", async () => {
   const { saveFlow, loadFlow } = flowStore();
   const expires = Date.now() + 60_000;
