@@ -2320,6 +2320,26 @@ h1 {
   margin-top: 16px;
 }
 
+.mock-hero-size-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 440px);
+  min-height: 48px;
+  margin: 24px auto 0;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mock-hero-size-cta:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+
 .creator-hero-circle--badge {
   z-index: 2;
 }
