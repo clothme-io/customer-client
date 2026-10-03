@@ -43,9 +43,8 @@ export async function loadFlow(key: string): Promise<SizeFlow | null> {
       let flow: SizeFlow | null = null;
       request.onsuccess = () => {
         for (const item of request.result as SizeFlow[]) {
-          if (item.expires < Date.now() || item.key !== key)
-            store.delete(item.key);
-          else flow = item;
+          if (item.expires < Date.now()) store.delete(item.key);
+          else if (item.key === key) flow = item;
         }
       };
       tx.oncomplete = () => resolve(flow);
