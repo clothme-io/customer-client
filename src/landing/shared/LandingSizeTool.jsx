@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { submitWaitlist } from "../../lib/waitlist";
 import { runSizeTool } from "../../lib/sizeToolClient";
+import { sizeToolProfileFromAge } from "../../lib/sizeToolProfile";
 import { track } from "../../lib/track";
 
 const PROCESS_COPY = [
@@ -183,12 +184,8 @@ export function LandingSizeTool() {
   const [emailStatus, setEmailStatus] = useState("idle");
   const [emailError, setEmailError] = useState("");
   const [profile, setProfile] = useState({
-    dob: "",
+    age: "",
     gender: "",
-    country: "",
-    provinceState: "",
-    city: "",
-    weight: "",
   });
   const progress = useRef({});
   const submitting = useRef(false);
@@ -227,11 +224,11 @@ export function LandingSizeTool() {
       frontFile &&
       sideFile &&
       heightValue &&
-      profile.dob &&
-      profile.gender &&
-      profile.country.trim() &&
-      profile.city.trim() &&
-      profile.provinceState.trim(),
+      profile.age !== "" &&
+      Number.isInteger(Number(profile.age)) &&
+      Number(profile.age) >= 1 &&
+      Number(profile.age) <= 120 &&
+      profile.gender,
     ) && phase === "upload";
 
   async function onGetSize(event) {
@@ -246,7 +243,7 @@ export function LandingSizeTool() {
         frontFile,
         sideFile,
         heightCm: heightValue,
-        profile,
+        profile: sizeToolProfileFromAge(profile),
         progress: progress.current,
       });
       setFrontPreview(null);
@@ -417,13 +414,17 @@ export function LandingSizeTool() {
                   details for your selected account profile.
                 </p>
                 <label>
-                  Date of birth
+                  Age
                   <input
-                    type="date"
+                    type="number"
+                    inputMode="numeric"
                     required
-                    max={new Date().toISOString().slice(0, 10)}
-                    value={profile.dob}
-                    onChange={(e) => updateProfile("dob", e.target.value)}
+                    min="1"
+                    max="120"
+                    step="1"
+                    placeholder="Age in years"
+                    value={profile.age}
+                    onChange={(e) => updateProfile("age", e.target.value)}
                   />
                 </label>
                 <label>
@@ -437,46 +438,6 @@ export function LandingSizeTool() {
                     <option value="female">Female</option>
                     <option value="male">Male</option>
                   </select>
-                </label>
-                <label>
-                  Country
-                  <input
-                    required
-                    autoComplete="country-name"
-                    value={profile.country}
-                    onChange={(e) => updateProfile("country", e.target.value)}
-                  />
-                </label>
-                <label>
-                  Province / state
-                  <input
-                    required
-                    autoComplete="address-level1"
-                    value={profile.provinceState}
-                    onChange={(e) =>
-                      updateProfile("provinceState", e.target.value)
-                    }
-                  />
-                </label>
-                <label>
-                  City
-                  <input
-                    required
-                    autoComplete="address-level2"
-                    value={profile.city}
-                    onChange={(e) => updateProfile("city", e.target.value)}
-                  />
-                </label>
-                <label>
-                  Weight (kg, optional)
-                  <input
-                    type="number"
-                    min="1"
-                    max="400"
-                    step="0.1"
-                    value={profile.weight}
-                    onChange={(e) => updateProfile("weight", e.target.value)}
-                  />
                 </label>
               </div>
 
