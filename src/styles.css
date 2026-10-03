@@ -2328,7 +2328,7 @@ h1 {
   min-height: 48px;
   margin: 24px auto 0;
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--accent);
   color: #fff;
   font-weight: 700;
@@ -4350,6 +4350,10 @@ h1 {
 
 .mock-final-cta .mock-perk-text {
   max-width: 100%;
+}
+
+.mock-final-cta .waitlist-form--mock button {
+  border-radius: 999px;
 }
 
 .mock-final-cta-inner {
