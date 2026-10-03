@@ -15,6 +15,7 @@
     "cms:sync": "node scripts/payload-migrate.mjs",
     "test:webclient": "node --experimental-strip-types --test tests/webclient/*.test.ts",
     "typecheck": "tsc --noEmit --incremental false",
+    "test:email": "node --test tests/email/*.test.mjs",
     "test:size-tool": "node --test tests/size-tool/*.test.mjs",
     "test:size-tool:http": "node tests/size-tool/http-smoke.mjs"
   },

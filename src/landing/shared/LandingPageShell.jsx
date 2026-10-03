@@ -48,7 +48,7 @@ export function LandingPageShell({ className, isModalOpen, onCloseModal, onWaitl
           <LandingBlogPreview />
         </LandingReveal>
         <LandingReveal>
-          <LandingFinalCta onWaitlistSuccess={onWaitlistSuccess} />
+          <LandingFinalCta />
         </LandingReveal>
       </main>
       <Footer />

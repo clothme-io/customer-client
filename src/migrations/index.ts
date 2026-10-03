@@ -1,3 +1,4 @@
+import * as appDownloadRequests from './20261003_000001_app_download_requests';
 import * as migration_20260626_183444 from './20260626_183444';
 import * as migration_20260702_000001_waitlist_entries from './20260702_000001_waitlist_entries';
 import * as migration_20260702_000002_drop_legacy_tables from './20260702_000002_drop_legacy_tables';
@@ -12,6 +13,7 @@ import * as migration_20260805_000001_cms_posts_source_status_columns from './20
 import * as migration_20260807_000001_repair_html_entities_in_posts from './20260807_000001_repair_html_entities_in_posts';
 
 export const migrations = [
+
   {
     up: migration_20260626_183444.up,
     down: migration_20260626_183444.down,
@@ -72,4 +74,5 @@ export const migrations = [
     down: migration_20260807_000001_repair_html_entities_in_posts.down,
     name: '20260807_000001_repair_html_entities_in_posts'
   },
+  { up: appDownloadRequests.up, down: appDownloadRequests.down, name: '20261003_000001_app_download_requests' },
 ];

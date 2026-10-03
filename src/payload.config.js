@@ -796,7 +796,7 @@ export default buildConfig({
       ssl: databaseSsl
     },
     push: process.env.NODE_ENV === "development",
-    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*", "waitlist_entries", "webhook_events"]
+    tablesFilter: ["cms_*", "media", "media_*", "locations", "locations_*", "payload_*", "waitlist_entries", "webhook_events", "app_download_requests"]
   }),
   editor: lexicalEditor({}),
   graphQL: {

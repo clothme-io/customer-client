@@ -177,6 +177,22 @@ jobs:
   test:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: email_test
+          POSTGRES_PASSWORD: email_test
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U email_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      EMAIL_TEST_DATABASE_URL: postgresql://email_test:email_test@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -184,7 +200,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npm run test:webclient && npm run test:size-tool && node --test tests/deployment/*.test.mjs
+      - run: npm run test:webclient && npm run test:size-tool && npm run test:email && node --test tests/deployment/*.test.mjs
       - run: npm run typecheck
 
   build:

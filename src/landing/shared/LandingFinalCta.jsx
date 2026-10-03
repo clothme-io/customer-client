@@ -1,6 +1,6 @@
-import { WaitlistForm } from "../../components/WaitlistForm";
+import { AppDownloadForm } from "../../components/AppDownloadForm";
 
-export function LandingFinalCta({ onWaitlistSuccess }) {
+export function LandingFinalCta() {
   return (
     <section className="mock-final-cta" id="join" aria-labelledby="final-cta-title">
       <div className="mock-final-cta-inner">
@@ -12,14 +12,7 @@ export function LandingFinalCta({ onWaitlistSuccess }) {
           <p className="mock-perk-text">Send me a download link for the app.</p>
         </div>
 
-        <WaitlistForm
-          id="waitlist-final"
-          source="landing:final"
-          ctaLabel="Send me a download link"
-          onSuccess={onWaitlistSuccess}
-          showState={false}
-          note="Your photos are used for sizing only — never shared, never sold."
-        />
+        <AppDownloadForm />
       </div>
     </section>
   );
