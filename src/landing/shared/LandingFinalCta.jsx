@@ -1,5 +1,4 @@
 import { WaitlistForm } from "../../components/WaitlistForm";
-import { landingPerk } from "../../data/landing";
 
 export function LandingFinalCta({ onWaitlistSuccess }) {
   return (
@@ -10,8 +9,7 @@ export function LandingFinalCta({ onWaitlistSuccess }) {
         </h2>
 
         <div className="mock-perk mock-perk--centered">
-          <p className="mock-perk-text">{landingPerk.text}</p>
-          <p className="mock-perk-fine">{landingPerk.finePrint}</p>
+          <p className="mock-perk-text">Send me a download link for the app.</p>
         </div>
 
         <WaitlistForm
