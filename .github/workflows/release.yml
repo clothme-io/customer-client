@@ -179,7 +179,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "::notice::Automated tests will gate deploys in a later phase."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run test:webclient && npm run test:size-tool && node --test tests/deployment/*.test.mjs
+      - run: npm run typecheck
 
   build:
     needs: test
@@ -892,49 +898,14 @@ jobs:
             echo "Applied infra/${rel}"
           done
 
+      - uses: actions/checkout@v4
+        with:
+          path: web-release
+
       - name: Wait for approved image and preview readiness
         env:
           TAG: ${{ needs.bump-prod.outputs.image_tag }}
-        run: |
-          EXPECTED="${{ env.IMAGE_REPOSITORY }}:$TAG"
-          echo "Waiting for rollout image $EXPECTED..."
-          for i in $(seq 1 90); do
-            CURRENT=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
-            echo "Attempt $i: current=$CURRENT expected=$EXPECTED"
-            if [ "$CURRENT" = "$EXPECTED" ]; then
-              break
-            fi
-            sleep 10
-          done
-          if [ "$CURRENT" != "$EXPECTED" ]; then
-            echo "::error::Rollout did not pick up approved image $EXPECTED within 15 minutes (current: $CURRENT)"
-            exit 1
-          fi
-          echo "Waiting for blue/green preview pause (or Healthy if already active)..."
-          for i in $(seq 1 90); do
-            PHASE=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.status.phase}' 2>/dev/null || true)
-            MSG=$(kubectl get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" -o jsonpath='{.status.message}' 2>/dev/null || true)
-            echo "Attempt $i: phase=$PHASE message=$MSG"
-            case "$PHASE" in
-              Paused)
-                echo "Preview ready ($MSG)"
-                exit 0
-                ;;
-              Healthy)
-                echo "Rollout Healthy with approved image (preview/active already on $EXPECTED)"
-                exit 0
-                ;;
-              Degraded|Error)
-                echo "::error::Rollout $PHASE while waiting for preview: $MSG"
-                kubectl argo rollouts get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" || true
-                exit 1
-                ;;
-            esac
-            sleep 10
-          done
-          echo "::error::Timed out waiting for BlueGreenPause on ${{ env.ROLLOUT_NAME }}"
-          kubectl argo rollouts get rollout "${{ env.ROLLOUT_NAME }}" -n "${{ env.ROLLOUT_NAMESPACE }}" || true
-          exit 1
+        run: node web-release/scripts/verify-rollout.mjs preview "${{ env.IMAGE_REPOSITORY }}:$TAG"
 
   create-traffic-cutover-issue:
     needs: [prod-wait-preview, bump-prod]
@@ -1012,19 +983,20 @@ jobs:
             exit 1
           fi
 
-      - name: Promote rollout
-        run: |
-          kubectl argo rollouts promote ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }}
-          kubectl argo rollouts status ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} --timeout 15m
+      - uses: actions/checkout@v4
 
-      - name: Verify rollout healthy
-        run: |
-          PHASE=$(kubectl get rollout ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} -o jsonpath='{.status.phase}')
-          if [ "$PHASE" != "Healthy" ]; then
-            echo "::error::Rollout not healthy after promote"
-            exit 1
-          fi
-          echo "::notice::Prod deploy complete. Image tag: ${{ needs.parse-approval-comment.outputs.image_tag }}"
+      - name: Verify approved preview before promotion
+        env:
+          TAG: ${{ needs.parse-approval-comment.outputs.image_tag }}
+        run: node scripts/verify-rollout.mjs preview "${{ env.IMAGE_REPOSITORY }}:$TAG"
+
+      - name: Promote rollout
+        run: kubectl argo rollouts promote ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }}
+
+      - name: Verify approved image serves live traffic
+        env:
+          TAG: ${{ needs.parse-approval-comment.outputs.image_tag }}
+        run: node scripts/verify-rollout.mjs active "${{ env.IMAGE_REPOSITORY }}:$TAG"
 
   bump-infra-rollback:
     needs: [parse-approval-comment]

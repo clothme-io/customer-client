@@ -4904,8 +4904,41 @@ h1 {
 
 .size-tool-result-line {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
   color: var(--ink);
+}
+
+.size-tool-result-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.size-tool-measurements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 4px 0;
+  list-style: none;
+  max-width: 100%;
+}
+
+.size-tool-measurements li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--mock-soft, #e5f6fc);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.size-tool-confidence {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .size-tool-result-summary {

@@ -292,6 +292,10 @@ export function LandingSizeTool() {
     window.location.assign("/account/users/new");
   }
 
+  const sizeParts = String(result?.size || "").match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+  const sizeTitle = sizeParts ? sizeParts[1] : result?.size;
+  const sizeMeasurements = sizeParts ? sizeParts[2].split("|").map((part) => part.trim()) : [];
+
   return (
     <section
       className="mock-section size-tool"
@@ -487,18 +491,18 @@ export function LandingSizeTool() {
       {(phase === "result" || phase === "success") && result ? (
         <div className="size-tool-panel size-tool-result" aria-live="polite">
           <div className="size-tool-result-card">
-            <span className="fit-score-badge fit-score-badge--inline">
-              Your size: {result.size}
-              {result.confidence != null
-                ? ` · ${result.confidence}% confidence`
-                : ""}
-            </span>
-            <p className="size-tool-result-line">
-              <strong>Your size: {result.size}</strong>
-              {result.confidence != null ? (
-                <span> · {result.confidence}% confidence</span>
-              ) : null}
-            </p>
+            <p className="size-tool-result-label">Your recommended size</p>
+            <h3 className="size-tool-result-line">{sizeTitle}</h3>
+            {sizeMeasurements.length ? (
+              <ul className="size-tool-measurements" aria-label="Size measurements">
+                {sizeMeasurements.map((measurement) => (
+                  <li key={measurement}>{measurement}</li>
+                ))}
+              </ul>
+            ) : null}
+            {result.confidence != null ? (
+              <p className="size-tool-confidence">{result.confidence}% confidence</p>
+            ) : null}
             <p className="size-tool-result-summary">{result.summary}</p>
             {result.brands?.length ? (
               <ul className="size-tool-brands">
@@ -514,11 +518,7 @@ export function LandingSizeTool() {
 
           {phase === "result" ? (
             <form className="size-tool-email" onSubmit={onSaveEmail}>
-              <h3>Save your size profile + lock in your founding perk</h3>
-              <p>
-                Enter your email to save this to your account and get 5% off
-                every order for your first year (first 1,000 members).
-              </p>
+              <h3>Save your size profile</h3>
               <div className="size-tool-email-row">
                 <label className="sr-only" htmlFor={`${baseId}-email`}>
                   Email
@@ -556,8 +556,7 @@ export function LandingSizeTool() {
             <div className="size-tool-success" role="status">
               <h3>You&apos;re in!</h3>
               <p>
-                Your founding-member 5% is locked in for launch. We&apos;ll
-                email your early access.
+                We&apos;ll email you about early access.
               </p>
               {emailError ? (
                 <p className="size-tool-error">{emailError}</p>
