@@ -288,10 +288,6 @@ export function LandingSizeTool() {
     }
   }
 
-  function resetForFamily() {
-    window.location.assign("/account/users/new");
-  }
-
   const sizeParts = String(result?.size || "").match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
   const sizeTitle = sizeParts ? sizeParts[1] : result?.size;
   const sizeMeasurements = sizeParts ? sizeParts[2].split("|").map((part) => part.trim()) : [];
@@ -544,13 +540,6 @@ export function LandingSizeTool() {
               <p className="size-tool-privacy">
                 Sizing only — never shared or sold.
               </p>
-              <button
-                type="button"
-                className="size-tool-ghost"
-                onClick={resetForFamily}
-              >
-                Add a family member
-              </button>
             </form>
           ) : (
             <div className="size-tool-success" role="status">
@@ -561,13 +550,6 @@ export function LandingSizeTool() {
               {emailError ? (
                 <p className="size-tool-error">{emailError}</p>
               ) : null}
-              <button
-                type="button"
-                className="size-tool-ghost"
-                onClick={resetForFamily}
-              >
-                Add a family member
-              </button>
             </div>
           )}
         </div>
