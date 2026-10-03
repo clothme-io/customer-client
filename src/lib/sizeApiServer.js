@@ -1,44 +1,6 @@
-/**
- * Server-side size-api helpers for the Size Tool proxy routes.
- * Guest placeholders for fields the UI does not collect (Phase 0).
- */
-
-export function sizeApiConfig() {
-  const baseUrl = (process.env.SIZE_API_URL || process.env.NEXT_PUBLIC_SIZE_API_URL || "")
-    .replace(/\/+$/, "");
-  return {
-    baseUrl,
-    token: process.env.SIZE_API_TOKEN || "token-canada-2026-auth",
-    accountId: process.env.SIZE_API_ACCOUNT_ID || "web-size-tool",
-    userId: process.env.SIZE_API_USER_ID || "web-size-tool-guest",
-    gender: process.env.SIZE_API_GENDER || "female",
-    city: process.env.SIZE_API_CITY || "Coquitlam",
-    country: process.env.SIZE_API_COUNTRY || "Canada",
-    provinceState: process.env.SIZE_API_PROVINCE || "British Columbia",
-    weight: process.env.SIZE_API_WEIGHT || "70",
-    dob: process.env.SIZE_API_DOB || "2000-01-01",
-    genderDemography: process.env.SIZE_API_GENDER_DEMOGRAPHY || "25-45"
-  };
-}
-
-export function sizeApiQuery(cfg) {
-  const q = new URLSearchParams({
-    accountId: cfg.accountId,
-    userId: cfg.userId
-  });
-  return q.toString();
-}
-
-export function sizeApiHeaders(cfg) {
-  return {
-    "X-token": cfg.token,
-    Accept: "application/json"
-  };
-}
-
-/** Map rich v2 generate payload into a compact Size Tool result. */
+/** Map the normalized mobile generation result into a compact Size Tool result. */
 export function mapGenerateResult(payload) {
-  const data = payload?.data || payload || {};
+  const data = payload || {};
   const sizeRecs = data.size_recommendations || {};
   const region =
     sizeRecs.US_CAD ||
@@ -48,7 +10,7 @@ export function mapGenerateResult(payload) {
     {};
 
   const topsByFit = region.tops || {};
-  const fitOrder = ["fitted", "regular", "relaxed", "oversized"];
+  const fitOrder = ["regular", "fitted", "relaxed", "oversized"];
   let sizeLabel = null;
   for (const fit of fitOrder) {
     const entry = topsByFit[fit];
@@ -58,7 +20,9 @@ export function mapGenerateResult(payload) {
     }
   }
   if (!sizeLabel) {
-    const first = Object.values(topsByFit).find((v) => v && typeof v === "object");
+    const first = Object.values(topsByFit).find(
+      (v) => v && typeof v === "object",
+    );
     sizeLabel = first?.display_size || first?.size || first?.label || null;
   }
   if (!sizeLabel) sizeLabel = "—";
@@ -99,7 +63,7 @@ export function mapGenerateResult(payload) {
   return {
     size: String(sizeLabel),
     confidence,
-    summary: "Recommended across most brands",
-    brands: brandChips
+    summary: "Estimated clothing size from your measurements",
+    brands: brandChips,
   };
 }

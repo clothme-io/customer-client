@@ -29,6 +29,21 @@ export function readPurchaseIntent(): PurchaseIntent | null {
     return null;
   }
 }
+export async function readPurchaseIntentForProfile(productId: string): Promise<PurchaseIntent | null> {
+  try {
+    const response = await sessionFetch("/api/webclient/session");
+    if (!response.ok) return null;
+    const session = await response.json();
+    const intent = readPurchaseIntent();
+    if (!session.authenticated || !session.accountId || !session.personId ||
+        intent?.productId !== productId ||
+        intent.accountId !== session.accountId || intent.personId !== session.personId)
+      return null;
+    return intent;
+  } catch {
+    return null;
+  }
+}
 export function clearPurchaseIntent() {
   sessionStorage.removeItem(KEY);
 }

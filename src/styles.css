@@ -5020,3 +5020,18 @@ h1 {
     background-clip: unset;
   }
 }
+
+.size-tool-profile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+.size-tool-profile p { grid-column: 1 / -1; margin: 0; font-size: 14px; }
+.size-tool-profile label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+.size-tool-profile input, .size-tool-profile select {
+  width: 100%; min-width: 0; box-sizing: border-box;
+  padding: 12px; border: 1px solid #d2e2ec; border-radius: 12px;
+  color: inherit; background: white; font: inherit;
+}
+@media (max-width: 480px) { .size-tool-profile { grid-template-columns: 1fr; } }

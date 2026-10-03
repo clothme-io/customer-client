@@ -1,13 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { FitScoreBadge } from "./FitScoreBadge";
 import { submitWaitlist } from "../../lib/waitlist";
 import { runSizeTool } from "../../lib/sizeToolClient";
 import { track } from "../../lib/track";
 
 const PROCESS_COPY = [
   "Reading your proportions…",
-  "Matching to brand sizes…",
-  "Almost there…"
+  "Calculating clothing sizes…",
+  "Almost there…",
 ];
 
 const TYPE_MS = 22;
@@ -29,9 +28,12 @@ function MorphingProcessCopy({ messages }) {
 
     if (reduceMotion) {
       setVisible(full);
-      holdTimer = window.setTimeout(() => {
-        if (!cancelled) setMsgIndex((n) => (n + 1) % messages.length);
-      }, MESSAGE_HOLD_MS + full.length * TYPE_MS);
+      holdTimer = window.setTimeout(
+        () => {
+          if (!cancelled) setMsgIndex((n) => (n + 1) % messages.length);
+        },
+        MESSAGE_HOLD_MS + full.length * TYPE_MS,
+      );
       return () => {
         cancelled = true;
         window.clearTimeout(holdTimer);
@@ -82,14 +84,7 @@ function parseHeightCm(unit, cm, feet, inches) {
   return total >= 90 && total <= 250 ? total : null;
 }
 
-function PoseTile({
-  id,
-  label,
-  file,
-  previewUrl,
-  onFile,
-  inputRef
-}) {
+function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
   const [dragging, setDragging] = useState(false);
 
   function takeFiles(list) {
@@ -126,10 +121,18 @@ function PoseTile({
                     stroke="currentColor"
                     strokeWidth="1.6"
                   />
-                  <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.6" />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3.2"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
                 </svg>
               </span>
-              <span className="size-tool-tile-hint">Tap to upload or drop a photo</span>
+              <span className="size-tool-tile-hint">
+                Tap to upload or drop a photo
+              </span>
               <span className="size-tool-silhouette" aria-hidden="true" />
             </>
           )}
@@ -179,11 +182,35 @@ export function LandingSizeTool() {
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState("idle");
   const [emailError, setEmailError] = useState("");
-  const [familyNote, setFamilyNote] = useState(false);
+  const [profile, setProfile] = useState({
+    dob: "",
+    gender: "",
+    country: "",
+    provinceState: "",
+    city: "",
+    weight: "",
+  });
+  const progress = useRef({});
+  const submitting = useRef(false);
+  useEffect(
+    () => () => {
+      if (frontPreview) URL.revokeObjectURL(frontPreview);
+    },
+    [frontPreview],
+  );
+  useEffect(
+    () => () => {
+      if (sidePreview) URL.revokeObjectURL(sidePreview);
+    },
+    [sidePreview],
+  );
+  function updateProfile(key, value) {
+    progress.current = {};
+    setProfile((current) => ({ ...current, [key]: value }));
+  }
 
   function setPose(which, file) {
-    const revoke = which === "front" ? frontPreview : sidePreview;
-    if (revoke) URL.revokeObjectURL(revoke);
+    progress.current = {};
     const url = file ? URL.createObjectURL(file) : null;
     if (which === "front") {
       setFrontFile(file);
@@ -195,24 +222,32 @@ export function LandingSizeTool() {
   }
 
   const heightValue = parseHeightCm(heightUnit, heightCm, heightFt, heightIn);
-  const canSubmit = Boolean(frontFile && sideFile && heightValue) && phase === "upload";
+  const canSubmit =
+    Boolean(
+      frontFile &&
+      sideFile &&
+      heightValue &&
+      profile.dob &&
+      profile.gender &&
+      profile.country.trim() &&
+      profile.city.trim() &&
+      profile.provinceState.trim(),
+    ) && phase === "upload";
 
   async function onGetSize(event) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting.current) return;
+    submitting.current = true;
     setError("");
     setPhase("processing");
-
-    const frontUrl = frontPreview;
-    const sideUrl = sidePreview;
 
     try {
       const next = await runSizeTool({
         frontFile,
         sideFile,
         heightCm: heightValue,
-        frontPreviewUrl: frontUrl,
-        sidePreviewUrl: sideUrl
+        profile,
+        progress: progress.current,
       });
       setFrontPreview(null);
       setSidePreview(null);
@@ -221,12 +256,10 @@ export function LandingSizeTool() {
       setResult(next);
       setPhase("result");
     } catch (err) {
-      setFrontPreview(null);
-      setSidePreview(null);
-      setFrontFile(null);
-      setSideFile(null);
       setError(err?.message || "Something went wrong. Please try again.");
       setPhase("upload");
+    } finally {
+      submitting.current = false;
     }
   }
 
@@ -245,23 +278,21 @@ export function LandingSizeTool() {
         email,
         source: "size_tool",
         honeypot: "",
-        skipTrack: true
+        skipTrack: true,
       });
       setEmailStatus("idle");
     } catch (err) {
       // Keep success UI; surface soft retry note
       setEmailStatus("idle");
-      setEmailError(err?.message || "We saved your size locally — email sync will retry at launch.");
+      setEmailError(
+        err?.message ||
+          "We saved your size locally — email sync will retry at launch.",
+      );
     }
   }
 
   function resetForFamily() {
-    setFamilyNote(true);
-    setPhase("upload");
-    setResult(null);
-    setError("");
-    setEmail("");
-    setEmailError("");
+    window.location.assign("/account/users/new");
   }
 
   return (
@@ -276,12 +307,13 @@ export function LandingSizeTool() {
           Get your size in seconds.
         </h2>
         <p className="size-tool-subhead">
-          Add 2 photos and we&apos;ll find your size in every brand — no measuring tape, no guessing.
+          Add 2 photos and we&apos;ll find your size in every brand — no
+          measuring tape, no guessing.
         </p>
       </div>
 
       {phase === "upload" || phase === "processing" ? (
-        <form className="size-tool-panel" onSubmit={onGetSize} noValidate>
+        <form className="size-tool-panel" onSubmit={onGetSize}>
           {phase === "upload" ? (
             <>
               <div className="size-tool-tiles">
@@ -305,8 +337,14 @@ export function LandingSizeTool() {
 
               <div className="size-tool-height">
                 <div className="size-tool-height-head">
-                  <label htmlFor={`${baseId}-height`}>Your height (for accuracy)</label>
-                  <div className="size-tool-unit" role="group" aria-label="Height units">
+                  <label htmlFor={`${baseId}-height`}>
+                    Your height (for accuracy)
+                  </label>
+                  <div
+                    className="size-tool-unit"
+                    role="group"
+                    aria-label="Height units"
+                  >
                     <button
                       type="button"
                       className={heightUnit === "cm" ? "is-active" : ""}
@@ -333,7 +371,10 @@ export function LandingSizeTool() {
                     step={1}
                     placeholder="e.g. 170"
                     value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value)}
+                    onChange={(e) => {
+                      progress.current = {};
+                      setHeightCm(e.target.value);
+                    }}
                     required
                   />
                 ) : (
@@ -347,7 +388,10 @@ export function LandingSizeTool() {
                       placeholder="ft"
                       aria-label="Feet"
                       value={heightFt}
-                      onChange={(e) => setHeightFt(e.target.value)}
+                      onChange={(e) => {
+                        progress.current = {};
+                        setHeightFt(e.target.value);
+                      }}
                       required
                     />
                     <input
@@ -358,10 +402,82 @@ export function LandingSizeTool() {
                       placeholder="in"
                       aria-label="Inches"
                       value={heightIn}
-                      onChange={(e) => setHeightIn(e.target.value)}
+                      onChange={(e) => {
+                        progress.current = {};
+                        setHeightIn(e.target.value);
+                      }}
                     />
                   </div>
                 )}
+              </div>
+
+              <div className="size-tool-profile">
+                <p>
+                  These details help calculate your sizes. Use photos and
+                  details for your selected account profile.
+                </p>
+                <label>
+                  Date of birth
+                  <input
+                    type="date"
+                    required
+                    max={new Date().toISOString().slice(0, 10)}
+                    value={profile.dob}
+                    onChange={(e) => updateProfile("dob", e.target.value)}
+                  />
+                </label>
+                <label>
+                  Gender
+                  <select
+                    required
+                    value={profile.gender}
+                    onChange={(e) => updateProfile("gender", e.target.value)}
+                  >
+                    <option value="">Select</option>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                  </select>
+                </label>
+                <label>
+                  Country
+                  <input
+                    required
+                    autoComplete="country-name"
+                    value={profile.country}
+                    onChange={(e) => updateProfile("country", e.target.value)}
+                  />
+                </label>
+                <label>
+                  Province / state
+                  <input
+                    required
+                    autoComplete="address-level1"
+                    value={profile.provinceState}
+                    onChange={(e) =>
+                      updateProfile("provinceState", e.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  City
+                  <input
+                    required
+                    autoComplete="address-level2"
+                    value={profile.city}
+                    onChange={(e) => updateProfile("city", e.target.value)}
+                  />
+                </label>
+                <label>
+                  Weight (kg, optional)
+                  <input
+                    type="number"
+                    min="1"
+                    max="400"
+                    step="0.1"
+                    value={profile.weight}
+                    onChange={(e) => updateProfile("weight", e.target.value)}
+                  />
+                </label>
               </div>
 
               <button
@@ -369,27 +485,34 @@ export function LandingSizeTool() {
                 className="size-tool-cta"
                 disabled={!canSubmit}
               >
-                Get my size →
+                {progress.current.taskId ? "Check my size →" : "Get my size →"}
               </button>
               <p className="size-tool-privacy">
-                Your photos are processed for sizing only — never shared, never sold, and deleted after your size is generated.
+                Your photos are sent to our sizing service. This page clears its
+                photo previews after success or when you leave. See our privacy
+                policy for processing and retention details.
               </p>
               <ul className="size-tool-trust">
-                <li>Takes ~10 seconds</li>
+                <li>Processing time varies</li>
                 <li>Works on any phone</li>
                 <li>Any body, any brand</li>
               </ul>
-              {error ? <p className="size-tool-error" role="alert">{error}</p> : null}
-              {familyNote ? (
-                <p className="size-tool-family-note" role="status">
-                  Family profiles are coming in the app — run the tool again anytime for another person.
+              {error ? (
+                <p className="size-tool-error" role="alert">
+                  {error}
                 </p>
               ) : null}
             </>
           ) : (
-            <div className="size-tool-processing" aria-live="polite" aria-busy="true">
+            <div
+              className="size-tool-processing"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <div className="size-tool-loader">
-                <FitScoreBadge size="…" match={72} className="fit-score-badge--inline size-tool-loader-badge" />
+                <span className="fit-score-badge size-tool-loader-badge">
+                  Calculating your size…
+                </span>
                 <div className="size-tool-loader-bar" aria-hidden="true">
                   <span />
                 </div>
@@ -403,11 +526,12 @@ export function LandingSizeTool() {
       {(phase === "result" || phase === "success") && result ? (
         <div className="size-tool-panel size-tool-result" aria-live="polite">
           <div className="size-tool-result-card">
-            <FitScoreBadge
-              size={result.size}
-              match={result.confidence ?? 94}
-              className="fit-score-badge--inline"
-            />
+            <span className="fit-score-badge fit-score-badge--inline">
+              Your size: {result.size}
+              {result.confidence != null
+                ? ` · ${result.confidence}% confidence`
+                : ""}
+            </span>
             <p className="size-tool-result-line">
               <strong>Your size: {result.size}</strong>
               {result.confidence != null ? (
@@ -431,10 +555,13 @@ export function LandingSizeTool() {
             <form className="size-tool-email" onSubmit={onSaveEmail}>
               <h3>Save your size profile + lock in your founding perk</h3>
               <p>
-                Enter your email to save this to your account and get 5% off every order for your first year (first 1,000 members).
+                Enter your email to save this to your account and get 5% off
+                every order for your first year (first 1,000 members).
               </p>
               <div className="size-tool-email-row">
-                <label className="sr-only" htmlFor={`${baseId}-email`}>Email</label>
+                <label className="sr-only" htmlFor={`${baseId}-email`}>
+                  Email
+                </label>
                 <input
                   id={`${baseId}-email`}
                   type="email"
@@ -445,12 +572,22 @@ export function LandingSizeTool() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <button type="submit" className="size-tool-cta" disabled={emailStatus === "submitting"}>
+                <button
+                  type="submit"
+                  className="size-tool-cta"
+                  disabled={emailStatus === "submitting"}
+                >
                   Save my size &amp; join →
                 </button>
               </div>
-              <p className="size-tool-privacy">Sizing only — never shared or sold.</p>
-              <button type="button" className="size-tool-ghost" onClick={resetForFamily}>
+              <p className="size-tool-privacy">
+                Sizing only — never shared or sold.
+              </p>
+              <button
+                type="button"
+                className="size-tool-ghost"
+                onClick={resetForFamily}
+              >
                 Add a family member
               </button>
             </form>
@@ -458,10 +595,17 @@ export function LandingSizeTool() {
             <div className="size-tool-success" role="status">
               <h3>You&apos;re in!</h3>
               <p>
-                Your founding-member 5% is locked in for launch. We&apos;ll email your early access.
+                Your founding-member 5% is locked in for launch. We&apos;ll
+                email your early access.
               </p>
-              {emailError ? <p className="size-tool-error">{emailError}</p> : null}
-              <button type="button" className="size-tool-ghost" onClick={resetForFamily}>
+              {emailError ? (
+                <p className="size-tool-error">{emailError}</p>
+              ) : null}
+              <button
+                type="button"
+                className="size-tool-ghost"
+                onClick={resetForFamily}
+              >
                 Add a family member
               </button>
             </div>

@@ -133,23 +133,12 @@ export function SizeAgeHeightView({
           </label>
           <label className={shell.field}>
             Country
-            <select
+            <input
               name="country"
               required
               defaultValue={profile.country || country}
-            >
-              <option value="">Select country</option>
-              {[
-                "Canada",
-                "United States",
-                "United Kingdom",
-                "Australia",
-                "France",
-                "Germany",
-              ].map((value) => (
-                <option key={value}>{value}</option>
-              ))}
-            </select>
+              autoComplete="country-name"
+            />
           </label>
           <label className={shell.field}>
             Province / state{" "}
