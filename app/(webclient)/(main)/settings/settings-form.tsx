@@ -1,4 +1,5 @@
 "use client";
+import { sessionFetch as fetch } from "../../lib/session-client";
 
 import { clearSizeFlows } from "../../lib/size-flow";
 import { clearPurchaseIntent } from "../../lib/purchase-intent";

@@ -1,8 +1,9 @@
 "use client";
+import { requestObservation } from "../../../src/lib/analytics/requests.js";
 let refreshing: Promise<boolean> | undefined;
 
 /** Only retry requests rejected for authentication; never retry ambiguous mutations. */
-export async function sessionFetch(
+async function fetchWithRefresh(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Response> {
@@ -24,4 +25,19 @@ export async function sessionFetch(
     });
   if (!(await refreshing)) return response;
   return fetch(input, init);
+}
+
+export async function sessionFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const observe = requestObservation(input, init);
+  try {
+    const response = await fetchWithRefresh(input, init);
+    observe(response);
+    return response;
+  } catch (error) {
+    observe(undefined);
+    throw error;
+  }
 }

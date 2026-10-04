@@ -1,5 +1,6 @@
 import Script from "next/script";
-import { useEffect } from "react";
+import { analyticsEnabled } from "../lib/analytics/client.js";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { siteConfig } from "../data/site";
 
@@ -13,22 +14,35 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js');
 
 export function MetaPixel() {
   const router = useRouter();
+  const [enabled, setEnabled] = useState(false);
   const pixelId = siteConfig.analytics.metaPixelId;
 
   useEffect(() => {
-    if (!pixelId) return undefined;
+    const update = () => setEnabled(analyticsEnabled());
+    update();
+    window.addEventListener("clothme:analytics-consent", update);
+    if (!pixelId)
+      return () =>
+        window.removeEventListener("clothme:analytics-consent", update);
 
     const onRoute = () => {
-      if (typeof window !== "undefined" && typeof window.fbq === "function") {
+      if (
+        analyticsEnabled() &&
+        typeof window !== "undefined" &&
+        typeof window.fbq === "function"
+      ) {
         window.fbq("track", "PageView");
       }
     };
 
     router.events.on("routeChangeComplete", onRoute);
-    return () => router.events.off("routeChangeComplete", onRoute);
+    return () => {
+      router.events.off("routeChangeComplete", onRoute);
+      window.removeEventListener("clothme:analytics-consent", update);
+    };
   }, [pixelId, router.events]);
 
-  if (!pixelId) return null;
+  if (!pixelId || !enabled) return null;
 
   return (
     <Script id="meta-pixel" strategy="afterInteractive">

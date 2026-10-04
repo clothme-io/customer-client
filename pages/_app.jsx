@@ -15,9 +15,9 @@ export default function App({ Component, pageProps, router }) {
 
   return (
     <div className={pageClassName}>
-      <Analytics />
       <MetaPixel />
       <Component {...pageProps} />
+      <Analytics path={router.asPath} />
     </div>
   );
 }

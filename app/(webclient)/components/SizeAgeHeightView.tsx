@@ -1,4 +1,5 @@
 "use client";
+import { commerceEvent } from "../lib/commerce-events";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -77,6 +78,7 @@ export function SizeAgeHeightView({
       country: String(form.get("country") || country).trim(),
       provinceState: String(form.get("provinceState") || provinceState).trim(),
     });
+    commerceEvent("size_details_completed");
     router.push("/account/size/capture");
   }
 

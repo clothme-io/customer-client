@@ -1,3 +1,5 @@
+import { analytics, analyticsEnabled } from "./analytics/client.js";
+import { sanitize } from "./analytics/core.js";
 /**
  * Fire an analytics event to all configured providers.
  * Safe to call on the server (no-ops) and before scripts have loaded.
@@ -10,24 +12,13 @@
 
 const META_STANDARD = {
   waitlist_submit: ["Lead"],
-  size_tool_signup: ["Lead", "CompleteRegistration"]
+  size_tool_signup: ["Lead", "CompleteRegistration"],
 };
 
 const META_CUSTOM = {
   size_tool_started: "SizeToolStarted",
-  size_tool_result: "SizeToolResult"
+  size_tool_result: "SizeToolResult",
 };
-
-const POSTHOG_ALLOWED_HOSTS = (process.env.NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS || "clothme.io,www.clothme.io")
-  .split(",")
-  .map((host) => host.trim().toLowerCase())
-  .filter(Boolean);
-
-function isAllowedAnalyticsHost() {
-  if (typeof window === "undefined") return false;
-
-  return POSTHOG_ALLOWED_HOSTS.includes(window.location.hostname.toLowerCase());
-}
 
 function fireMeta(eventName) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") return;
@@ -48,29 +39,20 @@ function fireMeta(eventName) {
 export function track(eventName, properties = {}) {
   if (typeof window === "undefined") return;
 
-  const payload = {
-    app: "clothme_customer_web",
-    environment: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "development",
-    ...properties,
+  const payload = sanitize(properties);
+  if (!analyticsEnabled()) return false;
+  const accepted = analytics.track(eventName, payload);
+  const safely = (fn) => {
+    try {
+      fn();
+    } catch {}
   };
-
-  if (payload.environment !== "production" || !isAllowedAnalyticsHost()) return;
-
-  if (window.posthog && typeof window.posthog.capture === "function") {
-    window.posthog.capture(eventName, payload);
-  }
-
-  if (typeof window.gtag === "function") {
-    window.gtag("event", eventName, payload);
-  }
-
-  if (typeof window.plausible === "function") {
-    window.plausible(eventName, { props: payload });
-  }
-
-  if (Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({ event: eventName, ...payload });
-  }
-
-  fireMeta(eventName);
+  safely(() => window.gtag?.("event", eventName, payload));
+  safely(() => window.plausible?.(eventName, { props: payload }));
+  safely(() => {
+    if (Array.isArray(window.dataLayer))
+      window.dataLayer.push({ event: eventName, ...payload });
+  });
+  safely(() => fireMeta(eventName));
+  return accepted;
 }

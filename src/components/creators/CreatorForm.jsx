@@ -1,3 +1,4 @@
+import { track } from "../../lib/track";
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { parseCreatorApplicationError } from '../../lib/creatorFormErrors';
@@ -55,6 +56,7 @@ export function CreatorForm() {
       return;
     }
 
+    track("creator_application_started");
     setLoading(true);
 
     try {
@@ -80,8 +82,10 @@ export function CreatorForm() {
         throw new Error(parseCreatorApplicationError(json));
       }
 
+      track('creator_application_succeeded');
       router.push('/creators/success');
     } catch (err) {
+      track("creator_application_failed");
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);

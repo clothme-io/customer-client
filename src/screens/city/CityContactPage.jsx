@@ -1,3 +1,4 @@
+import { track } from "../../lib/track";
 import { useState } from "react";
 import { SEO } from "../../components/SEO";
 import { CityHeader } from "../../components/city/CityHeader";
@@ -22,9 +23,11 @@ export function CityContactPage({ city }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    track("contact_request_started");
     setStatus("sending");
     setError("");
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch("/api/contact", {
         method: "POST",
@@ -37,8 +40,10 @@ export function CityContactPage({ city }) {
         }),
       });
       setStatus("sent");
-      e.currentTarget.reset();
+      track("contact_request_succeeded");
+      formElement.reset();
     } catch (err) {
+      track("contact_request_failed");
       setStatus("error");
       setError(err?.message || "Something went wrong. Email us directly at talk2us@clothme.io");
     }

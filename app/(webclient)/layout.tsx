@@ -30,8 +30,8 @@ export default function WebClientLayout({
       className={`${inter.className} ${styles.html}`}
     >
       <body className={styles.body}>
-        <CommerceAnalytics />
         {children}
+        <CommerceAnalytics />
       </body>
     </html>
   );

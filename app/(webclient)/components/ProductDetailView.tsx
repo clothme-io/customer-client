@@ -164,6 +164,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 );
                 const next = locations[(index + 1) % locations.length];
                 if (next) {
+                  commerceEvent("product_selection_changed", { stage: "location", productId: product.id });
                   setLocationId(next.id);
                   setColorId(next.colors?.[0]?.id || "");
                   setSizeLabel(next.colors?.[0]?.sizes?.[0]?.sizeLabel || "");
@@ -185,6 +186,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 style={{ background: color.hex || "#ccc" }}
                 aria-label={color.name}
                 onClick={() => {
+                  commerceEvent("product_selection_changed", { stage: "color", productId: product.id });
                   setColorId(color.id);
                   const first =
                     "sizes" in color ? color.sizes?.[0]?.sizeLabel : "";
@@ -205,7 +207,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 key={label}
                 type="button"
                 className={`${styles.sizeChip} ${label === sizeLabel ? styles.pillActive : ""}`}
-                onClick={() => setSizeLabel(label)}
+                onClick={() => { commerceEvent("product_selection_changed", { stage: "size", productId: product.id }); setSizeLabel(label); }}
               >
                 {label}
               </button>

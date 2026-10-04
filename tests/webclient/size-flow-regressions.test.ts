@@ -89,6 +89,7 @@ for (const scenario of [
         react: { useEffect() {}, useState: (initial: unknown) => [initial === null ? profile : initial, () => {}] },
         "next/navigation": { useRouter: () => ({ push: (path: string) => { destination = path; } }) },
         "../lib/size-flow": {},
+        "../lib/commerce-events": { commerceEvent() {} },
         "../lib/size-profile": { saveSizeProfile: (value: unknown) => { saved = value; } },
         "./AccountSubHeader": { AccountSubHeader: () => null },
         "../shop.module.css": { default: {} },

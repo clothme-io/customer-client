@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test:email": "node --test tests/email/*.test.mjs",
     "test:size-tool": "node --test tests/size-tool/*.test.mjs",
-    "test:size-tool:http": "node tests/size-tool/http-smoke.mjs"
+    "test:size-tool:http": "node tests/size-tool/http-smoke.mjs",
+    "test:analytics": "node --test tests/analytics/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
@@ -29,6 +30,7 @@
     "@stripe/react-stripe-js": "^6.9.0",
     "@stripe/stripe-js": "^9.15.0",
     "graphql": "^16.14.2",
+    "mixpanel-browser": "^2.83.0",
     "next": "^15.4.11",
     "node-html-parser": "^8.0.4",
     "payload": "^3.85.1",

@@ -122,6 +122,7 @@ function PayForm({
     setBusy(true);
     setError("");
     try {
+      commerceEvent("payment_attempted", { orderId });
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -147,6 +148,7 @@ function PayForm({
       sessionStorage.removeItem("cm_checkout_order");
       router.push("/checkout/thank-you");
     } catch (err) {
+      commerceEvent("payment_failed", { orderId });
       setError(err instanceof Error ? err.message : "Payment failed");
     } finally {
       setBusy(false);

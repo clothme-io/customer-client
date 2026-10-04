@@ -1,3 +1,4 @@
+import { track } from "../lib/track";
 import { useRef, useState } from 'react';
 import { apiFetch } from '../lib/api';
 export function AppDownloadForm() {
@@ -14,10 +15,12 @@ export function AppDownloadForm() {
       attempt.current = { email, requestId: crypto.randomUUID() };
     pending.current = true;
     setStatus('sending'); setError('');
+    track('download_email_requested');
     try {
       await apiFetch('/api/app-download', {method:'POST',body:JSON.stringify({...attempt.current,company:data.get('company') || ''})});
       setStatus('sent');
-    } catch (err) { setStatus('idle'); setError(err.message || 'Could not send the email. Please try again.'); }
+      track('download_email_accepted', { eventId: attempt.current.requestId });
+    } catch (err) { track('download_email_failed'); setStatus('idle'); setError(err.message || 'Could not send the email. Please try again.'); }
     finally { pending.current = false; }
   }
   if (status === 'sent') return <p role="status">Your download-link email has been sent. Check your inbox or spam folder.</p>;

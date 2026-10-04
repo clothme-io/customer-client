@@ -80,6 +80,7 @@ export function SizeCaptureView() {
   }, [router]);
 
   async function validate(pose: Pose, dataUrl: string, signal: AbortSignal) {
+    commerceEvent("size_validation_started", { pose });
     const profile = loadSizeProfile();
     const form = new FormData();
     form.append("action", pose === "front" ? "validateFront" : "validateSide");
@@ -111,6 +112,7 @@ export function SizeCaptureView() {
     if (!taskId) throw new Error("Validation did not return a task");
     const predictionId = await pollValidation(pose, taskId, signal);
     if (signal.aborted) return;
+    commerceEvent("size_validation_succeeded", { pose });
     if (pose === "front") {
       setFrontTask(predictionId.id);
       setFrontState("success");
@@ -123,6 +125,7 @@ export function SizeCaptureView() {
   }
 
   async function onPhoto(pose: Pose, dataUrl: string) {
+    commerceEvent("size_photo_selected", { pose });
     validations.current[pose]?.abort();
     const controller = new AbortController();
     validations.current[pose] = controller;
@@ -144,6 +147,7 @@ export function SizeCaptureView() {
       await validate(pose, dataUrl, controller.signal);
     } catch (err) {
       if (controller.signal.aborted) return;
+      commerceEvent("size_validation_failed", { pose });
       const message =
         err instanceof Error ? err.message : "Failed, retake pose";
       if (pose === "front") {

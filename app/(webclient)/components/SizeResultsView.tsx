@@ -108,7 +108,7 @@ export function SizeResultsView() {
               flow.result = body.result;
               await saveFlow(flow);
               setResult(body.result);
-              commerceEvent("measurement_generated");
+              commerceEvent("measurement_generated", { eventId: `measurement:${flow.taskId}` });
               break;
             }
             await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -134,7 +134,7 @@ export function SizeResultsView() {
             throw new Error("Your selected profile changed.");
           if (profile.ready) {
             setSaved(true);
-            commerceEvent("fit_profile_saved");
+            commerceEvent("fit_profile_saved", { eventId: `fit:${flow.taskId}` });
             setSavingMessage(
               "Your sizes are available in your account. Continue shopping to see product recommendations.",
             );
@@ -147,6 +147,7 @@ export function SizeResultsView() {
           "Your measurements were calculated, but we cannot confirm a saved shopping profile yet. Check again shortly; you do not need to retake your photos.",
         );
       } catch (err) {
+        if (!cancelled) commerceEvent("size_generation_failed");
         if (!cancelled)
           setError(
             err instanceof Error ? err.message : "Could not calculate sizes",

@@ -1,4 +1,5 @@
 "use client";
+import { commerceEvent } from "../lib/commerce-events";
 
 import { useEffect, useRef, useState } from "react";
 import styles from "../shop.module.css";
@@ -44,6 +45,7 @@ export function SizeCameraModal({
           stream.getTracks().forEach((track) => track.stop());
           return;
         }
+        commerceEvent("camera_opened", { pose });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -51,6 +53,7 @@ export function SizeCameraModal({
         }
       } catch (err) {
         const name = err instanceof Error ? err.name : "";
+        if (!cancelled) commerceEvent("camera_failed", { pose, stage: name === "NotAllowedError" ? "permission_denied" : "unavailable" });
         setError(
           name === "NotAllowedError"
             ? "Camera access was denied. Allow camera access in your browser settings, or go back and upload a photo."

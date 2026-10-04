@@ -1,4 +1,5 @@
 "use client";
+import { commerceEvent } from "../lib/commerce-events";
 
 import { sessionFetch as fetch } from "../lib/session-client";
 
@@ -16,6 +17,7 @@ export function SizeManualView() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     form.append("action", "manual");
+    commerceEvent("manual_size_submitted");
     setBusy(true);
     setError("");
     try {
@@ -34,6 +36,7 @@ export function SizeManualView() {
         throw new Error(
           "Measurements submitted, but the saved shopping profile is not available yet. Please check your account before buying.",
         );
+      commerceEvent("manual_size_saved");
       const intent = readPurchaseIntent();
       window.location.assign(
         intent &&
@@ -43,6 +46,7 @@ export function SizeManualView() {
           : "/shop",
       );
     } catch (err) {
+      commerceEvent("manual_size_failed");
       setError(
         err instanceof Error
           ? err.message

@@ -268,7 +268,7 @@ export function LandingSizeTool() {
 
     // Optimistic success — waitlist POST in background
     setPhase("success");
-    track("size_tool_signup");
+
 
     try {
       await submitWaitlist({
@@ -277,6 +277,7 @@ export function LandingSizeTool() {
         honeypot: "",
         skipTrack: true,
       });
+      track("size_tool_signup");
       setEmailStatus("idle");
     } catch (err) {
       // Keep success UI; surface soft retry note
