@@ -195,7 +195,8 @@ export const landingFooterLinks = {
     // { label: "Brands", href: "/#brands" }, // restore with brands section
   ],
   company: [
-    { label: "About Us", href: "/#why" },
+    { label: "About Us", href: "/about" },
+    { label: "Manifesto", href: "/manifesto" },
     { label: "Contact Us", href: "mailto:talk2us@clothme.io" }
   ],
   support: [

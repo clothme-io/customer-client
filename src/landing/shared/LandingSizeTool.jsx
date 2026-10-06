@@ -299,7 +299,7 @@ export function LandingSizeTool() {
       id="size-tool"
       aria-labelledby="size-tool-title"
     >
-      <div className="mock-section-heading">
+      <div id="get-your-size" className="mock-section-heading size-tool-anchor">
         <p className="eyebrow">Free Size Tool</p>
         <h2 id="size-tool-title" className="mock-section-title">
           Get your size in seconds.

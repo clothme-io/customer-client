@@ -56,6 +56,8 @@ export async function getServerSideProps({ res }) {
   // ── Main site URLs ─────────────────────────────────────────────────────────
   const mainUrls = [
     { loc: "/", priority: "1.0", changefreq: "weekly" },
+    { loc: "/about", priority: "0.6", changefreq: "monthly" },
+    { loc: "/manifesto", priority: "0.6", changefreq: "monthly" },
     { loc: "/blog", priority: "0.8", changefreq: "weekly" },
     { loc: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
     { loc: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
