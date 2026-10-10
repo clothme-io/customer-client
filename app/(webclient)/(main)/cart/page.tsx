@@ -1,8 +1,7 @@
 import { getSession } from "../../lib/session";
-import { fetchCart } from "../../lib/commerce";
+import { emptyCart, fetchCart } from "../../lib/commerce";
 import { CartView } from "../../components/CartView";
 import styles from "../../webclient.module.css";
-import shopStyles from "../../shop.module.css";
 
 export const metadata = {
   title: "Cart",
@@ -15,12 +14,7 @@ export default async function CartPage() {
   const session = await getSession();
 
   if (!session) {
-    return (
-      <section className={shopStyles.signInGate}>
-        <h1 className={styles.pageTitle}>Cart</h1>
-        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
-      </section>
-    );
+    return <CartView cart={emptyCart()} />;
   }
 
   try {

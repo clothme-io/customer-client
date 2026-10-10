@@ -27,6 +27,100 @@ function flowStore() {
   }, { indexedDB: new IDBFactory() });
 }
 
+test("sizeIdentity does not mint a guest before a session exists", async () => {
+  let guestCalls = 0;
+  const { sizeIdentity, LOCAL_SIZE_SCOPE } = loadModule("../../app/(webclient)/lib/size-flow.ts", {
+    "./session-client": {
+      sessionFetch: async () => ({ json: async () => ({ authenticated: false }) }),
+      ensureClientGuest: async () => { guestCalls += 1; },
+    },
+    "./size-profile": { bindSizeProfileScope() {}, dataUrlToBlob() {} },
+  }, {
+    indexedDB: new IDBFactory(),
+    sessionStorage: { getItem: () => null, setItem() {} },
+  });
+  assert.equal(await sizeIdentity(), LOCAL_SIZE_SCOPE);
+  assert.equal(guestCalls, 0);
+});
+
+test("bindSizeIdentity mints a guest and rebinds the local size profile", async () => {
+  let guestCalls = 0;
+  let bound: string | undefined;
+  let authenticated = false;
+  const { bindSizeIdentity } = loadModule("../../app/(webclient)/lib/size-flow.ts", {
+    "./session-client": {
+      sessionFetch: async () => ({
+        json: async () => authenticated
+          ? { authenticated: true, accountId: "acc", personId: "per" }
+          : { authenticated: false },
+      }),
+      ensureClientGuest: async () => { guestCalls += 1; authenticated = true; },
+    },
+    "./size-profile": {
+      bindSizeProfileScope: (next: string) => { bound = next; },
+      dataUrlToBlob() {},
+    },
+  }, {
+    indexedDB: new IDBFactory(),
+    sessionStorage: { getItem: () => "pending", setItem() {} },
+  });
+  assert.equal(await bindSizeIdentity(), "acc:per");
+  assert.equal(guestCalls, 1);
+  assert.equal(bound, "acc:per");
+});
+
+test("bindSizeProfileScope copies a pending profile onto the minted identity", () => {
+  const store: Record<string, string> = {
+    "cm_size_scope": "pending",
+    "cm_size_profile:pending": JSON.stringify({ dob: "1990-01-01", height: "170" }),
+  };
+  const { bindSizeProfileScope, loadSizeProfile } = loadModule(
+    "../../app/(webclient)/lib/size-profile.ts",
+    {},
+    { sessionStorage: {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => { store[key] = value; },
+    } },
+  );
+  bindSizeProfileScope("acc:per");
+  assert.equal(store["cm_size_scope"], "acc:per");
+  assert.equal(loadSizeProfile().dob, "1990-01-01");
+  assert.equal(loadSizeProfile().height, "170");
+});
+
+test("size pages and result polls do not mint a guest on GET", () => {
+  for (const file of [
+    "../../app/(webclient)/(main)/account/size/policy/page.tsx",
+    "../../app/(webclient)/(main)/account/size/age-height/page.tsx",
+    "../../app/(webclient)/(main)/account/size/capture/page.tsx",
+    "../../app/(webclient)/(main)/account/size/manual/page.tsx",
+    "../../app/(webclient)/(main)/account/size/results/page.tsx",
+    "../../app/api/webclient/fit-profile/route.ts",
+  ]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /loadSizeSession|ensureWebGuest|mintGuest/);
+  }
+  const sizeRoute = readFileSync(new URL("../../app/api/webclient/size/route.ts", import.meta.url), "utf8");
+  assert.match(sizeRoute, /requireSession\(\{ mintGuest: true \}\)/);
+  assert.match(sizeRoute, /export async function GET[\s\S]*requireSession\(\)/);
+});
+
+test("synthetic emails include guest.invalid and legacy uuid gmail", () => {
+  const { isSyntheticEmail } = loadModule("../../app/(webclient)/lib/session.ts", {
+    "next/headers": { cookies: async () => ({ get() {}, set() {}, delete() {} }) },
+    "./config": {
+      COOKIE_ACCESS: "cm_access", COOKIE_REFRESH: "cm_refresh", COOKIE_ACCOUNT: "cm_account",
+      COOKIE_PERSON: "cm_person", COOKIE_AUTH_LEVEL: "cm_auth_level", COOKIE_EMAIL: "cm_email",
+      WEBCLIENT_MOCK: false,
+    },
+    "./mock": { MOCK_SESSION: {} },
+  }, { process });
+  const accountId = "11111111-1111-1111-1111-111111111111";
+  assert.equal(isSyntheticEmail(`${accountId}@guest.invalid`, accountId), true);
+  assert.equal(isSyntheticEmail(`${accountId}@gmail.com`, accountId), true);
+  assert.equal(isSyntheticEmail("maya@example.com", accountId), false);
+});
+
 test("guest setup matches mobile's nonempty pre-profile DOB contract", async () => {
   let sent: any;
   const { bootstrapGuestSession } = loadModule("../../app/(webclient)/lib/guest.ts", {
@@ -35,11 +129,18 @@ test("guest setup matches mobile's nonempty pre-profile DOB contract", async () 
       if (!sent.dob) throw new Error("dob should not be empty");
       return { accountId: "account", accountUserId: "person", accessToken: "access", refreshToken: "refresh" };
     } },
+    "./config": { WEBCLIENT_MOCK: false },
+    "./refresh-session": { refreshSession: async () => null },
+    "./session": {},
   });
   const session = await bootstrapGuestSession();
   assert.equal(sent.dob, "dob");
+  assert.match(sent.email, /@guest\.invalid$/);
+  assert.doesNotMatch(sent.email, /gmail\.com/i);
   assert.equal(session.personId, "person");
   assert.equal(session.accessToken, "access");
+  assert.equal(session.email, sent.email);
+  assert.equal(session.authLevel, "guest");
 });
 
 test("switching profiles preserves other profiles' photos and measurement jobs", async () => {
@@ -129,7 +230,7 @@ test("separate tabs atomically claim one generation job and reuse its result", a
     return { ok: true, json: async () => ({ taskId: "single-job" }) };
   };
   const tab = () => loadModule("../../app/(webclient)/lib/size-flow.ts", {
-    "./session-client": { sessionFetch }, "./size-profile": {},
+    "./session-client": { sessionFetch, ensureClientGuest: async () => {} }, "./size-profile": {},
   }, { indexedDB, FormData });
   const first = tab(), second = tab();
   await first.saveFlow({ key: "a:p", expires: Date.now() + 60_000, photos: {
@@ -151,7 +252,7 @@ test("an ambiguous network failure leaves a persistent claim for another tab", a
       if (url.endsWith("/session")) return { json: async () => ({ authenticated: true, accountId: "a", personId: "p" }) };
       posts++;
       throw new Error("Connection lost");
-    } }, "./size-profile": {},
+    }, ensureClientGuest: async () => {} }, "./size-profile": {},
   }, { indexedDB, FormData });
   const first = tab();
   await first.saveFlow({ key: "a:p", expires: Date.now() + 60_000, photos: {
@@ -172,7 +273,10 @@ for (const scenario of [
   test(`purchase restoration requires matching authenticated identity: ${JSON.stringify(scenario)}`, async () => {
     const { readPurchaseIntentForProfile } = loadModule("../../app/(webclient)/lib/purchase-intent.ts", {
       "./commerce-events": {}, "./size-contract": { safeInternalPath: (path: string) => path },
-      "./session-client": { sessionFetch: async () => ({ ok: true, json: async () => scenario }) },
+      "./session-client": {
+        sessionFetch: async () => ({ ok: true, json: async () => scenario }),
+        ensureClientGuest: async () => {},
+      },
     }, { sessionStorage: { getItem: () => JSON.stringify({
       accountId: "a", personId: "p", productId: "product", createdAt: Date.now(), returnTo: "/product/product",
     }) } });

@@ -30,7 +30,9 @@ const cookieBase = {
 
 export function isSyntheticEmail(email: string, accountId: string) {
   if (!email) return true;
-  return email.toLowerCase() === `${accountId}@gmail.com`.toLowerCase();
+  const lower = email.toLowerCase();
+  if (lower.endsWith("@guest.invalid")) return true;
+  return lower === `${accountId}@gmail.com`.toLowerCase();
 }
 
 export function hasRealEmail(session: WebClientSession | null | undefined) {

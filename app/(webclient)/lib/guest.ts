@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { customerFetch } from "./api";
-import type { AuthLevel, WebClientSession } from "./session";
+import { WEBCLIENT_MOCK } from "./config";
+import { refreshSession } from "./refresh-session";
+import {
+  getSession,
+  setSession,
+  type AuthLevel,
+  type WebClientSession,
+} from "./session";
 
 type SetupResult = {
   accountId?: string;
@@ -31,7 +38,7 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
   const wishbagId = randomUUID();
   const cartId = randomUUID();
   const deviceId = randomUUID();
-  const email = `${accountId}@gmail.com`;
+  const email = `${accountId}@guest.invalid`;
   const password = `${accountId}password`;
 
   const raw = await customerFetch<SetupResult>(
@@ -77,4 +84,21 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
     authLevel: "guest" as AuthLevel,
     email,
   };
+}
+
+export async function ensureWebGuest(): Promise<WebClientSession> {
+  const existing = await getSession();
+  if (existing) return existing;
+  try {
+    const renewed = await refreshSession();
+    if (renewed) return renewed;
+  } catch {
+    // Fall through and mint a new anonymous web session.
+  }
+  if (WEBCLIENT_MOCK) {
+    throw new Error("Could not start a shopping session.");
+  }
+  const session = await bootstrapGuestSession();
+  await setSession(session);
+  return session;
 }

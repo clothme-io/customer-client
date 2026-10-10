@@ -1,7 +1,7 @@
 "use client";
 import { commerceEvent } from "../lib/commerce-events";
 
-import { sessionFetch as fetch } from "../lib/session-client";
+import { ensureClientGuest, sessionFetch as fetch } from "../lib/session-client";
 
 import { FormEvent, useState } from "react";
 import { readPurchaseIntent } from "../lib/purchase-intent";
@@ -21,6 +21,7 @@ export function SizeManualView() {
     setBusy(true);
     setError("");
     try {
+      await ensureClientGuest();
       const response = await fetch("/api/webclient/size", {
         method: "POST",
         body: form,

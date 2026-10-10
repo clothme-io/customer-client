@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
+import { ensureWebGuest } from "./guest";
 import { getSession } from "./session";
 import type { WebClientSession } from "./session";
 
-export async function requireSession(): Promise<
+export async function requireSession(options?: {
+  mintGuest?: boolean;
+}): Promise<
   | { session: WebClientSession; error?: undefined }
   | { session?: undefined; error: NextResponse }
 > {
+  if (options?.mintGuest) {
+    try {
+      return { session: await ensureWebGuest() };
+    } catch (error) {
+      return {
+        error: NextResponse.json(
+          {
+            message:
+              error instanceof Error
+                ? error.message
+                : "Could not start a shopping session.",
+          },
+          { status: 400 },
+        ),
+      };
+    }
+  }
+
   const session = await getSession();
   if (!session) {
     return {

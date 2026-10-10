@@ -18,7 +18,7 @@ export default async function CheckoutPage() {
     return (
       <section className={styles.pagePad}>
         <h1 className={styles.pageTitle}>Checkout</h1>
-        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
+        <p className={styles.muted}>Your cart is empty.</p>
       </section>
     );
   }
