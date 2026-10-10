@@ -27,6 +27,23 @@ async function fetchWithRefresh(
   return fetch(input, init);
 }
 
+export async function ensureClientGuest(): Promise<void> {
+  const current = await fetch("/api/webclient/session");
+  const body = await current.json().catch(() => ({}));
+  if (body.authenticated) return;
+  const guest = await fetch("/api/webclient/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "guest" }),
+  });
+  if (!guest.ok) {
+    const error = await guest.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Could not start a shopping session.",
+    );
+  }
+}
+
 export async function sessionFetch(
   input: RequestInfo | URL,
   init?: RequestInit,

@@ -8,7 +8,7 @@ import {
 } from "../../../(webclient)/lib/require-session";
 
 export async function POST(request: Request) {
-  const { session, error } = await requireSession();
+  const { session, error } = await requireSession({ mintGuest: true });
   if (error || !session) return error;
 
   const body = await request.json().catch(() => ({}));

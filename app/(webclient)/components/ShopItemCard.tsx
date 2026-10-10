@@ -2,7 +2,7 @@
 
 import { commerceEvent, purchaseEvent } from "../lib/commerce-events";
 
-import { sessionFetch as fetch } from "../lib/session-client";
+import { ensureClientGuest, sessionFetch as fetch } from "../lib/session-client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ function firstImage(card: ShopCard) {
 }
 
 async function runAction(payload: Record<string, unknown>) {
+  await ensureClientGuest();
   const response = await fetch("/api/webclient/action", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -67,7 +68,10 @@ export function ShopItemCard({ item }: { item: ShopCard }) {
     activeLocation?.currencySymbol ?? item.product.currencySymbol ?? "$";
   const qty = item.product.quantity;
   const rawScore = selectedFit?.score ?? item.product.userFitPercentage;
-  const fitScore = typeof rawScore === "number" ? Math.round(rawScore) : null;
+  const fitScore =
+    typeof rawScore === "number" && Number.isFinite(rawScore)
+      ? Math.round(rawScore)
+      : null;
 
   const variantId = item.product.sizeVariants?.find(
     (variant) =>
@@ -257,6 +261,11 @@ export function ShopItemCard({ item }: { item: ShopCard }) {
             {qty > 0 ? (
               <>
                 <strong>{qty}</strong>
+                <span>Left</span>
+              </>
+            ) : qty < 0 ? (
+              <>
+                <strong>—</strong>
                 <span>Left</span>
               </>
             ) : (

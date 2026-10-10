@@ -9,7 +9,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SizeCameraModal } from "./SizeCameraModal";
 import { dataUrlToBlob, loadSizeProfile } from "../lib/size-profile";
-import { stagePhotos, sizeIdentity } from "../lib/size-flow";
+import {
+  bindSizeIdentity,
+  isBoundSizeIdentity,
+  sizeIdentity,
+  stagePhotos,
+} from "../lib/size-flow";
 import { normalizeSizeImage } from "../lib/size-images";
 import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
@@ -48,9 +53,21 @@ export function SizeCaptureView() {
   useEffect(() => {
     sizeIdentity()
       .then((key) => {
-        identity.current = key;
-        if (sessionStorage.getItem("cm_size_scope") !== key)
+        if (isBoundSizeIdentity(identity.current) && !isBoundSizeIdentity(key))
+          return;
+        const scoped = sessionStorage.getItem("cm_size_scope");
+        if (
+          !scoped ||
+          (isBoundSizeIdentity(scoped) &&
+            isBoundSizeIdentity(key) &&
+            scoped !== key)
+        ) {
           router.replace("/account/size/age-height");
+          return;
+        }
+        identity.current = isBoundSizeIdentity(key)
+          ? key
+          : identity.current || key;
       })
       .catch((err) => setError(err.message));
     return () => {
@@ -80,6 +97,13 @@ export function SizeCaptureView() {
   }, [router]);
 
   async function validate(pose: Pose, dataUrl: string, signal: AbortSignal) {
+    const key = await bindSizeIdentity();
+    if (
+      isBoundSizeIdentity(identity.current) &&
+      identity.current !== key
+    )
+      throw new Error("Your profile changed. Return to age and height.");
+    identity.current = key;
     commerceEvent("size_validation_started", { pose });
     const profile = loadSizeProfile();
     const form = new FormData();
@@ -142,8 +166,6 @@ export function SizeCaptureView() {
     setCameraPose(null);
     setSourcePose(null);
     try {
-      if (!identity.current || (await sizeIdentity()) !== identity.current)
-        throw new Error("Your profile changed. Return to age and height.");
       await validate(pose, dataUrl, controller.signal);
     } catch (err) {
       if (controller.signal.aborted) return;
@@ -175,7 +197,8 @@ export function SizeCaptureView() {
     try {
       const profile = loadSizeProfile();
       commerceEvent("size_capture_completed");
-      if ((await sizeIdentity()) !== identity.current)
+      const key = await sizeIdentity();
+      if (!isBoundSizeIdentity(key) || key !== identity.current)
         throw new Error(
           "Your selected profile changed. Return to age and height.",
         );

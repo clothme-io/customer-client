@@ -33,7 +33,7 @@ function validImage(value: FormDataEntryValue | null): value is File {
 const validTask = (id: string) => /^[a-zA-Z0-9_-]{1,200}$/.test(id);
 
 export async function POST(request: Request) {
-  const { session, error } = await requireSession();
+  const { session, error } = await requireSession({ mintGuest: true });
   if (!session) return error;
   try {
     const form = await request.formData();

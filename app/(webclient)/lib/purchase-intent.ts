@@ -1,7 +1,7 @@
 "use client";
 import { commerceEvent } from "./commerce-events";
 import { safeInternalPath } from "./size-contract";
-import { sessionFetch } from "./session-client";
+import { ensureClientGuest, sessionFetch } from "./session-client";
 export type PurchaseIntent = {
   id: string;
   accountId: string;
@@ -50,17 +50,8 @@ export function clearPurchaseIntent() {
 export async function ensureFitProfile(
   input: Partial<PurchaseIntent>,
 ): Promise<boolean> {
-  let response = await sessionFetch("/api/webclient/fit-profile");
-  if (response.status === 401) {
-    const guest = await fetch("/api/webclient/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "guest" }),
-    });
-    if (!guest.ok)
-      throw new Error("Please sign in to recover your shopping session.");
-    response = await sessionFetch("/api/webclient/fit-profile");
-  }
+  await ensureClientGuest();
+  const response = await sessionFetch("/api/webclient/fit-profile");
   const body = await response.json();
   if (!response.ok)
     throw new Error(

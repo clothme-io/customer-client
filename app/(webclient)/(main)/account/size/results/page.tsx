@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSession } from "../../../../lib/session";
 import { SizeResultsView } from "../../../../components/SizeResultsView";
 import styles from "../../../../webclient.module.css";
@@ -16,7 +17,8 @@ export default async function SizeResultsPage() {
     return (
       <section className={shopStyles.signInGate}>
         <h1 className={styles.pageTitle}>Your sizes</h1>
-        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
+        <p className={styles.muted}>Add your sizes to see recommendations.</p>
+        <Link href="/account/size/policy">Add sizes</Link>
       </section>
     );
   }

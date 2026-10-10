@@ -50,6 +50,17 @@ export function saveSizeProfile(profile: SizeProfile) {
   sessionStorage.setItem(profileKey(), JSON.stringify(profile));
 }
 
+export function bindSizeProfileScope(next: string) {
+  const previous = sessionStorage.getItem("cm_size_scope") || "unscoped";
+  if (previous !== next) {
+    const from = `${SIZE_PROFILE_KEY}:${previous}`;
+    const to = `${SIZE_PROFILE_KEY}:${next}`;
+    const profile = sessionStorage.getItem(from);
+    if (profile && !sessionStorage.getItem(to)) sessionStorage.setItem(to, profile);
+  }
+  sessionStorage.setItem("cm_size_scope", next);
+}
+
 export function dataUrlToBlob(dataUrl: string) {
   const [header, data] = dataUrl.split(",");
   const mime = /data:(.*?);/.exec(header)?.[1] || "image/jpeg";

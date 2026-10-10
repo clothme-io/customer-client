@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchDiscoverBrands } from "../../lib/catalog";
+import { fetchDiscoverBrands, fetchPublicBrands } from "../../lib/catalog";
 import { getSession } from "../../lib/session";
 import styles from "../../webclient.module.css";
 import shopStyles from "../../shop.module.css";
@@ -14,19 +14,12 @@ export const dynamic = "force-dynamic";
 export default async function DiscoverPage() {
   const session = await getSession();
 
-  if (!session) {
-    return (
-      <section className={shopStyles.signInGate}>
-        <h1 className={styles.pageTitle}>Discover</h1>
-        <p className={styles.muted}>Could not start a shopping session. Refresh to try again.</p>
-      </section>
-    );
-  }
-
   let brands: Awaited<ReturnType<typeof fetchDiscoverBrands>> = [];
   let error = "";
   try {
-    brands = await fetchDiscoverBrands(session);
+    brands = session
+      ? await fetchDiscoverBrands(session)
+      : await fetchPublicBrands();
   } catch (err) {
     error = err instanceof Error ? err.message : "Could not load Discover";
   }

@@ -25,6 +25,88 @@ export async function fetchShopAvatars(session: WebClientSession) {
   });
 }
 
+type PublicProduct = {
+  id: string;
+  brandId: string;
+  brandName: string;
+  title: string;
+  likeCount?: number;
+  primaryImageUrl?: string | null;
+  minPriceCents?: number | null;
+  currency?: string | null;
+};
+
+type PublicBrand = {
+  id: string;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+};
+
+function currencySymbol(code?: string | null) {
+  if (code === "EUR") return "€";
+  if (code === "GBP") return "£";
+  return "$";
+}
+
+export function publicProductToShopCard(item: PublicProduct): ShopCard {
+  const amount = Number(item.minPriceCents || 0) / 100;
+  const image = item.primaryImageUrl || "";
+  return {
+    product: {
+      productId: item.id,
+      name: item.title,
+      productDescription: "",
+      images: image
+        ? [{ id: "primary", imageUrl: [image], isPrimary: true }]
+        : [],
+      quantity: -1,
+      currency: item.currency || "USD",
+      currencySymbol: currencySymbol(item.currency),
+      amount,
+      userFitPercentage: Number.NaN,
+      likeCount: item.likeCount || 0,
+      isLikedByUser: false,
+    },
+    brand: {
+      id: item.brandId,
+      logoUrl: "",
+      name: item.brandName,
+    },
+    fitVariants: [],
+    defaultLocationId: "",
+  };
+}
+
+export async function fetchPublicShopCards(page = 1) {
+  const data = await customerFetch<{ items?: PublicProduct[] }>(
+    "/v1/catalog/products",
+    { query: { page, pageSize: 20, sort: "newest" } },
+  );
+  return (data?.items ?? []).map(publicProductToShopCard);
+}
+
+export async function fetchPublicBrands(page = 1) {
+  const data = await customerFetch<{ items?: PublicBrand[] }>(
+    "/v1/catalog/brands",
+    { query: { page, pageSize: 20 } },
+  );
+  return (data?.items ?? []).map(
+    (brand): DiscoverBrand => ({
+      id: brand.id,
+      logoUrl: brand.logoUrl || "",
+      name: brand.name,
+      description: brand.description || "",
+      city: "",
+      country: "",
+      currency: "",
+      averageAmount: 0,
+      fitProductCount: 0,
+      isAccountFavorite: false,
+    }),
+  );
+}
+
 function ageFromDob(dob?: string) {
   if (!dob) return null;
   const born = new Date(dob);

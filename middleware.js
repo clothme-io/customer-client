@@ -81,24 +81,6 @@ export function middleware(request) {
       }
     }
 
-    const mockOn =
-      process.env.NEXT_PUBLIC_WEBCLIENT_MOCK === "1" ||
-      (process.env.NODE_ENV !== "production" &&
-        process.env.NEXT_PUBLIC_WEBCLIENT_MOCK !== "0");
-    const skipGuest =
-      pathname === "/brand" ||
-      pathname.startsWith("/brand/") ||
-      pathname === "/product" ||
-      pathname.startsWith("/product/") ||
-      pathname === "/login" ||
-      pathname.startsWith("/login/") ||
-      pathname.startsWith("/api/");
-    if (!mockOn && !skipGuest && !request.cookies.get("cm_access")) {
-      const guestUrl = url.clone();
-      guestUrl.pathname = "/api/webclient/guest";
-      guestUrl.search = `next=${encodeURIComponent(`${pathname}${request.nextUrl.search}`)}`;
-      return NextResponse.redirect(guestUrl);
-    }
     return response;
   }
 

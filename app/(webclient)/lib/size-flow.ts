@@ -1,9 +1,33 @@
 "use client";
-import { sessionFetch } from "./session-client";
+import { ensureClientGuest, sessionFetch } from "./session-client";
 import type { SizePhotos } from "./size-profile";
-import { dataUrlToBlob } from "./size-profile";
+import { bindSizeProfileScope, dataUrlToBlob } from "./size-profile";
 const DB = "clothme-sizing-v1";
 const TTL = 60 * 60_000;
+export const LOCAL_SIZE_SCOPE = "pending";
+export function isBoundSizeIdentity(key: string) {
+  return key.includes(":") && key !== LOCAL_SIZE_SCOPE;
+}
+export async function sizeIdentity() {
+  const response = await sessionFetch("/api/webclient/session");
+  const session = await response.json();
+  if (session.authenticated && session.accountId && session.personId)
+    return `${session.accountId}:${session.personId}`;
+  return sessionStorage.getItem("cm_size_scope") || LOCAL_SIZE_SCOPE;
+}
+export async function bindSizeIdentity() {
+  const previous = await sizeIdentity();
+  await ensureClientGuest();
+  const response = await sessionFetch("/api/webclient/session");
+  const session = await response.json();
+  if (!session.authenticated || !session.accountId || !session.personId)
+    throw new Error("Please sign in to continue your fit profile.");
+  const next = `${session.accountId}:${session.personId}`;
+  if (isBoundSizeIdentity(previous) && previous !== next)
+    throw new Error("Your profile changed. Return to age and height.");
+  bindSizeProfileScope(next);
+  return next;
+}
 export type SizeFlow = {
   key: string;
   expires: number;
@@ -12,13 +36,6 @@ export type SizeFlow = {
   result?: Record<string, any>;
   photos?: Omit<SizePhotos, "front" | "side"> & { front: Blob; side: Blob };
 };
-export async function sizeIdentity() {
-  const response = await sessionFetch("/api/webclient/session");
-  const session = await response.json();
-  if (!session.authenticated)
-    throw new Error("Please sign in to continue your fit profile.");
-  return `${session.accountId}:${session.personId}`;
-}
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB, 1);
@@ -74,6 +91,8 @@ export async function saveFlow(flow: SizeFlow) {
 }
 export async function stagePhotos(photos: SizePhotos) {
   const key = await sizeIdentity();
+  if (!isBoundSizeIdentity(key))
+    throw new Error("Please sign in to continue your fit profile.");
   await saveFlow({
     key,
     expires: Date.now() + TTL,
@@ -143,7 +162,7 @@ async function claimGeneration(key: string): Promise<SizeFlow> {
   }
 }
 async function submit(key: string): Promise<SizeFlow> {
-  if ((await sizeIdentity()) !== key)
+  if (!isBoundSizeIdentity(key) || (await sizeIdentity()) !== key)
     throw new Error("Your selected profile changed. Return to the photo step.");
   const flow = await claimGeneration(key);
   if (flow.taskId || flow.result) return flow;

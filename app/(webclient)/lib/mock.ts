@@ -640,6 +640,30 @@ export function mockApiResponse(
   if (path.includes("/catalog/discover/brands")) return { brands: MOCK_BRANDS };
   if (path.includes("/catalog/product-details")) return { product: mockProduct(String(query.id || "")) };
   if (path.includes("/catalog/brand-details")) return { brand: mockBrand(String(query.brandId || "")) };
+  if (path.includes("/catalog/products")) {
+    return {
+      items: MOCK_SHOP_CARDS.map((card) => ({
+        id: card.product.productId,
+        brandId: card.brand.id,
+        brandName: card.brand.name,
+        title: card.product.name,
+        likeCount: card.product.likeCount,
+        primaryImageUrl: card.product.images[0]?.imageUrl[0] || null,
+        minPriceCents: Math.round(card.product.amount * 100),
+        currency: card.product.currency,
+      })),
+    };
+  }
+  if (path.includes("/catalog/brands")) {
+    return {
+      items: MOCK_BRANDS.map((brand) => ({
+        id: brand.id,
+        name: brand.name,
+        description: brand.description,
+        logoUrl: brand.logoUrl,
+      })),
+    };
+  }
   if (path.includes("/customer/me")) return MOCK_PROFILE;
   if (path.includes("/customer/favourites/brands")) {
     return {

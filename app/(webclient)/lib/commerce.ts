@@ -12,6 +12,25 @@ import type {
   WishbagListItem
 } from "./types";
 
+export function emptyCart(): CartData {
+  return {
+    accountId: "",
+    cart: {
+      cartId: "",
+      totalAmount: 0,
+      totalTax: 0,
+      deliveryFee: 0,
+      total: 0,
+      totalItems: 0,
+      currency: "USD",
+      currencySymbol: "$",
+      subTotal: 0,
+    },
+    cartItems: [],
+    vendorShipping: [],
+  };
+}
+
 export async function fetchCart(session: WebClientSession) {
   return customerFetch<CartData>("/v1/customer/cart", {
     accessToken: session.accessToken,
