@@ -1,3 +1,4 @@
+import { isTooManyRequests } from "../../lib/api";
 import { fetchPublicShopCards, fetchShopAvatars, fetchShopData, mergeShopProfiles, shopCards } from "../../lib/catalog";
 import { fetchAccountProfile } from "../../lib/commerce";
 import { getSession } from "../../lib/session";
@@ -33,7 +34,8 @@ export default async function ShopPage() {
       cards = await fetchPublicShopCards();
     }
   } catch (err) {
-    error = err instanceof Error ? err.message : "Could not load Shop";
+    if (!isTooManyRequests(err))
+      error = err instanceof Error ? err.message : "Could not load Shop";
   }
 
   return (
