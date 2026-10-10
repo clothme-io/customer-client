@@ -33,7 +33,7 @@ function unwrap<T>(body: Envelope<T> | T): T {
 
 function errorMessage(body: unknown, fallback: string) {
   if (!body || typeof body !== "object") return fallback;
-  const record = body as Envelope<unknown>;
+  const record = body as Envelope<unknown> & { message?: string };
   if (typeof record.error === "string") return record.error;
   if (
     record.error &&
@@ -42,7 +42,18 @@ function errorMessage(body: unknown, fallback: string) {
   ) {
     return record.error.message;
   }
+  if (typeof record.message === "string" && record.message.trim())
+    return record.message;
   return fallback;
+}
+
+export function isTooManyRequests(error: unknown) {
+  if (error instanceof CustomerApiError) return error.status === 429;
+  return error instanceof Error && /too many requests/i.test(error.message);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function customerFetch<T>(
@@ -91,28 +102,57 @@ export async function customerFetch<T>(
     headers[PERSON_ID_HEADER] = options.personId;
   }
 
-  const response = await fetch(url, {
+  const init: RequestInit = {
     method: options.method || "GET",
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    signal: AbortSignal.timeout(30_000),
     cache: "no-store",
-  });
+  };
 
-  if (response.status === 204) {
-    return null as T;
+  let lastError: CustomerApiError | undefined;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    const body = (await response.json().catch(() => ({}))) as Envelope<T> & {
+      message?: string;
+    };
+    const status =
+      typeof body.status === "number" ? body.status : response.status;
+    const limited = response.status === 429 || status === 429;
+
+    if (limited) {
+      lastError = new CustomerApiError(
+        errorMessage(body, "Too Many Requests"),
+        429,
+      );
+      if (attempt < 2) {
+        const retryAfter = Number(response.headers.get("retry-after"));
+        const waitMs =
+          Number.isFinite(retryAfter) && retryAfter > 0
+            ? Math.min(retryAfter * 1000, 2000)
+            : 400 * 2 ** attempt;
+        await delay(waitMs);
+        continue;
+      }
+      throw lastError;
+    }
+
+    if (!response.ok || status > 209) {
+      throw new CustomerApiError(
+        errorMessage(body, "Request failed"),
+        status || response.status,
+      );
+    }
+
+    return unwrap<T>(body);
   }
 
-  const body = (await response.json().catch(() => ({}))) as Envelope<T>;
-  const status =
-    typeof body.status === "number" ? body.status : response.status;
-
-  if (!response.ok || status > 209) {
-    throw new CustomerApiError(
-      errorMessage(body, "Request failed"),
-      status || response.status,
-    );
-  }
-
-  return unwrap<T>(body);
+  throw lastError || new CustomerApiError("Request failed", 500);
 }

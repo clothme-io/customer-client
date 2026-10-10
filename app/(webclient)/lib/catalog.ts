@@ -1,4 +1,5 @@
-import { customerFetch } from "./api";
+import { unstable_cache } from "next/cache";
+import { customerFetch, isTooManyRequests } from "./api";
 import type {
   BrandPayload,
   AccountPerson,
@@ -78,33 +79,71 @@ export function publicProductToShopCard(item: PublicProduct): ShopCard {
   };
 }
 
+function toDiscoverBrand(brand: PublicBrand): DiscoverBrand {
+  return {
+    id: brand.id,
+    logoUrl: brand.logoUrl || "",
+    name: brand.name,
+    description: brand.description || "",
+    city: "",
+    country: "",
+    currency: "",
+    averageAmount: 0,
+    fitProductCount: 0,
+    isAccountFavorite: false,
+  };
+}
+
+const stalePublicShop = new Map<number, ShopCard[]>();
+const stalePublicBrands = new Map<number, DiscoverBrand[]>();
+
+const loadPublicShopCards = unstable_cache(
+  async (page: number) => {
+    const data = await customerFetch<{ items?: PublicProduct[] }>(
+      "/v1/catalog/products",
+      { query: { page, pageSize: 20, sort: "newest" } },
+    );
+    return (data?.items ?? []).map(publicProductToShopCard);
+  },
+  ["public-shop-cards"],
+  { revalidate: 300 },
+);
+
+const loadPublicBrands = unstable_cache(
+  async (page: number) => {
+    const data = await customerFetch<{ items?: PublicBrand[] }>(
+      "/v1/catalog/brands",
+      { query: { page, pageSize: 20 } },
+    );
+    return (data?.items ?? []).map(toDiscoverBrand);
+  },
+  ["public-brands"],
+  { revalidate: 300 },
+);
+
+async function publicCatalog<T>(
+  load: () => Promise<T[]>,
+  stale: Map<number, T[]>,
+  page: number,
+) {
+  try {
+    const items = await load();
+    if (items.length) stale.set(page, items);
+    return items;
+  } catch (err) {
+    const cached = stale.get(page);
+    if (cached?.length) return cached;
+    if (isTooManyRequests(err)) return [];
+    throw err;
+  }
+}
+
 export async function fetchPublicShopCards(page = 1) {
-  const data = await customerFetch<{ items?: PublicProduct[] }>(
-    "/v1/catalog/products",
-    { query: { page, pageSize: 20, sort: "newest" } },
-  );
-  return (data?.items ?? []).map(publicProductToShopCard);
+  return publicCatalog(() => loadPublicShopCards(page), stalePublicShop, page);
 }
 
 export async function fetchPublicBrands(page = 1) {
-  const data = await customerFetch<{ items?: PublicBrand[] }>(
-    "/v1/catalog/brands",
-    { query: { page, pageSize: 20 } },
-  );
-  return (data?.items ?? []).map(
-    (brand): DiscoverBrand => ({
-      id: brand.id,
-      logoUrl: brand.logoUrl || "",
-      name: brand.name,
-      description: brand.description || "",
-      city: "",
-      country: "",
-      currency: "",
-      averageAmount: 0,
-      fitProductCount: 0,
-      isAccountFavorite: false,
-    }),
-  );
+  return publicCatalog(() => loadPublicBrands(page), stalePublicBrands, page);
 }
 
 function ageFromDob(dob?: string) {

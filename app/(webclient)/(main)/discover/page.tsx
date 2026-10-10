@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isTooManyRequests } from "../../lib/api";
 import { fetchDiscoverBrands, fetchPublicBrands } from "../../lib/catalog";
 import { getSession } from "../../lib/session";
 import styles from "../../webclient.module.css";
@@ -21,7 +22,8 @@ export default async function DiscoverPage() {
       ? await fetchDiscoverBrands(session)
       : await fetchPublicBrands();
   } catch (err) {
-    error = err instanceof Error ? err.message : "Could not load Discover";
+    if (!isTooManyRequests(err))
+      error = err instanceof Error ? err.message : "Could not load Discover";
   }
 
   return (

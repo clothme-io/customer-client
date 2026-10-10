@@ -216,16 +216,18 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ ok: true, authLevel: "registered" });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : isSignup
-          ? "Sign up failed"
-          : "Sign in failed";
     const status =
       typeof (error as { status?: number }).status === "number"
         ? (error as { status: number }).status
         : 401;
+    const message =
+      status === 429
+        ? "Sign in is temporarily unavailable. Please try again in a moment."
+        : error instanceof Error
+          ? error.message
+          : isSignup
+            ? "Sign up failed"
+            : "Sign in failed";
     return NextResponse.json({ message }, { status });
   }
 }
