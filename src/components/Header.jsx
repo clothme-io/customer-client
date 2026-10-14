@@ -1,4 +1,4 @@
-import { landingNav } from "../data/landing";
+import { landingNav, vendorLink } from "../data/landing";
 
 export function Header() {
   return (
@@ -12,7 +12,10 @@ export function Header() {
           <a key={item.href} href={item.href}>{item.label}</a>
         ))}
       </nav>
-      <a className="header-cta" href="/#size-tool">Get your size</a>
+      <div className="header-actions">
+        <a className="header-vendor-link" href={vendorLink.href}>{vendorLink.label}</a>
+        <a className="header-cta" href="/#size-tool">Get your size</a>
+      </div>
     </header>
   );
 }
