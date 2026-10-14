@@ -77,6 +77,8 @@ export const usStatesAndProvinces = [
   "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"
 ];
 
+export const vendorLink = { label: "For Brands", href: "https://vendor.clothme.io" };
+
 export const landingNav = [
   { label: "Get your size", href: "/#size-tool" },
   { label: "For You", href: "/#why" },
@@ -196,6 +198,7 @@ export const landingFooterLinks = {
   ],
   company: [
     { label: "About Us", href: "/about" },
+    vendorLink,
     { label: "Manifesto", href: "/manifesto" },
     { label: "Contact Us", href: "mailto:talk2us@clothme.io" }
   ],
