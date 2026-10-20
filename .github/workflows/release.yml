@@ -269,6 +269,28 @@ jobs:
             exit 1
           fi
 
+      - name: Validate infrastructure credential
+        env:
+          INFRA_REPO_PAT: ${{ secrets.INFRA_REPO_PAT }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, urllib.request, urllib.error
+          token = os.environ.get("INFRA_REPO_PAT", "")
+          if token != token.strip() or any(c.isspace() for c in token):
+              raise SystemExit("::error::INFRA_REPO_PAT contains whitespace. Save only the generated secret value.")
+          if not token.startswith(("github_pat_", "ghp_")):
+              raise SystemExit("::error::INFRA_REPO_PAT is not a GitHub personal access token value. Save the generated secret, not its name or ID.")
+          request = urllib.request.Request(
+              "https://api.github.com/repos/clothme-io/clothme_infra_kube",
+              headers={"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "User-Agent": "clothme-release"},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  print("Infrastructure credential authenticated; repository is accessible.")
+          except urllib.error.HTTPError as error:
+              raise SystemExit(f"::error::Infrastructure credential validation returned HTTP {error.code}. Check token validity, repository access, and owner approval.")
+          PYCODE
+
       - uses: actions/checkout@v4
         with:
           repository: clothme-io/clothme_infra_kube
