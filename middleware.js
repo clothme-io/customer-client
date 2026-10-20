@@ -1,6 +1,10 @@
+import { captureReferral, REFERRAL_COOKIE } from "./src/lib/referral.js";
 import { NextResponse } from "next/server";
 
 const WEBCLIENT_PATHS = [
+  "/creator-link",
+  "/creator-campaign",
+  "/continue",
   "/shop",
   "/discover",
   "/cart",
@@ -54,6 +58,11 @@ export function middleware(request) {
     .split(":")[0]
     .split("/")[0];
 
+  if (url.pathname === "/" && /^(?:app|dv-app|pr-app)\./.test(hostname)) {
+    url.pathname = "/shop";
+    return NextResponse.redirect(url);
+  }
+
   // Never rewrite Next.js internals, static files, Payload routes, or ACME challenges
   const { pathname } = url;
   if (
@@ -66,6 +75,19 @@ export function middleware(request) {
 
   if (isWebClientPath(pathname)) {
     const response = NextResponse.next();
+    const referral =
+      request.headers.has("next-router-prefetch") ||
+      request.headers.get("purpose") === "prefetch"
+        ? null
+        : captureReferral(url, request.cookies.get(REFERRAL_COOKIE)?.value);
+    if (referral)
+      response.cookies.set(REFERRAL_COOKIE, referral, {
+        httpOnly: true,
+        secure: url.protocol === "https:",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 86400,
+      });
     if (!request.cookies.get("cm_geo")) {
       const geo = {
         country: request.headers.get("x-vercel-ip-country") || "",

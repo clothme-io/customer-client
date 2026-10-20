@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { customerFetch, isTooManyRequests } from "./api";
+import { customerFetch } from "./api";
 import type {
   BrandPayload,
   AccountPerson,
@@ -133,7 +133,6 @@ async function publicCatalog<T>(
   } catch (err) {
     const cached = stale.get(page);
     if (cached?.length) return cached;
-    if (isTooManyRequests(err)) return [];
     throw err;
   }
 }

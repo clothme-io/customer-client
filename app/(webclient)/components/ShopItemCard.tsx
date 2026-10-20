@@ -1,8 +1,12 @@
 "use client";
+import { FitChoiceModal } from "./FitChoiceModal";
 
 import { commerceEvent, purchaseEvent } from "../lib/commerce-events";
 
-import { ensureClientGuest, sessionFetch as fetch } from "../lib/session-client";
+import {
+  ensureClientGuest,
+  sessionFetch as fetch,
+} from "../lib/session-client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -38,6 +42,7 @@ async function runAction(payload: Record<string, unknown>) {
 
 export function ShopItemCard({ item }: { item: ShopCard }) {
   const router = useRouter();
+  const [fitChoiceOpen, setFitChoiceOpen] = useState(false);
   const [fitKey, setFitKey] = useState("");
   const locations = item.product.productLocations ?? [];
   const defaultLocationId =
@@ -133,7 +138,7 @@ export function ShopItemCard({ item }: { item: ShopCard }) {
           returnTo: `/product/${encodeURIComponent(item.product.productId)}`,
         }))
       ) {
-        router.push("/account/size/policy");
+        setFitChoiceOpen(true);
         return;
       }
       if (!variantId) {
@@ -156,6 +161,9 @@ export function ShopItemCard({ item }: { item: ShopCard }) {
 
   return (
     <article className={styles.card}>
+      {fitChoiceOpen && (
+        <FitChoiceModal onClose={() => setFitChoiceOpen(false)} />
+      )}
       <header className={styles.cardHeader}>
         <Link href={`/brand/${item.brand.id}`} className={styles.brandMeta}>
           {item.brand.logoUrl ? (
@@ -290,7 +298,7 @@ export function ShopItemCard({ item }: { item: ShopCard }) {
           type="button"
           className={styles.cartBtn}
           onClick={onAddToCart}
-          disabled={pending === "cart" || qty < 1}
+          disabled={pending === "cart" || qty === 0}
         >
           {pending === "cart" ? "Adding…" : "Add to cart"}
         </button>

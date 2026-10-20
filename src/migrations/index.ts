@@ -1,3 +1,4 @@
+import * as shoppingContinuations from './20261019_000001_shopping_continuations';
 import * as appDownloadRequests from './20261003_000001_app_download_requests';
 import * as migration_20260626_183444 from './20260626_183444';
 import * as migration_20260702_000001_waitlist_entries from './20260702_000001_waitlist_entries';
@@ -75,4 +76,5 @@ export const migrations = [
     name: '20260807_000001_repair_html_entities_in_posts'
   },
   { up: appDownloadRequests.up, down: appDownloadRequests.down, name: '20261003_000001_app_download_requests' },
+  { up: shoppingContinuations.up, down: shoppingContinuations.down, name: '20261019_000001_shopping_continuations' },
 ];
