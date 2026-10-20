@@ -1,4 +1,5 @@
 "use client";
+import { FitChoiceModal } from "./FitChoiceModal";
 
 import { commerceEvent, purchaseEvent } from "../lib/commerce-events";
 
@@ -18,6 +19,7 @@ import shell from "../webclient.module.css";
 
 export function ProductDetailView({ product }: { product: ProductDetail }) {
   const router = useRouter();
+  const [fitChoiceOpen, setFitChoiceOpen] = useState(false);
   const locations = product.variantLocations ?? [];
   const [locationId, setLocationId] = useState(locations[0]?.id || "");
   const activeLocation =
@@ -73,7 +75,9 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
         "Your selection is saved. Review your size before adding it to your cart.",
       );
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [product.id]);
 
   useEffect(() => {
@@ -104,7 +108,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
           returnTo: `/product/${encodeURIComponent(product.id)}`,
         }))
       ) {
-        router.push("/account/size/policy");
+        setFitChoiceOpen(true);
         return;
       }
       if (!variantId || !selectedSize || selectedSize.quantity < 1) {
@@ -134,6 +138,9 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
 
   return (
     <article>
+      {fitChoiceOpen && (
+        <FitChoiceModal onClose={() => setFitChoiceOpen(false)} />
+      )}
       {images[0] ? (
         <img src={images[0]} alt={product.name} className={styles.detailHero} />
       ) : (
@@ -164,7 +171,10 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 );
                 const next = locations[(index + 1) % locations.length];
                 if (next) {
-                  commerceEvent("product_selection_changed", { stage: "location", productId: product.id });
+                  commerceEvent("product_selection_changed", {
+                    stage: "location",
+                    productId: product.id,
+                  });
                   setLocationId(next.id);
                   setColorId(next.colors?.[0]?.id || "");
                   setSizeLabel(next.colors?.[0]?.sizes?.[0]?.sizeLabel || "");
@@ -186,7 +196,10 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 style={{ background: color.hex || "#ccc" }}
                 aria-label={color.name}
                 onClick={() => {
-                  commerceEvent("product_selection_changed", { stage: "color", productId: product.id });
+                  commerceEvent("product_selection_changed", {
+                    stage: "color",
+                    productId: product.id,
+                  });
                   setColorId(color.id);
                   const first =
                     "sizes" in color ? color.sizes?.[0]?.sizeLabel : "";
@@ -207,7 +220,13 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 key={label}
                 type="button"
                 className={`${styles.sizeChip} ${label === sizeLabel ? styles.pillActive : ""}`}
-                onClick={() => { commerceEvent("product_selection_changed", { stage: "size", productId: product.id }); setSizeLabel(label); }}
+                onClick={() => {
+                  commerceEvent("product_selection_changed", {
+                    stage: "size",
+                    productId: product.id,
+                  });
+                  setSizeLabel(label);
+                }}
               >
                 {label}
               </button>

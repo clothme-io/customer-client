@@ -1,4 +1,5 @@
 "use client";
+import { sessionFetch } from "../lib/session-client";
 import { commerceEvent } from "../lib/commerce-events";
 
 import { FormEvent, useEffect, useState } from "react";
@@ -15,16 +16,19 @@ import styles from "../shop.module.css";
 import shell from "../webclient.module.css";
 
 export function SizeAgeHeightView({
+  firstName = "",
   city = "",
   country = "",
   provinceState = "",
 }: {
+  firstName?: string;
   city?: string;
   country?: string;
   provinceState?: string;
 }) {
   const router = useRouter();
   const [profile, setProfile] = useState<SizeProfile | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export function SizeAgeHeightView({
     };
   }, [city, country, provinceState]);
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const dob = String(form.get("dob") || "");
@@ -69,17 +73,41 @@ export function SizeAgeHeightView({
       setError("Enter height in centimetres (80–250).");
       return;
     }
-    saveSizeProfile({
-      dob,
-      height,
-      gender,
-      weight: String(form.get("weight") || "").trim(),
-      city: String(form.get("city") || city).trim(),
-      country: String(form.get("country") || country).trim(),
-      provinceState: String(form.get("provinceState") || provinceState).trim(),
-    });
-    commerceEvent("size_details_completed");
-    router.push("/account/size/capture");
+    setSaving(true);
+    setError("");
+    try {
+      const name = String(form.get("firstName") || "").trim();
+      if (!name || name.length > 100) throw new Error("Enter your name.");
+      if (name !== firstName) {
+        const response = await sessionFetch("/api/webclient/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "updateProfileName",
+            firstName: name,
+          }),
+        });
+        if (!response.ok)
+          throw new Error("Could not save your name. Please retry.");
+      }
+      saveSizeProfile({
+        dob,
+        height,
+        gender,
+        weight: String(form.get("weight") || "").trim(),
+        city: String(form.get("city") || city).trim(),
+        country: String(form.get("country") || country).trim(),
+        provinceState: String(
+          form.get("provinceState") || provinceState,
+        ).trim(),
+      });
+      commerceEvent("size_details_completed");
+      router.push("/account/size/capture");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Please retry.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -91,6 +119,16 @@ export function SizeAgeHeightView({
           <p className={shell.muted}>
             We use this with your photos to calculate clothing sizes.
           </p>
+          <label className={shell.field}>
+            Your name
+            <input
+              name="firstName"
+              required
+              maxLength={100}
+              defaultValue={firstName}
+              autoComplete="given-name"
+            />
+          </label>
           <label className={shell.field}>
             Date of birth
             <input name="dob" type="date" required defaultValue={profile.dob} />
@@ -164,6 +202,7 @@ export function SizeAgeHeightView({
           <button
             className={shell.button}
             type="submit"
+            disabled={saving}
             style={{ width: "100%", marginTop: 8 }}
           >
             Continue

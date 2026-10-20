@@ -1,3 +1,4 @@
+import { claimWebReferrals } from "../../../(webclient)/lib/attribution";
 import { fetchFitProfile } from "../../../(webclient)/lib/fit-profile";
 import { fetchCart } from "../../../(webclient)/lib/commerce";
 import { NextResponse } from "next/server";
@@ -39,6 +40,25 @@ export async function POST(request: Request) {
           );
         }
       }
+    }
+    if (action === "updateProfileName") {
+      const firstName =
+        typeof body.firstName === "string" ? body.firstName.trim() : "";
+      if (!firstName || firstName.length > 100)
+        return NextResponse.json(
+          { message: "Enter your name (up to 100 characters)." },
+          { status: 400 },
+        );
+      const result = await customerFetch(
+        `/v1/customer/persons/${session.personId}`,
+        {
+          method: "PATCH",
+          accessToken: session.accessToken,
+          personId: session.personId,
+          body: { firstName },
+        },
+      );
+      return NextResponse.json(result);
     }
     if (action === "like") {
       const productId = String(body.productId || "");
@@ -186,6 +206,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "initCheckout") {
+      await claimWebReferrals(session);
       const result = await customerFetch("/v1/customer/checkout", {
         method: "POST",
         accessToken: session.accessToken,

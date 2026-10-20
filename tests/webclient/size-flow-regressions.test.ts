@@ -181,7 +181,7 @@ for (const scenario of [
   { savedCountry: "Japan", detectedCountry: "Canada", enteredCountry: "Japan" },
   { savedCountry: "", detectedCountry: "", enteredCountry: "Brazil" },
 ]) {
-  test(`country field accepts and saves ${scenario.enteredCountry}`, () => {
+  test(`country field accepts and saves ${scenario.enteredCountry}`, async () => {
     let saved: any;
     let destination: string | undefined;
     const profile = { country: scenario.savedCountry };
@@ -190,6 +190,7 @@ for (const scenario of [
         react: { useEffect() {}, useState: (initial: unknown) => [initial === null ? profile : initial, () => {}] },
         "next/navigation": { useRouter: () => ({ push: (path: string) => { destination = path; } }) },
         "../lib/size-flow": {},
+        "../lib/session-client": { sessionFetch: async () => ({ok:true}) },
         "../lib/commerce-events": { commerceEvent() {} },
         "../lib/size-profile": { saveSizeProfile: (value: unknown) => { saved = value; } },
         "./AccountSubHeader": { AccountSubHeader: () => null },
@@ -211,8 +212,8 @@ for (const scenario of [
     assert.equal(country.props.autoComplete, "country-name");
     assert.equal(country.props.defaultValue, scenario.savedCountry || scenario.detectedCountry);
     const form = findElement(view, node => node.type === "form");
-    form.props.onSubmit({ preventDefault() {}, currentTarget: {
-      dob: "1990-01-01", height: "170", gender: "female",
+    await form.props.onSubmit({ preventDefault() {}, currentTarget: {
+      firstName: "Alex", dob: "1990-01-01", height: "170", gender: "female",
       country: scenario.enteredCountry, city: "Test city", provinceState: "Test region",
     } });
     assert.equal(saved.country, scenario.enteredCountry);
