@@ -157,3 +157,147 @@
     min-height: 0;
   }
 }
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .featureGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 22px;
+  }
+
+  .featureMedia {
+    height: 420px;
+  }
+
+  .featureMedia img {
+    width: auto;
+    height: 88%;
+    max-width: 72%;
+    object-fit: contain;
+    object-position: bottom;
+  }
+
+  .feature:last-child {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 32px;
+  }
+
+  .feature:last-child .featureMedia {
+    grid-row: 1 / 3;
+    height: 360px;
+  }
+
+  .feature:last-child h3 {
+    align-self: end;
+    margin-top: 0;
+  }
+
+  .feature:last-child p {
+    align-self: start;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+
+  .hero,
+  .fitSection,
+  .discovery,
+  .family {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero {
+    min-height: 0;
+    gap: 42px;
+    padding: 80px 4vw;
+  }
+
+  .heroContent {
+    max-width: 760px;
+  }
+
+  .hero h1 {
+    font-size: clamp(68px, 9vw, 90px);
+  }
+
+  .heroVisual {
+    width: 100%;
+    height: 480px;
+    min-height: 0;
+  }
+
+  .statement,
+  .trust,
+  .faq {
+    display: block;
+    padding: 95px 4vw;
+  }
+
+  .sectionKicker {
+    margin-bottom: 34px;
+  }
+
+  .fitMedia {
+    width: 100%;
+    height: 640px;
+    flex: none;
+  }
+
+  .fitMedia img {
+    width: auto;
+    height: 88%;
+    max-width: 65%;
+    object-fit: contain;
+    object-position: bottom;
+  }
+
+  .fitContent {
+    width: 100%;
+    padding: 80px 6vw 95px;
+  }
+
+  .fitContent h2 {
+    max-width: 720px;
+  }
+
+  .discovery {
+    padding: 95px 4vw;
+    gap: 48px;
+  }
+
+  .discoveryMedia {
+    width: 100%;
+    height: 560px;
+  }
+
+  .familyPhoto {
+    width: 100%;
+    height: 520px;
+  }
+
+  .familyCopy {
+    width: 100%;
+    padding: 85px 6vw 95px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .fitMedia img {
+    width: auto;
+    height: 78%;
+    max-width: 80%;
+    object-fit: contain;
+    object-position: bottom;
+  }
+}
+
+.heroContent .heroNote {
+  margin: 18px 0 0;
+}
