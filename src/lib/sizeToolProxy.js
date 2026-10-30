@@ -4,6 +4,9 @@ import {
   GET as readSize,
 } from "../../app/api/webclient/size/route";
 import { mapGenerateResult } from "./sizeApiServer";
+import { customerFetch } from "../../app/(webclient)/lib/api";
+import { WEBCLIENT_MOCK } from "../../app/(webclient)/lib/config";
+import { getSession } from "../../app/(webclient)/lib/session";
 
 // Reuse the shopping app's session-aware adapter to the existing mobile APIs.
 export async function submitSizeTool(request, generate = false) {
@@ -52,7 +55,23 @@ export async function readSizeTool(request, generate = false) {
   );
   if (!generate || !response.ok) return response;
   const body = await response.json();
-  if (body.state === "complete") body.result = mapGenerateResult(body.result);
+  if (body.state === "complete") {
+    if (!WEBCLIENT_MOCK) {
+      const session = await getSession();
+      if (!session) return NextResponse.json({ message: "Your sizing session expired. Please sign in and try again." }, { status: 401 });
+      try {
+        await customerFetch(`/v1/customer/persons/${session.personId}/sizing-profile`, {
+          method: "PUT",
+          accessToken: session.accessToken,
+          personId: session.personId,
+          body: { sizing: body.result.sizing, measurements: body.result.measurements },
+        });
+      } catch {
+        return NextResponse.json({ message: "Your size was calculated but could not be saved yet. Please try again." }, { status: 503 });
+      }
+    }
+    body.result = mapGenerateResult(body.result);
+  }
   return NextResponse.json(body, {
     status: response.status,
     headers: { "Cache-Control": "no-store" },

@@ -5090,6 +5090,78 @@ h1 {
   border-bottom: 1px solid var(--line);
 }
 
+.size-tool-reopen { margin: 24px auto 0; }
+
+.size-tool-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgb(10 35 48 / 72%);
+}
+
+.size-tool-modal {
+  position: relative;
+  margin: 0;
+  width: min(100%, 620px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 20%);
+}
+
+.size-tool-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #edf4f5;
+  color: var(--ink);
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.size-tool-account-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.size-tool-account-fields label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.size-tool-account-fields input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-weight: 400;
+}
+
+@media (max-width: 540px) {
+  .size-tool-account-fields { grid-template-columns: 1fr; }
+  .size-tool-modal-backdrop { padding: 10px; }
+  .size-tool-modal { max-height: calc(100dvh - 20px); }
+}
+
 .size-tool-result-line {
   margin: 0;
   font-size: clamp(1.5rem, 5vw, 2rem);

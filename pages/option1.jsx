@@ -192,7 +192,7 @@ export default function OptionOnePage() {
         </section>
 
         <div className={styles.toolSection}>
-          <LandingSizeTool />
+          <LandingSizeTool accountHandoff />
         </div>
 
         <section className={styles.discovery} aria-labelledby="discovery-title">
