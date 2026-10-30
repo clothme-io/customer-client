@@ -302,60 +302,45 @@
   margin: 18px 0 0;
 }
 
-.fitMedia {
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 24px 28px;
-}
+@media (max-width: 900px) {
+  .fitMedia {
+    padding-bottom: 65px;
+  }
 
-.fitMedia::before {
-  display: none;
-}
+  .fitMedia::before {
+    left: 50%;
+    top: 52%;
+    width: min(80%, 520px);
+    transform: translate(-50%, -50%);
+  }
 
-.fitPhoneStage {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
+  .fitMedia img {
+    width: auto;
+    height: 85%;
+    max-width: 58%;
+    object-fit: contain;
+    object-position: bottom;
+  }
 
-.fitPhoneStage::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(82%, 560px);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #eff7f8;
-}
-
-.fitPhoneStage img {
-  width: auto;
-  height: 100%;
-  max-width: 80%;
-  object-fit: contain;
-  object-position: bottom;
-}
-
-.fitBadge {
-  position: relative;
-  left: auto;
-  bottom: auto;
-  flex: none;
-  margin-top: 14px;
-  padding: 14px 22px;
-  text-align: center;
-  white-space: nowrap;
+  .fitBadge {
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 700px) {
   .fitMedia {
     height: clamp(560px, 85vw, 620px);
+  }
+
+  .fitMedia::before {
+    top: 55%;
+    width: min(80%, 340px);
+  }
+
+  .fitMedia img {
+    height: 75%;
   }
 }
