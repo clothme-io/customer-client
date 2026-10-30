@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SEO } from "../src/components/SEO";
 import { LandingSizeTool } from "../src/landing/shared/LandingSizeTool";
+import { LandingBlogPreview } from "../src/landing/shared/LandingBlogPreview";
 import styles from "./option1.module.css";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
@@ -29,6 +30,27 @@ const features = [
     image: "/phone-account.png",
     alt: "ClothME account screen with multiple shopper profiles",
     tone: "mint"
+  }
+];
+
+const previewGuides = [
+  {
+    slug: "does-pacsun-run-small",
+    category: "fit-guide",
+    title: "Does PacSun Run Small? a Size-by-Size Guide",
+    excerpt: "Does PacSun run small? Only some cuts do. Compare bust, waist, and hip numbers, then see when jeans and shorts need a size up."
+  },
+  {
+    slug: "fabric-hand-meaning",
+    category: "personal-style",
+    title: "Fabric Hand Meaning: What It Is and How to Judge It",
+    excerpt: "Fabric hand is how a fabric feels and behaves when you touch it. Learn the terms, what shapes hand, and how to check it."
+  },
+  {
+    slug: "best-online-shopping-tools",
+    category: "family-shopping",
+    title: "Best Online Shopping Tools for Fit and Families",
+    excerpt: "Compare online shopping tools for price tracking, size finding, and family lists, with trade-offs for fit-aware shoppers."
   }
 ];
 
@@ -184,6 +206,10 @@ export default function OptionOnePage() {
             <a href="/privacy-policy" className={styles.textLink}>Read our privacy policy <Arrow /></a>
           </div>
         </section>
+
+        <div className={styles.guidesSection}>
+          <LandingBlogPreview limit={3} fallbackPosts={previewGuides} showAllLink />
+        </div>
 
         <section className={styles.faq} id="faq" aria-labelledby="faq-title">
           <div className={styles.faqIntro}>

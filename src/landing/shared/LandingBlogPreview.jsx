@@ -3,7 +3,7 @@ import { BlogCard } from "../../components/BlogCard";
 import { apiFetch } from "../../lib/api";
 
 const HOME_GUIDE_LIMIT = 6;
-const SKELETON_COUNT = 6;
+const EMPTY_FALLBACK = [];
 
 function GuideCardSkeleton() {
   return (
@@ -18,9 +18,9 @@ function GuideCardSkeleton() {
   );
 }
 
-export function LandingBlogPreview() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function LandingBlogPreview({ limit = HOME_GUIDE_LIMIT, fallbackPosts = EMPTY_FALLBACK, showAllLink = false }) {
+  const [posts, setPosts] = useState(fallbackPosts);
+  const [loading, setLoading] = useState(fallbackPosts.length === 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,11 +29,15 @@ export function LandingBlogPreview() {
       try {
         const data = await apiFetch("/api/posts");
         if (cancelled) return;
-        const next = Array.isArray(data.posts) ? data.posts.slice(0, HOME_GUIDE_LIMIT) : [];
-        setPosts(next);
+        const next = Array.isArray(data.posts) ? data.posts.slice(0, limit) : [];
+        for (const fallback of fallbackPosts) {
+          if (next.length >= limit) break;
+          if (!next.some((post) => post.slug === fallback.slug)) next.push(fallback);
+        }
+        if (next.length) setPosts(next);
       } catch (error) {
         console.warn("Home guides could not load posts:", error);
-        if (!cancelled) setPosts([]);
+        if (!cancelled && !fallbackPosts.length) setPosts([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -43,7 +47,7 @@ export function LandingBlogPreview() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [limit, fallbackPosts]);
 
   if (!loading && posts.length === 0) return null;
 
@@ -62,12 +66,13 @@ export function LandingBlogPreview() {
           aria-busy={loading}
           aria-live="polite"
         >
-          {loading
-            ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
+          {loading && posts.length === 0
+            ? Array.from({ length: limit }, (_, index) => (
                 <GuideCardSkeleton key={`guide-skeleton-${index}`} />
               ))
             : posts.map((post) => <BlogCard key={post.slug} post={post} />)}
         </div>
+        {showAllLink && <a className="guides-all-link" href="/blog">Explore all guides →</a>}
       </div>
     </section>
   );
