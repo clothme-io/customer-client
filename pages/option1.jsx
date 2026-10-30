@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SEO } from "../src/components/SEO";
+import { LandingSizeTool } from "../src/landing/shared/LandingSizeTool";
 import styles from "./option1.module.css";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
@@ -52,7 +53,7 @@ const faqs = [
 
 function Cta({ children = "Get your size", light = false }) {
   return (
-    <a className={`${styles.cta}${light ? ` ${styles.ctaLight}` : ""}`} href="/#size-tool">
+    <a className={`${styles.cta}${light ? ` ${styles.ctaLight}` : ""}`} href="#size-tool">
       <span>{children}</span><Arrow />
     </a>
   );
@@ -79,7 +80,7 @@ export default function OptionOnePage() {
           <a href="#family">For family</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <a className={styles.headerCta} href="/#size-tool">Get your size <Arrow /></a>
+        <a className={styles.headerCta} href="#size-tool">Get your size <Arrow /></a>
       </header>
 
       <main>
@@ -146,6 +147,10 @@ export default function OptionOnePage() {
             <Cta />
           </div>
         </section>
+
+        <div className={styles.toolSection}>
+          <LandingSizeTool />
+        </div>
 
         <section className={styles.discovery} aria-labelledby="discovery-title">
           <div className={styles.discoveryCopy}>
