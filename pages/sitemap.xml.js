@@ -1,6 +1,7 @@
 import { siteConfig } from "../src/data/site";
 import { getPublicPosts } from "../src/lib/serverContent.mjs";
 import { getAllPublishedCities } from "../src/lib/getCityData";
+import { getOpenJobs } from "../src/lib/careersDb";
 
 function absoluteUrl(path) {
   return new URL(path, siteConfig.siteUrl).toString();
@@ -47,10 +48,11 @@ function getRootDomain() {
 export async function getServerSideProps({ res }) {
   const now = new Date().toISOString();
 
-  const [mainPosts, cities, cmsPosts] = await Promise.all([
+  const [mainPosts, cities, cmsPosts, careerJobs] = await Promise.all([
     getPublicPosts(),
     getAllPublishedCities(),
     getPublishedCmsPosts(),
+    getOpenJobs().catch(() => []),
   ]);
 
   // ── Main site URLs ─────────────────────────────────────────────────────────
@@ -58,9 +60,12 @@ export async function getServerSideProps({ res }) {
     { loc: "/", priority: "1.0", changefreq: "weekly" },
     { loc: "/about", priority: "0.6", changefreq: "monthly" },
     { loc: "/manifesto", priority: "0.6", changefreq: "monthly" },
+    { loc: "/careers", priority: "0.6", changefreq: "weekly" },
+    { loc: "/careers/privacy", priority: "0.3", changefreq: "yearly" },
     { loc: "/blog", priority: "0.8", changefreq: "weekly" },
     { loc: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
     { loc: "/terms-of-service", priority: "0.3", changefreq: "yearly" },
+    ...careerJobs.map((job) => ({ loc: `/careers/${job.slug}`, priority: "0.7", changefreq: "weekly", lastmod: job.updatedAt ? new Date(job.updatedAt).toISOString() : now })),
     ...mainPosts.map((post) => ({
       loc: `/blog/${post.slug}`,
       priority: "0.7",

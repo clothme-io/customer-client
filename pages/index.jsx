@@ -1,5 +1,5 @@
-import { HomePage } from "../src/screens/HomePage";
+import { ClothMEHome } from "../src/screens/ClothMEHome";
 
 export default function IndexPage() {
-  return <HomePage version="blue" />;
+  return <ClothMEHome />;
 }

@@ -1,5 +1,12 @@
 import * as shoppingContinuations from './20261019_000001_shopping_continuations';
 import * as appDownloadRequests from './20261003_000001_app_download_requests';
+import * as careers from './20261030_000001_careers';
+import * as backendDraft from './20261030_000002_seed_backend';
+import * as specialistDrafts from './20261030_000003_seed_specialist_drafts';
+import * as publishCompleteRoles from './20261030_000004_publish_complete_roles';
+import * as departmentsAndOperations from './20261030_000005_departments_and_operations';
+import * as publishEngineeringRoles from './20261030_000006_publish_engineering_roles';
+import * as publishPeopleSpecialist from './20261030_000007_publish_people_specialist';
 import * as migration_20260626_183444 from './20260626_183444';
 import * as migration_20260702_000001_waitlist_entries from './20260702_000001_waitlist_entries';
 import * as migration_20260702_000002_drop_legacy_tables from './20260702_000002_drop_legacy_tables';
@@ -77,4 +84,11 @@ export const migrations = [
   },
   { up: appDownloadRequests.up, down: appDownloadRequests.down, name: '20261003_000001_app_download_requests' },
   { up: shoppingContinuations.up, down: shoppingContinuations.down, name: '20261019_000001_shopping_continuations' },
+  { up: careers.up, down: careers.down, name: '20261030_000001_careers' },
+  { up: backendDraft.up, down: backendDraft.down, name: '20261030_000002_seed_backend' },
+  { up: specialistDrafts.up, down: specialistDrafts.down, name: '20261030_000003_seed_specialist_drafts' },
+  { up: publishCompleteRoles.up, down: publishCompleteRoles.down, name: '20261030_000004_publish_complete_roles' },
+  { up: departmentsAndOperations.up, down: departmentsAndOperations.down, name: '20261030_000005_departments_and_operations' },
+  { up: publishEngineeringRoles.up, down: publishEngineeringRoles.down, name: '20261030_000006_publish_engineering_roles' },
+  { up: publishPeopleSpecialist.up, down: publishPeopleSpecialist.down, name: '20261030_000007_publish_people_specialist' },
 ];

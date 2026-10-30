@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test:email": "node --test tests/email/*.test.mjs",
     "test:size-tool": "node --test tests/size-tool/*.test.mjs",
+    "test:careers": "node --test tests/careers/*.test.mjs",
     "test:size-tool:http": "node tests/size-tool/http-smoke.mjs",
     "test:analytics": "node --test tests/analytics/*.test.mjs"
   },

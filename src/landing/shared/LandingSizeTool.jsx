@@ -187,11 +187,13 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [accountStep, setAccountStep] = useState("result");
   const [sizeReady, setSizeReady] = useState(false);
   const [sizeCheckRetry, setSizeCheckRetry] = useState(0);
   const [sizeCheckTimedOut, setSizeCheckTimedOut] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle");
   const [saveError, setSaveError] = useState("");
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState("");
   const [deliveryFailed, setDeliveryFailed] = useState(false);
   const [emailStatus, setEmailStatus] = useState("idle");
@@ -243,6 +245,18 @@ export function LandingSizeTool({ accountHandoff = false }) {
     window.addEventListener("keydown", onKeyDown);
     return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", onKeyDown); };
   }, [accountHandoff, modalOpen]);
+  useEffect(() => {
+    if (!accountHandoff || phase !== "result") return;
+    let cancelled = false;
+    fetch("/api/webclient/session").then((response) => response.json()).then((session) => {
+      if (cancelled) return;
+      if (session.isRegistered) {
+        setAlreadyRegistered(true);
+        if (session.email) setEmail(session.email);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [accountHandoff, phase]);
   function updateProfile(key, value) {
     progress.current = {};
     setProfile((current) => ({ ...current, [key]: value }));
@@ -295,6 +309,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
       setResult(next);
       setSizeReady(false);
       setSizeCheckTimedOut(false);
+      setAccountStep("result");
       setModalOpen(accountHandoff);
       setPhase("result");
     } catch (err) {
@@ -594,9 +609,15 @@ export function LandingSizeTool({ accountHandoff = false }) {
             ) : null}
           </div>
 
-          {phase === "result" && accountHandoff ? (
+          {phase === "result" && accountHandoff && accountStep === "result" ? (
+            <div className="size-tool-email">
+              <h3>Keep this size in your ClothME account</h3>
+              <p>Save it once, then log in to the app and choose the products you want to shop.</p>
+              <button type="button" className="size-tool-cta" onClick={() => setAccountStep("details")}>Save this size →</button>
+            </div>
+          ) : phase === "result" && accountHandoff ? (
             <form className="size-tool-email" onSubmit={onSaveAccount}>
-              <h3>Create an account to save your size</h3>
+              <h3>{alreadyRegistered ? "Save your size to your account" : "Create an account to save your size"}</h3>
               <p>Then sign in to the app and choose the products you want to shop.</p>
               <div className="size-tool-account-fields">
                 <label>First name<input name="firstName" autoComplete="given-name" required maxLength={100} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></label>
@@ -604,10 +625,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
                 <label>State or province<input name="region" autoComplete="address-level1" required maxLength={100} value={region} onChange={(e) => setRegion(e.target.value)} /></label>
                 <label>Country code<input name="country" autoComplete="country" placeholder="CA, US, GB…" required pattern="[A-Za-z]{2}" maxLength={2} value={country} onChange={(e) => setCountry(e.target.value.toUpperCase())} /></label>
                 <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-                <label>Password<input name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+                {!alreadyRegistered ? <label>Password<input name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} /></label> : null}
               </div>
               <button type="submit" className="size-tool-cta" disabled={!sizeReady || saveStatus === "submitting"}>
-                {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? "Save my size and create account →" : "Saving your size profile…"}
+                {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? alreadyRegistered ? "Save my size →" : "Save my size and create account →" : "Saving your size profile…"}
               </button>
               {!sizeReady ? <p role="status">Your result is ready. We’re confirming it has been saved before you create an account.</p> : null}
               {sizeCheckTimedOut ? <button type="button" className="size-tool-ghost" onClick={() => { setSizeCheckTimedOut(false); setSizeCheckRetry((value) => value + 1); }}>Check saved size again</button> : null}

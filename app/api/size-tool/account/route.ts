@@ -26,12 +26,11 @@ export async function POST(request: Request) {
   const region = String(body.region || "").trim();
   const country = String(body.country || "").trim();
   const gender = String(body.gender || "").toUpperCase();
-  if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || !city || !region || !/^[A-Za-z]{2}$/.test(country) || !["MALE", "FEMALE"].includes(gender)) {
-    return NextResponse.json({ message: "Enter your first name, city, region, two-letter country code, email, and a password of at least 8 characters." }, { status: 400 });
-  }
-
   let session = await getSession();
   if (!session) return NextResponse.json({ message: "Your sizing session expired. Please sign in or try again." }, { status: 401 });
+  if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || (session.authLevel === "guest" && password.length < 8) || !city || !region || !/^[A-Za-z]{2}$/.test(country) || !["MALE", "FEMALE"].includes(gender)) {
+    return NextResponse.json({ message: "Enter your first name, city, region, two-letter country code, email, and a password of at least 8 characters for a new account." }, { status: 400 });
+  }
 
   try {
     const saved = await fetchGeneratedSizeProfile(session);
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
       method: "PATCH",
       accessToken: session.accessToken,
       personId: session.personId,
-      body: { firstName, lastName: "", gender },
+      body: { firstName, gender },
     });
     const addresses = await customerFetch<{ items?: Array<{ city?: string; provinceState?: string; country?: string }> }>(
       `/v1/customer/persons/${session.personId}/addresses`,
@@ -77,7 +76,8 @@ export async function POST(request: Request) {
     );
     const existing = addresses.items?.some((address) =>
       address.city?.toLowerCase() === city.toLowerCase() &&
-      address.provinceState?.toLowerCase() === region.toLowerCase(),
+      address.provinceState?.toLowerCase() === region.toLowerCase() &&
+      address.country?.toLowerCase() === country.toLowerCase(),
     );
     if (!existing) {
       await customerFetch(`/v1/customer/persons/${session.personId}/addresses`, {
