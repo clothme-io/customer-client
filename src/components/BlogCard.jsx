@@ -19,7 +19,7 @@ export function BlogCard({ post }) {
       {label ? <p className="post-card__category">{label}</p> : null}
       <h3 className="post-card__title">{post.title}</h3>
       {excerpt ? <p className="post-card__excerpt">{excerpt}</p> : null}
-      <a className="post-card__link" href={`/blog/${post.slug}`}>
+      <a className="post-card__link" href={post.href || `/blog/${post.slug}`}>
         Read the guide →
       </a>
     </article>

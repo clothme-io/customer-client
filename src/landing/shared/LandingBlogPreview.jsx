@@ -18,7 +18,7 @@ function GuideCardSkeleton() {
   );
 }
 
-export function LandingBlogPreview({ limit = HOME_GUIDE_LIMIT, fallbackPosts = EMPTY_FALLBACK, showAllLink = false }) {
+export function LandingBlogPreview({ limit = HOME_GUIDE_LIMIT, fallbackPosts = EMPTY_FALLBACK, showAllLink = false, allGuidesHref = "/blog" }) {
   const [posts, setPosts] = useState(fallbackPosts);
   const [loading, setLoading] = useState(fallbackPosts.length === 0);
 
@@ -72,7 +72,7 @@ export function LandingBlogPreview({ limit = HOME_GUIDE_LIMIT, fallbackPosts = E
               ))
             : posts.map((post) => <BlogCard key={post.slug} post={post} />)}
         </div>
-        {showAllLink && <a className="guides-all-link" href="/blog">Explore all guides →</a>}
+        {showAllLink && <a className="guides-all-link" href={allGuidesHref}>Explore all guides →</a>}
       </div>
     </section>
   );

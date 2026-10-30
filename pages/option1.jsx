@@ -36,18 +36,21 @@ const features = [
 const previewGuides = [
   {
     slug: "does-pacsun-run-small",
+    href: "https://clothme.io/blog/does-pacsun-run-small",
     category: "fit-guide",
     title: "Does PacSun Run Small? a Size-by-Size Guide",
     excerpt: "Does PacSun run small? Only some cuts do. Compare bust, waist, and hip numbers, then see when jeans and shorts need a size up."
   },
   {
     slug: "fabric-hand-meaning",
+    href: "https://clothme.io/blog/fabric-hand-meaning",
     category: "personal-style",
     title: "Fabric Hand Meaning: What It Is and How to Judge It",
     excerpt: "Fabric hand is how a fabric feels and behaves when you touch it. Learn the terms, what shapes hand, and how to check it."
   },
   {
     slug: "best-online-shopping-tools",
+    href: "https://clothme.io/blog/best-online-shopping-tools",
     category: "family-shopping",
     title: "Best Online Shopping Tools for Fit and Families",
     excerpt: "Compare online shopping tools for price tracking, size finding, and family lists, with trade-offs for fit-aware shoppers."
@@ -208,7 +211,7 @@ export default function OptionOnePage() {
         </section>
 
         <div className={styles.guidesSection}>
-          <LandingBlogPreview limit={3} fallbackPosts={previewGuides} showAllLink />
+          <LandingBlogPreview limit={3} fallbackPosts={previewGuides} showAllLink allGuidesHref="https://clothme.io/blog" />
         </div>
 
         <section className={styles.faq} id="faq" aria-labelledby="faq-title">
