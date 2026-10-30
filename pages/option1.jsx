@@ -16,7 +16,7 @@ const features = [
   {
     number: "02",
     title: "A store that feels like yours.",
-    body: "Explore clothing with your fit and preferences in mind, all in one place.",
+    body: "See products matched to your size profile and preferences, all in one place.",
     image: "/phone-store.png",
     alt: "ClothME store screen with a product and fit recommendation",
     tone: "peach"
@@ -34,7 +34,7 @@ const features = [
 const faqs = [
   {
     question: "How does ClothME find my size?",
-    answer: "ClothME uses two photos and a few details to build a size profile. It then uses that profile to suggest sizes as you shop."
+    answer: "ClothME uses two photos and a few details to build a size profile. It then uses that profile to show products matched to your fit."
   },
   {
     question: "Do I need a measuring tape?",
@@ -137,11 +137,11 @@ export default function OptionOnePage() {
           <div className={styles.fitContent}>
             <p className={styles.eyebrow}>01 / Your size</p>
             <h2 id="fit-title">Start with your fit. Go wherever your style takes you.</h2>
-            <p>Two photos help create your size profile. From there, ClothME can suggest a size while you browse, so each choice starts with more information.</p>
+            <p>Two photos help create your size profile. ClothME uses it to show you products matched to your fit, so you can focus on what works for you.</p>
             <div className={styles.fitSteps}>
               <div><span>01</span><strong>Add two photos</strong><p>No measuring tape to find before you start.</p></div>
               <div><span>02</span><strong>Build your profile</strong><p>Keep your fit information in one place.</p></div>
-              <div><span>03</span><strong>Shop with guidance</strong><p>See a size recommendation where available.</p></div>
+              <div><span>03</span><strong>See only what fits</strong><p>Browse products matched to your size profile.</p></div>
             </div>
             <Cta />
           </div>
@@ -151,7 +151,7 @@ export default function OptionOnePage() {
           <div className={styles.discoveryCopy}>
             <p className={styles.eyebrow}>02 / Your discovery</p>
             <h2 id="discovery-title">More of what you love. Less looking for it.</h2>
-            <p>ClothME brings clothing discovery and fit guidance together, so finding something you like and choosing a size can happen in the same flow.</p>
+            <p>ClothME filters discovery around your size profile, so the products you see are matched to your fit from the start.</p>
           </div>
           <div className={styles.discoveryMedia}>
             <img src="/phone-store.png" alt="Example ClothME store view with jeans and a fit score" loading="lazy" />
