@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SEO } from "../src/components/SEO";
 import { LandingSizeTool } from "../src/landing/shared/LandingSizeTool";
 import { LandingBlogPreview } from "../src/landing/shared/LandingBlogPreview";
+import { AppDownloadForm } from "../src/components/AppDownloadForm";
 import { landingPrivacyPoints } from "../src/data/landing";
 import styles from "./option1.module.css";
 
@@ -215,6 +216,19 @@ export default function OptionOnePage() {
             <h2 id="family-title">One account. <em>Everyone</em> you shop for.</h2>
             <p>Make room for the people in your life. Separate profiles help keep their sizes and preferences personal, even when you’re shopping for them.</p>
             <div className={styles.familyChips}><span>You</span><span>Your partner</span><span>Your kids</span><span>Your people</span></div>
+          </div>
+        </section>
+
+        <section className={styles.appInvite} id="app-download" aria-labelledby="app-invite-title">
+          <div className={styles.appInviteCopy}>
+            <p className={styles.eyebrow}>Take ClothME with you</p>
+            <h2 id="app-invite-title">Be the first to experience <span>shopping that finally fits.</span></h2>
+            <p>Get a link to the ClothME app in your inbox and start shopping with your fit in mind.</p>
+          </div>
+          <div className={styles.appInvitePanel}>
+            <p className={styles.appInviteLabel}>Your link to ClothME</p>
+            <h3>Send me a download link for the app.</h3>
+            <AppDownloadForm />
           </div>
         </section>
 
