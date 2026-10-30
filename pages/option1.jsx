@@ -264,7 +264,7 @@ export default function OptionOnePage() {
       <footer className={styles.footer}>
         <a className={styles.wordmark} href="/option1">Cloth<span>ME</span><span className={styles.wordmarkDot}>.</span></a>
         <p>Shopping that finally fits.</p>
-        <div><a href="/about">About</a><a href="/privacy-policy">Privacy</a><a href="/terms-of-service">Terms</a><a href="https://vendor.clothme.io">For brands</a></div>
+        <div><a href="/about">About</a><a href="/manifesto">Manifesto</a><a href="/privacy-policy">Privacy</a><a href="/terms-of-service">Terms</a><a href="https://vendor.clothme.io">For brands</a></div>
         <small>© {new Date().getFullYear()} ClothME</small>
       </footer>
     </div>
