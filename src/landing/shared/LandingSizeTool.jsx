@@ -164,7 +164,7 @@ function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
   );
 }
 
-export function LandingSizeTool() {
+export function LandingSizeTool({ accountHandoff = false }) {
   const baseId = useId();
   const frontInputRef = useRef(null);
   const sideInputRef = useRef(null);
@@ -181,6 +181,21 @@ export function LandingSizeTool() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
+  const [country, setCountry] = useState("");
+  const [password, setPassword] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [accountStep, setAccountStep] = useState("result");
+  const [sizeReady, setSizeReady] = useState(false);
+  const [sizeCheckRetry, setSizeCheckRetry] = useState(0);
+  const [sizeCheckTimedOut, setSizeCheckTimedOut] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("idle");
+  const [saveError, setSaveError] = useState("");
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState("");
+  const [deliveryFailed, setDeliveryFailed] = useState(false);
   const [emailStatus, setEmailStatus] = useState("idle");
   const [emailError, setEmailError] = useState("");
   const [profile, setProfile] = useState({
@@ -201,6 +216,47 @@ export function LandingSizeTool() {
     },
     [sidePreview],
   );
+  useEffect(() => {
+    if (!accountHandoff || phase !== "result" || sizeReady) return;
+    let cancelled = false;
+    let timer;
+    let attempts = 0;
+    const check = async () => {
+      try {
+        const response = await fetch("/api/size-tool/saved", { cache: "no-store" });
+        if (!response.ok) throw new Error("Saved size check failed");
+        const data = await response.json();
+        if (!cancelled && data.ready) {
+          setSizeReady(true);
+          return;
+        }
+      } catch { /* Keep the result visible while the save is checked again. */ }
+      if (!cancelled && ++attempts < 30) timer = window.setTimeout(check, 2000);
+      else if (!cancelled) setSizeCheckTimedOut(true);
+    };
+    void check();
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [accountHandoff, phase, sizeReady, sizeCheckRetry]);
+  useEffect(() => {
+    if (!accountHandoff || !modalOpen) return;
+    const previous = document.body.style.overflow;
+    const onKeyDown = (event) => { if (event.key === "Escape") setModalOpen(false); };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", onKeyDown); };
+  }, [accountHandoff, modalOpen]);
+  useEffect(() => {
+    if (!accountHandoff || phase !== "result") return;
+    let cancelled = false;
+    fetch("/api/webclient/session").then((response) => response.json()).then((session) => {
+      if (cancelled) return;
+      if (session.isRegistered) {
+        setAlreadyRegistered(true);
+        if (session.email) setEmail(session.email);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [accountHandoff, phase]);
   function updateProfile(key, value) {
     progress.current = {};
     setProfile((current) => ({ ...current, [key]: value }));
@@ -251,6 +307,10 @@ export function LandingSizeTool() {
       setFrontFile(null);
       setSideFile(null);
       setResult(next);
+      setSizeReady(false);
+      setSizeCheckTimedOut(false);
+      setAccountStep("result");
+      setModalOpen(accountHandoff);
       setPhase("result");
     } catch (err) {
       setError(err?.message || "Something went wrong. Please try again.");
@@ -260,32 +320,60 @@ export function LandingSizeTool() {
     }
   }
 
+  async function onSaveAccount(event) {
+    event.preventDefault();
+    if (saveStatus === "submitting" || !sizeReady) return;
+    setSaveError("");
+    setSaveStatus("submitting");
+    try {
+      const response = await fetch("/api/size-tool/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, city, region, country, email, password, gender: profile.gender }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Could not save your account.");
+      setPassword("");
+      setPhase("success");
+      setSaveStatus("saved");
+      track("size_tool_signup");
+      await sendDownloadLink();
+    } catch (err) {
+      setSaveStatus("idle");
+      setSaveError(err?.message || "Could not save your account. Please try again.");
+    }
+  }
+
+  async function sendDownloadLink() {
+    setDeliveryStatus("Sending your app download link…");
+    setDeliveryFailed(false);
+    try {
+      const download = await fetch("/api/app-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, requestId: crypto.randomUUID(), savedSize: true }),
+      });
+      if (!download.ok) throw new Error("Email delivery unavailable");
+      setDeliveryStatus("We sent your app download link. Sign in with this email and password in the app.");
+    } catch {
+      setDeliveryStatus("Your size is saved. We couldn’t send the app link yet.");
+      setDeliveryFailed(true);
+    }
+  }
+
   async function onSaveEmail(event) {
     event.preventDefault();
     if (emailStatus === "submitting") return;
     setEmailError("");
     setEmailStatus("submitting");
-
-    // Optimistic success — waitlist POST in background
     setPhase("success");
-
-
     try {
-      await submitWaitlist({
-        email,
-        source: "size_tool",
-        honeypot: "",
-        skipTrack: true,
-      });
+      await submitWaitlist({ email, source: "size_tool", honeypot: "", skipTrack: true });
       track("size_tool_signup");
-      setEmailStatus("idle");
     } catch (err) {
-      // Keep success UI; surface soft retry note
+      setEmailError(err?.message || "We saved your size locally — email sync will retry at launch.");
+    } finally {
       setEmailStatus("idle");
-      setEmailError(
-        err?.message ||
-          "We saved your size locally — email sync will retry at launch.",
-      );
     }
   }
 
@@ -485,11 +573,19 @@ export function LandingSizeTool() {
         </form>
       ) : null}
 
-      {(phase === "result" || phase === "success") && result ? (
-        <div className="size-tool-panel size-tool-result" aria-live="polite">
+      {accountHandoff && (phase === "result" || phase === "success") && result && !modalOpen ? (
+        <button type="button" className="size-tool-cta size-tool-reopen" onClick={() => setModalOpen(true)}>
+          {phase === "success" ? "View your saved size" : "View your size and save it"} →
+        </button>
+      ) : null}
+
+      {(phase === "result" || phase === "success") && result && (!accountHandoff || modalOpen) ? (
+        <div className={accountHandoff ? "size-tool-modal-backdrop" : undefined} onMouseDown={accountHandoff ? (event) => { if (event.target === event.currentTarget) setModalOpen(false); } : undefined}>
+        <div className={`size-tool-panel size-tool-result${accountHandoff ? " size-tool-modal" : ""}`} role={accountHandoff ? "dialog" : undefined} aria-modal={accountHandoff ? "true" : undefined} aria-labelledby={accountHandoff ? `${baseId}-result-title` : undefined}>
+          {accountHandoff ? <button type="button" className="size-tool-modal-close" aria-label="Close size result" onClick={() => setModalOpen(false)}>×</button> : null}
           <div className="size-tool-result-card">
             <p className="size-tool-result-label">Your recommended size</p>
-            <h3 className="size-tool-result-line">{sizeTitle}</h3>
+            <h3 className="size-tool-result-line" id={`${baseId}-result-title`}>{sizeTitle}</h3>
             {sizeMeasurements.length ? (
               <ul className="size-tool-measurements" aria-label="Size measurements">
                 {sizeMeasurements.map((measurement) => (
@@ -513,46 +609,58 @@ export function LandingSizeTool() {
             ) : null}
           </div>
 
-          {phase === "result" ? (
+          {phase === "result" && accountHandoff && accountStep === "result" ? (
+            <div className="size-tool-email">
+              <h3>Keep this size in your ClothME account</h3>
+              <p>Save it once, then log in to the app and choose the products you want to shop.</p>
+              <button type="button" className="size-tool-cta" onClick={() => setAccountStep("details")}>Save this size →</button>
+            </div>
+          ) : phase === "result" && accountHandoff ? (
+            <form className="size-tool-email" onSubmit={onSaveAccount}>
+              <h3>{alreadyRegistered ? "Save your size to your account" : "Create an account to save your size"}</h3>
+              <p>Then sign in to the app and choose the products you want to shop.</p>
+              <div className="size-tool-account-fields">
+                <label>First name<input name="firstName" autoComplete="given-name" required maxLength={100} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></label>
+                <label>City<input name="city" autoComplete="address-level2" required maxLength={100} value={city} onChange={(e) => setCity(e.target.value)} /></label>
+                <label>State or province<input name="region" autoComplete="address-level1" required maxLength={100} value={region} onChange={(e) => setRegion(e.target.value)} /></label>
+                <label>Country code<input name="country" autoComplete="country" placeholder="CA, US, GB…" required pattern="[A-Za-z]{2}" maxLength={2} value={country} onChange={(e) => setCountry(e.target.value.toUpperCase())} /></label>
+                <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+                {!alreadyRegistered ? <label>Password<input name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} /></label> : null}
+              </div>
+              <button type="submit" className="size-tool-cta" disabled={!sizeReady || saveStatus === "submitting"}>
+                {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? alreadyRegistered ? "Save my size →" : "Save my size and create account →" : "Saving your size profile…"}
+              </button>
+              {!sizeReady ? <p role="status">Your result is ready. We’re confirming it has been saved before you create an account.</p> : null}
+              {sizeCheckTimedOut ? <button type="button" className="size-tool-ghost" onClick={() => { setSizeCheckTimedOut(false); setSizeCheckRetry((value) => value + 1); }}>Check saved size again</button> : null}
+              {saveError ? <p className="size-tool-error" role="alert">{saveError}</p> : null}
+              <p className="size-tool-privacy">
+                Your photos are used for sizing. Your account lets you use this size in the app.
+              </p>
+            </form>
+          ) : phase === "result" ? (
             <form className="size-tool-email" onSubmit={onSaveEmail}>
               <h3>Save your size profile</h3>
               <div className="size-tool-email-row">
-                <label className="sr-only" htmlFor={`${baseId}-email`}>
-                  Email
-                </label>
-                <input
-                  id={`${baseId}-email`}
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  required
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="size-tool-cta"
-                  disabled={emailStatus === "submitting"}
-                >
-                  Save my size &amp; join →
-                </button>
+                <label className="sr-only" htmlFor={`${baseId}-email`}>Email</label>
+                <input id={`${baseId}-email`} type="email" name="email" autoComplete="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <button type="submit" className="size-tool-cta" disabled={emailStatus === "submitting"}>Save my size &amp; join →</button>
               </div>
-              <p className="size-tool-privacy">
-                Sizing only — never shared or sold.
-              </p>
+              <p className="size-tool-privacy">Sizing only — never shared or sold.</p>
             </form>
+          ) : accountHandoff ? (
+            <div className="size-tool-success" role="status">
+              <h3>Your size is saved to your account.</h3>
+              <p>{deliveryStatus || "Preparing your app download link…"}</p>
+              {deliveryFailed ? <button type="button" className="size-tool-ghost" onClick={() => { void sendDownloadLink(); }}>Retry app link email</button> : null}
+            </div>
           ) : (
             <div className="size-tool-success" role="status">
               <h3>You&apos;re in!</h3>
-              <p>
-                We&apos;ll email you about early access.
-              </p>
-              {emailError ? (
-                <p className="size-tool-error">{emailError}</p>
-              ) : null}
+              <p>We&apos;ll email you about early access.</p>
+              {emailError ? <p className="size-tool-error">{emailError}</p> : null}
             </div>
           )}
+        </div>
         </div>
       ) : null}
     </section>

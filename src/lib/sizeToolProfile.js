@@ -7,8 +7,8 @@ export function sizeToolProfileFromAge({ age, gender }, now = new Date()) {
     dob: `${now.getUTCFullYear() - years}-01-01`,
     gender,
     country: "Canada",
-    provinceState: "British Columbia",
-    city: "Coquitlam",
+    provinceState: "",
+    city: "",
     weight: "",
   };
 }

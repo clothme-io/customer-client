@@ -198,6 +198,7 @@ export const landingFooterLinks = {
   ],
   company: [
     { label: "About Us", href: "/about" },
+    { label: "Careers", href: "/careers" },
     vendorLink,
     { label: "Manifesto", href: "/manifesto" },
     { label: "Contact Us", href: "mailto:talk2us@clothme.io" }

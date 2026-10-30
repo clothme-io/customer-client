@@ -10,11 +10,11 @@ export function downloadEmailConfig(env = process.env) {
   const address = env.EMAIL_FROM || 'noreply@clothme.io';
   return { key: env.RESEND_API_KEY, from: address.includes('<') ? address : `ClothME <${address}>`, downloadUrl: downloadUrl.href, logoUrl: logoUrl.href };
 }
-export async function sendAppDownload({ email, requestId, config, fetcher = fetch }) {
+export async function sendAppDownload({ email, requestId, config, savedSize = false, fetcher = fetch }) {
   const response = await fetcher('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.key}`, 'Content-Type': 'application/json', 'Idempotency-Key': `app-download/${requestId}` },
-    body: JSON.stringify({ from: config.from, to: [email], ...appDownloadTemplate(config) }),
+    body: JSON.stringify({ from: config.from, to: [email], ...appDownloadTemplate(config, { savedSize }) }),
     signal: AbortSignal.timeout(15000),
   });
   const body = await response.json().catch(() => ({}));

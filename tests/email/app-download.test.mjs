@@ -12,6 +12,12 @@ test('email has logo, no-reply sender, escaped link, and plain text',()=>{
  const t=appDownloadTemplate({...config,downloadUrl:'https://clothme.io/download?a=1&b="x"'});
  assert.match(t.html,/alt="ClothME"/);assert.match(t.html,/&amp;b=&quot;x&quot;/);assert.match(t.text,/https:\/\/clothme.io\/download/);assert.doesNotMatch(t.html,/waitlist|5%/);
 });
+test('saved-size email instructs an existing web account to log in',()=>{
+ const t=appDownloadTemplate(downloadEmailConfig(env),{savedSize:true});
+ assert.match(t.text,/size is saved/);assert.match(t.text,/choose Log in/);
+ assert.match(t.html,/product preferences/);
+ assert.doesNotMatch(t.text,/password:/i);
+});
 test('retries use the same idempotency key and recipient',async()=>{
  const calls=[];const input={email:'customer@example.com',requestId:'same-request',config:downloadEmailConfig(env),fetcher:async(url,options)=>{calls.push({url,...options});return Response.json({id:'email-id'});}};
  assert.equal(await sendAppDownload(input),'email-id');await sendAppDownload(input);

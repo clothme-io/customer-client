@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { downloadEmailConfig, sendAppDownload } from '../../../src/lib/email/sendAppDownload.js';
 import { claimDownloadRequest } from '../../../src/lib/email/downloadRequestStore.js';
+import { getSession } from '../../(webclient)/lib/session';
 export const runtime = 'nodejs';
 export async function POST(request) {
   const reply = (body, status) => NextResponse.json(body, { status, headers: { 'Cache-Control':'no-store' } });
@@ -10,14 +11,20 @@ export async function POST(request) {
   if (String(body.company || '').trim()) return reply({ok:true},200);
   const email = String(body.email || '').trim().toLowerCase();
   const requestId = String(body.requestId || '');
+  const savedSize = body.savedSize === true;
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(requestId))
     return reply({message:'Enter a valid email address and try again.'},400);
+  if (savedSize) {
+    const session = await getSession();
+    if (session?.authLevel !== 'registered' || session.email.toLowerCase() !== email)
+      return reply({message:'Sign in to request your saved-size app link.'},401);
+  }
   let config;
   try { config = downloadEmailConfig(); } catch { return reply({message:'App download links are not available yet. Please check back soon.'},503); }
   try {
     const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     await claimDownloadRequest({email,requestId,ip});
-    await sendAppDownload({email,requestId,config});
+    await sendAppDownload({email,requestId,config,savedSize});
     return reply({ok:true},200);
   } catch (error) {
     if (error.message === 'RATE_LIMITED') return reply({message:'Please wait a minute before requesting another email.'},429);
