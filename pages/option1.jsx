@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SEO } from "../src/components/SEO";
 import { LandingSizeTool } from "../src/landing/shared/LandingSizeTool";
 import { LandingBlogPreview } from "../src/landing/shared/LandingBlogPreview";
+import { landingPrivacyPoints } from "../src/data/landing";
 import styles from "./option1.module.css";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
@@ -59,20 +60,36 @@ const previewGuides = [
 
 const faqs = [
   {
-    question: "How does ClothME find my size?",
-    answer: "ClothME uses two photos and a few details to build a size profile. It then uses that profile to show products matched to your fit."
+    question: "How does ClothME know my size?",
+    answer: "Two photos and a few details help ClothME create your size profile. We use it to recommend sizes and show products matched to your fit."
   },
   {
-    question: "Do I need a measuring tape?",
-    answer: "No. The size profile starts with two photos, so you can begin without taking manual measurements."
+    question: "Do I need to take measurements?",
+    answer: "No measuring tape is needed to get started. The size profile begins with two photos and a few details."
   },
   {
-    question: "Can I shop for my family?",
-    answer: "ClothME is designed for multiple profiles in one account, so you can keep each person's fit information separate."
+    question: "Is ClothME free to use?",
+    answer: "You can create your size profile without a fee. Product prices and any delivery charges are shown when you shop."
+  },
+  {
+    question: "Can I shop for my kids and family?",
+    answer: "Yes. You can keep separate profiles for the people you shop for in one account, with their fit information and preferences kept distinct."
+  },
+  {
+    question: "Which brands are available on ClothME?",
+    answer: "ClothME brings together products from participating brands and stores. The selection you see depends on what is available for your size profile."
   },
   {
     question: "What happens to my photos?",
-    answer: "Your photos are used to generate your size profile. Read the ClothME privacy policy for details about how your information is handled and how to request deletion."
+    answer: "Your photos are processed to create your size profile. You can request deletion of your account and associated photos. Our privacy policy explains how your information is handled."
+  },
+  {
+    question: "Is my family's data safe?",
+    answer: "Family profiles are kept within your account. A parent or legal guardian can manage profiles for household members. Read our privacy policy for details about how their information is handled."
+  },
+  {
+    question: "Do I have to wait for shipping?",
+    answer: "Delivery and pickup options depend on the participating store and product. Available options are shown while you shop."
   }
 ];
 
@@ -206,6 +223,11 @@ export default function OptionOnePage() {
           <div>
             <h2 id="trust-title">Personal to you. In your control.</h2>
             <p>Your size profile and family information deserve care. ClothME explains how your photos are used and gives you a way to request deletion of your account and associated photos.</p>
+            <ul className={styles.trustPoints}>
+              {landingPrivacyPoints.map((point) => (
+                <li key={point}><span aria-hidden="true">✓</span>{point}</li>
+              ))}
+            </ul>
             <a href="/privacy-policy" className={styles.textLink}>Read our privacy policy <Arrow /></a>
           </div>
         </section>

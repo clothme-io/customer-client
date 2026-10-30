@@ -302,6 +302,37 @@
   margin: 18px 0 0;
 }
 
+.trustPoints {
+  display: grid;
+  gap: 15px;
+  max-width: 690px;
+  margin: 30px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.trustPoints li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.trustPoints li span {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  border: 1px solid var(--blue);
+  border-radius: 50%;
+  color: var(--blue);
+  font-size: 13px;
+  line-height: 1;
+}
+
 @media (max-width: 900px) {
   .fitMedia {
     padding-bottom: 65px;
