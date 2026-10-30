@@ -157,7 +157,9 @@ export default function OptionOnePage() {
 
         <section className={styles.fitSection} id="fit" aria-labelledby="fit-title">
           <div className={styles.fitMedia}>
-            <img src="/phone-generate-size.png" alt="ClothME Generate Size screen showing photo instructions" loading="lazy" />
+            <div className={styles.fitPhoneStage}>
+              <img src="/phone-generate-size.png" alt="ClothME Generate Size screen showing photo instructions" loading="lazy" />
+            </div>
             <div className={styles.fitBadge}>A profile for your fit</div>
           </div>
           <div className={styles.fitContent}>
