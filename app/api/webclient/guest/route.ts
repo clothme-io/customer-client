@@ -3,7 +3,7 @@ import { safeInternalPath } from "../../../(webclient)/lib/size-contract";
 import { NextRequest, NextResponse } from "next/server";
 import { WEBCLIENT_MOCK } from "../../../(webclient)/lib/config";
 import { bootstrapGuestSession } from "../../../(webclient)/lib/guest";
-import { getSession, setSession } from "../../../(webclient)/lib/session";
+import { clearSession, getSession, setSession } from "../../../(webclient)/lib/session";
 
 export async function GET(request: NextRequest) {
   const next = safeInternalPath(request.nextUrl.searchParams.get("next"));
@@ -19,12 +19,18 @@ export async function GET(request: NextRequest) {
   try {
     const previous = await getSession(true);
     if (previous?.refreshToken) {
-      const renewed = await refreshSession();
-      if (!renewed)
-        throw new Error(
-          "Please sign in again to recover your shopping session.",
-        );
-      return NextResponse.redirect(new URL(next, request.url));
+      try {
+        const renewed = await refreshSession();
+        if (renewed) return NextResponse.redirect(new URL(next, request.url));
+      } catch {
+        if (previous.authLevel === "registered") {
+          throw new Error("Please sign in again to recover your shopping session.");
+        }
+      }
+      if (previous.authLevel === "registered") {
+        throw new Error("Please sign in again to recover your shopping session.");
+      }
+      await clearSession();
     }
     const session = await bootstrapGuestSession();
     await setSession(session);

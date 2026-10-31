@@ -62,11 +62,11 @@ const previewGuides = [
 const faqs = [
   {
     question: "How does ClothME know my size?",
-    answer: "Two photos and a few details help ClothME create your size profile. We use it to recommend sizes and show products matched to your fit."
+    answer: "Choose photo sizing with two photos, or answer a short questionnaire to get estimated measurements you can review. Either way, your size profile helps ClothME show products matched to your fit."
   },
   {
     question: "Do I need to take measurements?",
-    answer: "No measuring tape is needed to get started. The size profile begins with two photos and a few details."
+    answer: "No measuring tape is needed to get started. Choose photo sizing or answer a few questions, then review your size profile."
   },
   {
     question: "Is ClothME free to use?",
@@ -135,7 +135,7 @@ export function ClothMEHome() {
             <h1 id="option1-title">Shopping that <em>finally</em> fits.</h1>
             <p className={styles.heroDescription}>Find your size. Discover clothes that feel like you. Shop for everyone you love, all in one place.</p>
             <Cta />
-            <p className={styles.heroNote}>Your size profile starts with two photos.</p>
+            <p className={styles.heroNote}>Start with two photos or a few questions.</p>
           </div>
           <div className={styles.heroVisual}>
             <img src="/personal-shopping.jpg" alt="Shopper looking at clothing on her phone" />
@@ -183,9 +183,9 @@ export function ClothMEHome() {
           <div className={styles.fitContent}>
             <p className={styles.eyebrow}>01 / Your size</p>
             <h2 id="fit-title">Start with your fit. Go wherever your style takes you.</h2>
-            <p>Two photos help create your size profile. ClothME uses it to show you products matched to your fit, so you can focus on what works for you.</p>
+            <p>Use two photos or answer a few questions to create your size profile. ClothME uses it to show you products matched to your fit, so you can focus on what works for you.</p>
             <div className={styles.fitSteps}>
-              <div><span>01</span><strong>Add two photos</strong><p>No measuring tape to find before you start.</p></div>
+              <div><span>01</span><strong>Choose your sizing method</strong><p>Add two photos or answer a few questions.</p></div>
               <div><span>02</span><strong>Build your profile</strong><p>Keep your fit information in one place.</p></div>
               <div><span>03</span><strong>See only what fits</strong><p>Browse products matched to your size profile.</p></div>
             </div>

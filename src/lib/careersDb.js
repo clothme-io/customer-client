@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { resolveDatabaseUrl } from "./databaseUrl.js";
+import { withoutHowToApply } from "./careersContent.js";
 
 let pool;
 export function careerPool() {
@@ -42,7 +43,8 @@ export async function getOpenJob(slug) {
     `SELECT ${publicFields} FROM career_jobs WHERE slug=$1 AND status='open' AND content_approved=true LIMIT 1`,
     [slug],
   );
-  return result.rows[0] || null;
+  const job = result.rows[0];
+  return job ? { ...job, contentSource: withoutHowToApply(job.contentSource) } : null;
 }
 
 export function jsonJob(job) {

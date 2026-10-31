@@ -3,6 +3,8 @@ import { submitWaitlist } from "../../lib/waitlist";
 import { runSizeTool } from "../../lib/sizeToolClient";
 import { sizeToolProfileFromAge } from "../../lib/sizeToolProfile";
 import { track } from "../../lib/track";
+import { ManualSizeForm } from "./ManualSizeForm";
+import { ManualSizeReview } from "./ManualSizeReview";
 
 const PROCESS_COPY = [
   "Reading your proportions…",
@@ -70,19 +72,14 @@ function MorphingProcessCopy({ messages }) {
   );
 }
 
-function feetInchesToCm(feet, inches) {
-  const f = Number(feet) || 0;
-  const inch = Number(inches) || 0;
-  return Math.round((f * 12 + inch) * 2.54);
-}
-
-function parseHeightCm(unit, cm, feet, inches) {
+function parseHeightCm(unit, cm, inches) {
   if (unit === "cm") {
     const n = Number(cm);
     return Number.isFinite(n) && n >= 90 && n <= 250 ? Math.round(n) : null;
   }
-  const total = feetInchesToCm(feet, inches);
-  return total >= 90 && total <= 250 ? total : null;
+  const n = Number(inches);
+  const total = n * 2.54;
+  return total >= 90 && total <= 250 ? Math.round(total) : null;
 }
 
 function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
@@ -170,13 +167,14 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const sideInputRef = useRef(null);
 
   const [phase, setPhase] = useState("upload"); // upload | processing | result | success
+  const [sizingMethod, setSizingMethod] = useState("photo");
+  const [manualDirty, setManualDirty] = useState(false);
   const [frontFile, setFrontFile] = useState(null);
   const [sideFile, setSideFile] = useState(null);
   const [frontPreview, setFrontPreview] = useState(null);
   const [sidePreview, setSidePreview] = useState(null);
   const [heightUnit, setHeightUnit] = useState("cm");
   const [heightCm, setHeightCm] = useState("");
-  const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -240,11 +238,11 @@ export function LandingSizeTool({ accountHandoff = false }) {
   useEffect(() => {
     if (!accountHandoff || !modalOpen) return;
     const previous = document.body.style.overflow;
-    const onKeyDown = (event) => { if (event.key === "Escape") setModalOpen(false); };
+    const onKeyDown = (event) => { if (event.key === "Escape" && !manualDirty) closeResult(); };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
     return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", onKeyDown); };
-  }, [accountHandoff, modalOpen]);
+  }, [accountHandoff, modalOpen, manualDirty]);
   useEffect(() => {
     if (!accountHandoff || phase !== "result") return;
     let cancelled = false;
@@ -274,7 +272,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
     }
   }
 
-  const heightValue = parseHeightCm(heightUnit, heightCm, heightFt, heightIn);
+  const heightValue = parseHeightCm(heightUnit, heightCm, heightIn);
   const canSubmit =
     Boolean(
       frontFile &&
@@ -306,7 +304,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
       setSidePreview(null);
       setFrontFile(null);
       setSideFile(null);
-      setResult(next);
+      setResult({ ...next, method: "photo" });
       setSizeReady(false);
       setSizeCheckTimedOut(false);
       setAccountStep("result");
@@ -318,6 +316,31 @@ export function LandingSizeTool({ accountHandoff = false }) {
     } finally {
       submitting.current = false;
     }
+  }
+
+  function onManualGenerated(next, details) {
+    setProfile(details);
+    setManualDirty(false);
+    setResult({ ...next, method: "manual" });
+    setSizeReady(false);
+    setSizeCheckTimedOut(false);
+    setAccountStep("result");
+    setModalOpen(accountHandoff);
+    setPhase("result");
+  }
+
+  function closeResult() {
+    setModalOpen(false);
+    setResult(null);
+    setManualDirty(false);
+    setSizeReady(false);
+    setPhase("upload");
+  }
+
+  function startOtherMethod() {
+    closeResult();
+    progress.current = {};
+    setSizingMethod((current) => current === "photo" ? "manual" : "photo");
   }
 
   async function onSaveAccount(event) {
@@ -390,15 +413,21 @@ export function LandingSizeTool({ accountHandoff = false }) {
       <div id="get-your-size" className="mock-section-heading size-tool-anchor">
         <p className="eyebrow">Free Size Tool</p>
         <h2 id="size-tool-title" className="mock-section-title">
-          Get your size in seconds.
+          {sizingMethod === "manual" && accountHandoff ? "Find your size without photos." : "Get your size in seconds."}
         </h2>
-        <p className="size-tool-subhead">
-          Add 2 photos and we&apos;ll find your size in every brand — no
-          measuring tape, no guessing.
-        </p>
+        <p className="size-tool-subhead">{sizingMethod === "manual" && accountHandoff
+          ? "Answer a few questions and review your estimated measurements — no photos needed."
+          : "Add 2 photos and we’ll find your size in every brand — no measuring tape, no guessing."}</p>
       </div>
 
-      {phase === "upload" || phase === "processing" ? (
+      {accountHandoff && phase === "upload" ? <div className="size-tool-method" role="group" aria-label="Sizing method">
+        <button type="button" aria-pressed={sizingMethod === "photo"} className={sizingMethod === "photo" ? "is-active" : ""} onClick={() => setSizingMethod("photo")}>Photo sizing</button>
+        <button type="button" aria-pressed={sizingMethod === "manual"} className={sizingMethod === "manual" ? "is-active" : ""} onClick={() => setSizingMethod("manual")}>Manual sizing</button>
+      </div> : null}
+
+      {accountHandoff && phase === "upload" && sizingMethod === "manual" ? <ManualSizeForm onGenerated={onManualGenerated} /> : null}
+
+      {(phase === "upload" && sizingMethod === "photo") || phase === "processing" ? (
         <form className="size-tool-panel" onSubmit={onGetSize}>
           {phase === "upload" ? (
             <>
@@ -440,10 +469,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     </button>
                     <button
                       type="button"
-                      className={heightUnit === "ft" ? "is-active" : ""}
-                      onClick={() => setHeightUnit("ft")}
+                      className={heightUnit === "in" ? "is-active" : ""}
+                      onClick={() => setHeightUnit("in")}
                     >
-                      ft / in
+                      inches
                     </button>
                   </div>
                 </div>
@@ -464,36 +493,22 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     required
                   />
                 ) : (
-                  <div className="size-tool-ftin">
-                    <input
-                      id={`${baseId}-height`}
-                      type="number"
-                      inputMode="numeric"
-                      min={3}
-                      max={8}
-                      placeholder="ft"
-                      aria-label="Feet"
-                      value={heightFt}
-                      onChange={(e) => {
-                        progress.current = {};
-                        setHeightFt(e.target.value);
-                      }}
-                      required
-                    />
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={11}
-                      placeholder="in"
-                      aria-label="Inches"
-                      value={heightIn}
-                      onChange={(e) => {
-                        progress.current = {};
-                        setHeightIn(e.target.value);
-                      }}
-                    />
-                  </div>
+                  <input
+                    id={`${baseId}-height`}
+                    type="number"
+                    inputMode="decimal"
+                    min={90 / 2.54}
+                    max={250 / 2.54}
+                    step="any"
+                    placeholder="e.g. 67"
+                    aria-label="Height in inches"
+                    value={heightIn}
+                    onChange={(e) => {
+                      progress.current = {};
+                      setHeightIn(e.target.value);
+                    }}
+                    required
+                  />
                 )}
               </div>
 
@@ -580,10 +595,16 @@ export function LandingSizeTool({ accountHandoff = false }) {
       ) : null}
 
       {(phase === "result" || phase === "success") && result && (!accountHandoff || modalOpen) ? (
-        <div className={accountHandoff ? "size-tool-modal-backdrop" : undefined} onMouseDown={accountHandoff ? (event) => { if (event.target === event.currentTarget) setModalOpen(false); } : undefined}>
+        <div className={accountHandoff ? "size-tool-modal-backdrop" : undefined} onMouseDown={accountHandoff ? (event) => { if (event.target === event.currentTarget && !manualDirty) closeResult(); } : undefined}>
         <div className={`size-tool-panel size-tool-result${accountHandoff ? " size-tool-modal" : ""}`} role={accountHandoff ? "dialog" : undefined} aria-modal={accountHandoff ? "true" : undefined} aria-labelledby={accountHandoff ? `${baseId}-result-title` : undefined}>
-          {accountHandoff ? <button type="button" className="size-tool-modal-close" aria-label="Close size result" onClick={() => setModalOpen(false)}>×</button> : null}
+          {accountHandoff ? <button type="button" className="size-tool-modal-close" aria-label="Close size result" disabled={manualDirty} title={manualDirty ? "Save measurement changes before closing" : undefined} onClick={closeResult}>×</button> : null}
           <div className="size-tool-result-card">
+            {result.method === "manual" ? <>
+              <p className="size-tool-result-label">Manual sizing result</p>
+              <h3 className="size-tool-result-line" id={`${baseId}-result-title`}>Your estimated measurements</h3>
+              <ManualSizeReview result={result} onDirtyChange={setManualDirty}
+                onSaved={(updated) => setResult((current) => ({ ...current, ...updated }))} />
+            </> : <>
             <p className="size-tool-result-label">Your recommended size</p>
             <h3 className="size-tool-result-line" id={`${baseId}-result-title`}>{sizeTitle}</h3>
             {sizeMeasurements.length ? (
@@ -607,13 +628,15 @@ export function LandingSizeTool({ accountHandoff = false }) {
                 ))}
               </ul>
             ) : null}
+            </>}
           </div>
 
           {phase === "result" && accountHandoff && accountStep === "result" ? (
             <div className="size-tool-email">
               <h3>Keep this size in your ClothME account</h3>
               <p>Save it once, then log in to the app and choose the products you want to shop.</p>
-              <button type="button" className="size-tool-cta" onClick={() => setAccountStep("details")}>Save this size →</button>
+              <button type="button" className="size-tool-cta" disabled={manualDirty} onClick={() => setAccountStep("details")}>Save this size →</button>
+              {manualDirty ? <p>Save your measurement changes before creating an account.</p> : null}
             </div>
           ) : phase === "result" && accountHandoff ? (
             <form className="size-tool-email" onSubmit={onSaveAccount}>
@@ -627,14 +650,14 @@ export function LandingSizeTool({ accountHandoff = false }) {
                 <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
                 {!alreadyRegistered ? <label>Password<input name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} /></label> : null}
               </div>
-              <button type="submit" className="size-tool-cta" disabled={!sizeReady || saveStatus === "submitting"}>
+              <button type="submit" className="size-tool-cta" disabled={!sizeReady || manualDirty || saveStatus === "submitting"}>
                 {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? alreadyRegistered ? "Save my size →" : "Save my size and create account →" : "Saving your size profile…"}
               </button>
               {!sizeReady ? <p role="status">Your result is ready. We’re confirming it has been saved before you create an account.</p> : null}
               {sizeCheckTimedOut ? <button type="button" className="size-tool-ghost" onClick={() => { setSizeCheckTimedOut(false); setSizeCheckRetry((value) => value + 1); }}>Check saved size again</button> : null}
               {saveError ? <p className="size-tool-error" role="alert">{saveError}</p> : null}
               <p className="size-tool-privacy">
-                Your photos are used for sizing. Your account lets you use this size in the app.
+                {result.method === "manual" ? "Your answers are used to estimate your sizing." : "Your photos are used for sizing."} Your account lets you use this size in the app.
               </p>
             </form>
           ) : phase === "result" ? (
@@ -660,6 +683,9 @@ export function LandingSizeTool({ accountHandoff = false }) {
               {emailError ? <p className="size-tool-error">{emailError}</p> : null}
             </div>
           )}
+          {accountHandoff && phase === "result" ? <button type="button" className="size-tool-ghost" onClick={startOtherMethod}>
+            {manualDirty ? "Discard changes and try photo sizing" : `Try ${result.method === "manual" ? "photo" : "manual"} sizing instead`}
+          </button> : null}
         </div>
         </div>
       ) : null}
