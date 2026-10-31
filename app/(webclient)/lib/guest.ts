@@ -38,7 +38,9 @@ export async function bootstrapGuestSession(): Promise<WebClientSession> {
   const wishbagId = randomUUID();
   const cartId = randomUUID();
   const deviceId = randomUUID();
-  const email = `${accountId}@guest.invalid`;
+  // The customer API exempts this exact account-ID bootstrap address on setup.
+  // Session helpers still treat it as a synthetic email, never a contact address.
+  const email = `${accountId}@gmail.com`;
   const password = `${accountId}password`;
 
   const raw = await customerFetch<SetupResult>(

@@ -5261,6 +5261,27 @@ h1 {
   text-align: center;
 }
 
+.size-tool-cta.is-processing {
+  position: relative;
+  padding-right: 46px;
+}
+
+.size-tool-cta.is-processing::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-left-color: transparent;
+  border-radius: 50%;
+  animation: size-tool-spin .8s linear infinite;
+}
+
+@keyframes size-tool-spin {
+  to { transform: rotate(360deg); }
+}
+
 .size-tool-loader-badge {
   animation: size-tool-pulse 1.4s ease-in-out infinite;
 }
@@ -5531,6 +5552,10 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .size-tool-cta.is-processing::after {
+    animation: none;
+  }
+
   .size-tool-loader-badge,
   .size-tool-loader-bar span,
   .size-tool-process-shimmer {

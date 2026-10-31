@@ -158,9 +158,15 @@ export async function POST(request: Request) {
       await setSession(session);
       return NextResponse.json({ ok: true, authLevel: "guest" });
     } catch (error) {
+      const status =
+        typeof (error as { status?: number }).status === "number"
+          ? (error as { status: number }).status
+          : 400;
       const message =
-        error instanceof Error ? error.message : "Guest setup failed";
-      return NextResponse.json({ message }, { status: 400 });
+        status === 429
+          ? "Too many sizing attempts. Please try again later."
+          : error instanceof Error ? error.message : "Guest setup failed";
+      return NextResponse.json({ message }, { status });
     }
   }
 
