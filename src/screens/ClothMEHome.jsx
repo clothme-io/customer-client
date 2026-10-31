@@ -200,7 +200,7 @@ export function ClothMEHome() {
         <section className={styles.discovery} aria-labelledby="discovery-title">
           <div className={styles.discoveryCopy}>
             <p className={styles.eyebrow}>02 / Your discovery</p>
-            <h2 id="discovery-title">More of what you love. Less looking for it.</h2>
+            <h2 id="discovery-title">More of what you love. Less time looking for it.</h2>
             <p>ClothME filters discovery around your size profile, so the products you see are matched to your fit from the start.</p>
           </div>
           <div className={styles.discoveryMedia}>
