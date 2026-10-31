@@ -6,72 +6,6 @@ import { track } from "../../lib/track";
 import { ManualSizeForm } from "./ManualSizeForm";
 import { ManualSizeReview } from "./ManualSizeReview";
 
-const PROCESS_COPY = [
-  "Reading your proportions…",
-  "Calculating clothing sizes…",
-  "Almost there…",
-];
-
-const TYPE_MS = 22;
-const MESSAGE_HOLD_MS = 1600;
-
-function MorphingProcessCopy({ messages }) {
-  const [msgIndex, setMsgIndex] = useState(0);
-  const [visible, setVisible] = useState("");
-  const full = messages[msgIndex] || "";
-
-  useEffect(() => {
-    let cancelled = false;
-    let typeTimer = null;
-    let holdTimer = null;
-
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduceMotion) {
-      setVisible(full);
-      holdTimer = window.setTimeout(
-        () => {
-          if (!cancelled) setMsgIndex((n) => (n + 1) % messages.length);
-        },
-        MESSAGE_HOLD_MS + full.length * TYPE_MS,
-      );
-      return () => {
-        cancelled = true;
-        window.clearTimeout(holdTimer);
-      };
-    }
-
-    let i = 0;
-    setVisible("");
-
-    typeTimer = window.setInterval(() => {
-      if (cancelled) return;
-      i += 1;
-      setVisible(full.slice(0, i));
-      if (i >= full.length) {
-        window.clearInterval(typeTimer);
-        holdTimer = window.setTimeout(() => {
-          if (!cancelled) setMsgIndex((n) => (n + 1) % messages.length);
-        }, MESSAGE_HOLD_MS);
-      }
-    }, TYPE_MS);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(typeTimer);
-      window.clearTimeout(holdTimer);
-    };
-  }, [full, messages]);
-
-  return (
-    <p className="size-tool-process-copy" aria-live="polite">
-      <span className="size-tool-process-shimmer">{visible}</span>
-    </p>
-  );
-}
-
 function parseHeightCm(unit, cm, inches) {
   if (unit === "cm") {
     const n = Number(cm);
@@ -420,17 +354,16 @@ export function LandingSizeTool({ accountHandoff = false }) {
           : "Add 2 photos and we’ll find your size in every brand — no measuring tape, no guessing."}</p>
       </div>
 
-      {accountHandoff && phase === "upload" ? <div className="size-tool-method" role="group" aria-label="Sizing method">
-        <button type="button" aria-pressed={sizingMethod === "photo"} className={sizingMethod === "photo" ? "is-active" : ""} onClick={() => setSizingMethod("photo")}>Photo sizing</button>
-        <button type="button" aria-pressed={sizingMethod === "manual"} className={sizingMethod === "manual" ? "is-active" : ""} onClick={() => setSizingMethod("manual")}>Manual sizing</button>
+      {accountHandoff && (phase === "upload" || phase === "processing") ? <div className="size-tool-method" role="group" aria-label="Sizing method">
+        <button type="button" disabled={phase !== "upload"} aria-pressed={sizingMethod === "photo"} className={sizingMethod === "photo" ? "is-active" : ""} onClick={() => setSizingMethod("photo")}>Photo sizing</button>
+        <button type="button" disabled={phase !== "upload"} aria-pressed={sizingMethod === "manual"} className={sizingMethod === "manual" ? "is-active" : ""} onClick={() => setSizingMethod("manual")}>Manual sizing</button>
       </div> : null}
 
       {accountHandoff && phase === "upload" && sizingMethod === "manual" ? <ManualSizeForm onGenerated={onManualGenerated} /> : null}
 
-      {(phase === "upload" && sizingMethod === "photo") || phase === "processing" ? (
-        <form className="size-tool-panel" onSubmit={onGetSize}>
-          {phase === "upload" ? (
-            <>
+      {sizingMethod === "photo" && (phase === "upload" || phase === "processing") ? (
+        <form className="size-tool-panel" onSubmit={onGetSize} aria-busy={phase === "processing"}>
+            <div className="size-tool-photo-fields" inert={phase === "processing" ? true : undefined}>
               <div className="size-tool-tiles">
                 <PoseTile
                   id={`${baseId}-front`}
@@ -547,10 +480,11 @@ export function LandingSizeTool({ accountHandoff = false }) {
 
               <button
                 type="submit"
-                className="size-tool-cta"
+                className={`size-tool-cta${phase === "processing" ? " is-processing" : ""}`}
                 disabled={!canSubmit}
+                aria-live="polite"
               >
-                {progress.current.taskId ? "Check my size →" : "Get my size →"}
+                {phase === "processing" ? "Calculating your size…" : progress.current.taskId ? "Check my size →" : "Get my size →"}
               </button>
               <p className="size-tool-privacy">
                 Your photos are sent to our sizing service. This page clears its
@@ -567,24 +501,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
                   {error}
                 </p>
               ) : null}
-            </>
-          ) : (
-            <div
-              className="size-tool-processing"
-              aria-live="polite"
-              aria-busy="true"
-            >
-              <div className="size-tool-loader">
-                <span className="fit-score-badge size-tool-loader-badge">
-                  Calculating your size…
-                </span>
-                <div className="size-tool-loader-bar" aria-hidden="true">
-                  <span />
-                </div>
-              </div>
-              <MorphingProcessCopy messages={PROCESS_COPY} />
             </div>
-          )}
         </form>
       ) : null}
 

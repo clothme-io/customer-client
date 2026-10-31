@@ -121,12 +121,13 @@ test("synthetic emails include guest.invalid and legacy uuid gmail", () => {
   assert.equal(isSyntheticEmail("maya@example.com", accountId), false);
 });
 
-test("guest setup matches mobile's nonempty pre-profile DOB contract", async () => {
+test("guest setup matches mobile's bootstrap address and pre-profile DOB contract", async () => {
   let sent: any;
   const { bootstrapGuestSession } = loadModule("../../app/(webclient)/lib/guest.ts", {
-    "./api": { customerFetch: async (_path: string, options: any) => {
+    "./api": { customerFetch: async (path: string, options: any) => {
       sent = options.body;
       if (!sent.dob) throw new Error("dob should not be empty");
+      assert.equal(sent.email, `${new URL(path, "https://example.test").searchParams.get("accountId")}@gmail.com`);
       return { accountId: "account", accountUserId: "person", accessToken: "access", refreshToken: "refresh" };
     } },
     "./config": { WEBCLIENT_MOCK: false },
@@ -135,8 +136,7 @@ test("guest setup matches mobile's nonempty pre-profile DOB contract", async () 
   });
   const session = await bootstrapGuestSession();
   assert.equal(sent.dob, "dob");
-  assert.match(sent.email, /@guest\.invalid$/);
-  assert.doesNotMatch(sent.email, /gmail\.com/i);
+  assert.match(sent.email, /^[0-9a-f-]+@gmail\.com$/);
   assert.equal(session.personId, "person");
   assert.equal(session.accessToken, "access");
   assert.equal(session.email, sent.email);
