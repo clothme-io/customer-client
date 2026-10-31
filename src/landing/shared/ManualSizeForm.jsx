@@ -108,13 +108,13 @@ export function ManualSizeForm({ onGenerated }) {
         <div className="size-tool-manual-shape-options">
           <Choices title="Body shape" options={MANUAL_SHAPES} value={shape} onChange={setShape} />
           {gender === "female" ? <Choices title="Cup size (optional)" options={[["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["DD", "DD"], ["F", "F"]]} value={cup} onChange={setCup} /> : null}
+          <Choices title="Belly" options={[[1, "Flat"], [2, "Average"], [3, "Prominent"]]} value={belly} onChange={setBelly} />
+          <Choices title="Build" options={[[1, "Soft"], [2, "Average"], [3, "Athletic"]]} value={build} onChange={setBuild} />
+          <Choices title="Leg length relative to your height" options={THREE_CHOICES} value={legs} onChange={setLegs} />
+          <Choices title="Arm length relative to your height" options={THREE_CHOICES} value={arms} onChange={setArms} />
         </div>
         <ManualBodyPreview shape={shape} gender={gender} cup={cup} />
       </div>
-      <Choices title="Belly" options={[[1, "Flat"], [2, "Average"], [3, "Prominent"]]} value={belly} onChange={setBelly} />
-      <Choices title="Build" options={[[1, "Soft"], [2, "Average"], [3, "Athletic"]]} value={build} onChange={setBuild} />
-      <Choices title="Leg length relative to your height" options={THREE_CHOICES} value={legs} onChange={setLegs} />
-      <Choices title="Arm length relative to your height" options={THREE_CHOICES} value={arms} onChange={setArms} />
       {error ? <p className="size-tool-error" role="alert">{error}</p> : null}
       <button className="size-tool-cta" type="submit" disabled={busy}>{busy ? "Estimating your size…" : "Generate my sizing →"}</button>
       <p className="size-tool-privacy">These answers are used to estimate your sizing. You can review and adjust the result.</p>
