@@ -6,6 +6,7 @@ const origin = "http://localhost:3112",
   upstream = "http://127.0.0.1:3113";
 const calls = [];
 const failures = [];
+let firstSaveFails = true;
 const stub = http.createServer(async (req, res) => {
   const send = (status, body) => {
     res.writeHead(status, { "Content-Type": "application/json" });
@@ -21,6 +22,15 @@ const stub = http.createServer(async (req, res) => {
         accessToken: "test-access",
         refreshToken: "test-refresh",
       });
+    if (url.pathname === "/v1/customer/persons/test-person/sizing-profile" && req.method === "PUT") {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const profile = JSON.parse(Buffer.concat(chunks).toString());
+      assert.equal(profile.sizing.top.chest_circumference.cm, 90);
+      assert.equal(profile.sizing.bottom.hip_circumference.cm, 100);
+      if (firstSaveFails) { firstSaveFails = false; return send(503, { message: "Service temporarily unavailable" }); }
+      return send(200, profile);
+    }
     assert.equal(req.headers.authorization, "Bearer test-access");
     assert.equal(req.headers["x-token"], "test-size-token");
     assert.equal(req.headers["x-account-id"], "test-account");
@@ -70,6 +80,7 @@ const stub = http.createServer(async (req, res) => {
         task_id: "generation",
         result: {
           measurements: { waist: { cm: 80 } },
+          sizing: { top: { chest_circumference: { cm: 90 } }, bottom: { hip_circumference: { cm: 100 } } },
           size_recommendations: {
             US_CAD: { tops: { regular: { size: "M" } } },
           },
@@ -178,11 +189,15 @@ try {
     method: "POST",
     body: f,
   });
-  const result = await request(
+  const pending = await request(
     `/api/size-tool/generate?taskId=${queued.taskId}`,
   );
+  assert.equal(pending.state, "complete");
+  assert.equal(pending.savePending, true);
+  const result = await request(`/api/size-tool/generate?taskId=${queued.taskId}`);
   assert.equal(result.result.size, "M");
   assert.equal(result.result.confidence, null);
+  assert.equal(result.savePending, undefined);
   assert.deepEqual(failures, []);
   assert.deepEqual(calls, [
     "POST /v1/account/setup",
@@ -192,6 +207,9 @@ try {
     "GET /validate-side-result/validate-side",
     "POST /generate/v1/size",
     "GET /generate/v1/size/generation",
+    "PUT /v1/customer/persons/test-person/sizing-profile",
+    "GET /generate/v1/size/generation",
+    "PUT /v1/customer/persons/test-person/sizing-profile",
   ]);
   console.log(
     "PASS: homepage HTTP routes use mobile paths, session headers, multipart photos, result envelopes and GET polling",

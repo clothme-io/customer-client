@@ -60,14 +60,22 @@ export async function readSizeTool(request, generate = false) {
       const session = await getSession();
       if (!session) return NextResponse.json({ message: "Your sizing session expired. Please sign in and try again." }, { status: 401 });
       try {
+        if (!body.result?.sizing?.top || !body.result?.sizing?.bottom) {
+          return NextResponse.json({ message: "Sizing completed without the measurements needed to save your fit profile." }, { status: 502 });
+        }
         await customerFetch(`/v1/customer/persons/${session.personId}/sizing-profile`, {
           method: "PUT",
           accessToken: session.accessToken,
           personId: session.personId,
           body: { sizing: body.result.sizing, measurements: body.result.measurements },
         });
-      } catch {
-        return NextResponse.json({ message: "Your size was calculated but could not be saved yet. Please try again." }, { status: 503 });
+      } catch (error) {
+        console.warn("size-tool: generated profile save failed", {
+          status: typeof error?.status === "number" ? error.status : undefined,
+          error: error?.name || "UnknownError",
+        });
+        // Preserve the completed calculation. A GET with the same task ID can retry the save.
+        body.savePending = true;
       }
     }
     body.result = mapGenerateResult(body.result);

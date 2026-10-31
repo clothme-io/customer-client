@@ -6,6 +6,32 @@ import { track } from "../../lib/track";
 import { ManualSizeForm } from "./ManualSizeForm";
 import { ManualSizeReview } from "./ManualSizeReview";
 
+const LOADING_FACTS = [
+  { icon: "👖", text: "Levi’s added rivets to jeans in 1873" },
+  { icon: "👔", text: "Neckties began as soldiers’ scarves" },
+  { icon: "🧵", text: "A T-shirt can take 2,700 liters of water to make" },
+  { icon: "👟", text: "Sneakers outsell dress shoes" },
+  { icon: "🧶", text: "Merino wool naturally resists moisture" },
+  { icon: "👗", text: "Fashion Week began in New York in 1943" },
+];
+
+function ProcessingFeedback({ status, seconds, factIndex }) {
+  const stage = status.stage === "front" ? "Checking front photo" : status.stage === "side" ? "Checking side photo" : status.stage === "generation" ? "Calculating your size" : "Preparing your profile";
+  const percent = Number.isFinite(status.percent) ? Math.max(0, Math.min(100, Math.round(status.percent))) : null;
+  const stageSeconds = status.beganAt ? Math.max(1, (Date.now() - status.beganAt) / 1000) : 0;
+  const estimate = status.stage === "generation" && percent >= 15 && percent < 100
+    ? Math.min(300, Math.round(stageSeconds * (100 - percent) / percent / 5) * 5)
+    : null;
+  const fact = LOADING_FACTS[factIndex % LOADING_FACTS.length];
+  return <div className="size-tool-progress" role="status" aria-live="polite">
+    <div className="size-tool-progress-heading"><strong>{stage}</strong>{percent !== null ? <span>{percent}%</span> : null}</div>
+    <div className="size-tool-progress-track" role="progressbar" aria-label={stage} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? 0}><span style={{ width: `${percent ?? 0}%` }} /></div>
+    <p className="size-tool-progress-time">{estimate !== null ? `About ${estimate < 60 ? `${Math.max(5, estimate)} seconds` : `${Math.ceil(estimate / 60)} minutes`} remaining (estimate)` : `${seconds}s elapsed · Time remaining varies`}</p>
+    <div className="size-tool-progress-fact" key={factIndex}><span className="size-tool-progress-icon" aria-hidden="true">{fact.icon}</span><span>{fact.text}</span></div>
+    {status.message?.includes("Reconnecting") ? <p className="size-tool-progress-connection">{status.message}</p> : null}
+  </div>;
+}
+
 function parseHeightCm(unit, cm, inches) {
   if (unit === "cm") {
     const n = Number(cm);
@@ -112,6 +138,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [heightIn, setHeightIn] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [progressStatus, setProgressStatus] = useState({ stage: "session", percent: null, message: "" });
+  const [processingSeconds, setProcessingSeconds] = useState(0);
+  const [loadingFactIndex, setLoadingFactIndex] = useState(0);
+  const [retryingSave, setRetryingSave] = useState(false);
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [city, setCity] = useState("");
@@ -136,6 +166,14 @@ export function LandingSizeTool({ accountHandoff = false }) {
   });
   const progress = useRef({});
   const submitting = useRef(false);
+  useEffect(() => {
+    if (phase !== "processing") return;
+    const started = Date.now();
+    setProcessingSeconds(0);
+    const timer = window.setInterval(() => setProcessingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    const facts = window.setInterval(() => setLoadingFactIndex((index) => index + 1), 2800);
+    return () => { window.clearInterval(timer); window.clearInterval(facts); };
+  }, [phase]);
   useEffect(
     () => () => {
       if (frontPreview) URL.revokeObjectURL(frontPreview);
@@ -225,6 +263,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
     submitting.current = true;
     setError("");
     setPhase("processing");
+    setProgressStatus({ stage: "session", percent: null, message: "Preparing your fit profile…", beganAt: Date.now() });
 
     try {
       const next = await runSizeTool({
@@ -233,6 +272,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
         heightCm: heightValue,
         profile: sizeToolProfileFromAge(profile),
         progress: progress.current,
+        onProgress: (update) => setProgressStatus((current) => ({
+          ...update,
+          beganAt: current.stage === update.stage ? current.beganAt : Date.now(),
+        })),
       });
       setFrontPreview(null);
       setSidePreview(null);
@@ -249,6 +292,22 @@ export function LandingSizeTool({ accountHandoff = false }) {
       setPhase("upload");
     } finally {
       submitting.current = false;
+    }
+  }
+
+  async function retryProfileSave() {
+    if (!progress.current.taskId || retryingSave) return;
+    setRetryingSave(true);
+    setSaveError("");
+    try {
+      const next = await runSizeTool({ frontFile, sideFile, heightCm: heightValue, profile: sizeToolProfileFromAge(profile), progress: progress.current });
+      setResult((current) => ({ ...current, savePending: next.savePending }));
+      setSizeCheckTimedOut(false);
+      setSizeCheckRetry((value) => value + 1);
+    } catch (err) {
+      setSaveError(err?.message || "Could not confirm your saved size. Please try again.");
+    } finally {
+      setRetryingSave(false);
     }
   }
 
@@ -486,6 +545,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
               >
                 {phase === "processing" ? "Calculating your size…" : progress.current.taskId ? "Check my size →" : "Get my size →"}
               </button>
+              {phase === "processing" ? <ProcessingFeedback status={progressStatus} seconds={processingSeconds} factIndex={loadingFactIndex} /> : null}
               <p className="size-tool-privacy">
                 Your photos are sent to our sizing service. This page clears its
                 photo previews after success or when you leave. See our privacy
@@ -552,6 +612,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
             <div className="size-tool-email">
               <h3>Keep this size in your ClothME account</h3>
               <p>Save it once, then log in to the app and choose the products you want to shop.</p>
+              {result.savePending ? <p role="status">Your size was calculated. We’re still saving your fit profile.</p> : null}
               <button type="button" className="size-tool-cta" disabled={manualDirty} onClick={() => setAccountStep("details")}>Save this size →</button>
               {manualDirty ? <p>Save your measurement changes before creating an account.</p> : null}
             </div>
@@ -571,6 +632,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
                 {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? alreadyRegistered ? "Save my size →" : "Save my size and create account →" : "Saving your size profile…"}
               </button>
               {!sizeReady ? <p role="status">Your result is ready. We’re confirming it has been saved before you create an account.</p> : null}
+              {result.savePending && !sizeReady ? <button type="button" className="size-tool-ghost" disabled={retryingSave} onClick={retryProfileSave}>{retryingSave ? "Retrying save…" : "Retry saving my size"}</button> : null}
               {sizeCheckTimedOut ? <button type="button" className="size-tool-ghost" onClick={() => { setSizeCheckTimedOut(false); setSizeCheckRetry((value) => value + 1); }}>Check saved size again</button> : null}
               {saveError ? <p className="size-tool-error" role="alert">{saveError}</p> : null}
               <p className="size-tool-privacy">
