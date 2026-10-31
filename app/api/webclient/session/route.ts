@@ -131,16 +131,20 @@ export async function POST(request: Request) {
   }
 
   if (action === "guest") {
-    const existing = await getSession(true);
+    let existing = await getSession(true);
     if (existing?.refreshToken && !existing.accessToken) {
       try {
         await refreshSession();
         return NextResponse.json({ ok: true });
       } catch {
-        return NextResponse.json(
-          { message: "Sign in to recover your shopping session." },
-          { status: 401 },
-        );
+        if (existing.authLevel === "registered") {
+          return NextResponse.json(
+            { message: "Sign in to recover your shopping session." },
+            { status: 401 },
+          );
+        }
+        await clearSession();
+        existing = null;
       }
     }
     if (existing) {
