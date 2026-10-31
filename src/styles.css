@@ -5122,6 +5122,58 @@ h1 {
   color: #fff;
 }
 
+.size-tool-manual-shape-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 22px;
+  align-items: start;
+}
+
+.size-tool-manual-shape-options {
+  display: grid;
+  gap: 22px;
+}
+
+.size-tool-body-preview {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #f7fbfd;
+  text-align: center;
+}
+
+.size-tool-body-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  font-size: .83rem;
+}
+
+.size-tool-body-preview-header span {
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.size-tool-body-preview svg {
+  display: block;
+  width: min(100%, 190px);
+  height: auto;
+  margin: 12px auto 0;
+}
+
+.size-tool-body-preview p {
+  margin: 3px 0 8px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.size-tool-body-preview small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .size-tool-manual-review {
   width: 100%;
 }
@@ -5159,6 +5211,7 @@ h1 {
 }
 
 @media (max-width: 540px) {
+  .size-tool-manual-shape-layout { grid-template-columns: 1fr; }
   .size-tool-manual-numbers,
   .size-tool-manual-measurements { grid-template-columns: 1fr; }
   .size-tool-method { width: calc(100% - 32px); }
