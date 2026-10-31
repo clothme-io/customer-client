@@ -104,7 +104,7 @@ export function ManualSizeForm({ onGenerated }) {
       </div>
       <p className="size-tool-manual-limit">Manual sizing currently supports adults from 140–220 cm and 30–200 kg. For children, use photo sizing.</p>
       <Choices title="Body model" options={[["female", "Female"], ["male", "Male"]]} value={gender} onChange={setGender} />
-      <div className="size-tool-manual-shape-layout">
+      <div className={`size-tool-manual-shape-layout${shape ? " has-preview" : ""}`}>
         <div className="size-tool-manual-shape-options">
           <Choices title="Body shape" options={MANUAL_SHAPES} value={shape} onChange={setShape} />
           {gender === "female" ? <Choices title="Cup size (optional)" options={[["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["DD", "DD"], ["F", "F"]]} value={cup} onChange={setCup} /> : null}
@@ -113,7 +113,7 @@ export function ManualSizeForm({ onGenerated }) {
           <Choices title="Leg length relative to your height" options={THREE_CHOICES} value={legs} onChange={setLegs} />
           <Choices title="Arm length relative to your height" options={THREE_CHOICES} value={arms} onChange={setArms} />
         </div>
-        <ManualBodyPreview shape={shape} gender={gender} cup={cup} />
+        {shape ? <ManualBodyPreview shape={shape} gender={gender} cup={cup} /> : null}
       </div>
       {error ? <p className="size-tool-error" role="alert">{error}</p> : null}
       <button className="size-tool-cta" type="submit" disabled={busy}>{busy ? "Estimating your size…" : "Generate my sizing →"}</button>
