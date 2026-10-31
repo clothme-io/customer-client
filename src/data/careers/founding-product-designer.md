@@ -473,13 +473,3 @@ ClothME is committed to providing equal employment opportunities.
 We welcome qualified applicants from diverse backgrounds and evaluate candidates based on their experience, capabilities, and ability to contribute to our mission.
 
 Reasonable accommodations are available throughout the recruitment process.
-
-## How to Apply
-
-Apply through the ClothME Careers page:
-
-**https://clothme.io/careers**
-
-Please include your resume and a link to your portfolio or examples of relevant design work.
-
-We'd especially love to see a product experience you helped design, the problem you were solving, your design decisions, and the results of your work.

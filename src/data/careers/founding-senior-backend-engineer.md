@@ -305,11 +305,3 @@ We're looking for someone who wants to help build the technology behind a better
 ClothME is committed to providing equal employment opportunities. We welcome qualified applicants from diverse backgrounds and evaluate candidates based on their skills, experience, and ability to contribute to our mission.
 
 Reasonable accommodations are available throughout the recruitment process.
-
-## How to Apply
-
-Apply through the ClothME Careers page at:
-
-**https://clothme.io/careers**
-
-Please include your resume and, if available, links to relevant projects, GitHub repositories, or examples of systems you've helped build.

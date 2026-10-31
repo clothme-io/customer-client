@@ -477,13 +477,3 @@ ClothME is committed to providing equal employment opportunities.
 We welcome qualified applicants from diverse backgrounds and evaluate candidates based on their experience, capabilities, and ability to contribute to our mission.
 
 Reasonable accommodations are available throughout the recruitment process.
-
-## How to Apply
-
-Apply through the ClothME Careers page:
-
-**https://clothme.io/careers**
-
-Please include your resume and, if available, links to relevant projects, GitHub repositories, technical publications, or examples of machine learning systems you've built.
-
-We'd especially love to learn about an AI system you personally helped develop, how you evaluated it, and the impact it had.
