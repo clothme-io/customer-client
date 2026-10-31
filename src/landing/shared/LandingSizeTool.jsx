@@ -70,19 +70,14 @@ function MorphingProcessCopy({ messages }) {
   );
 }
 
-function feetInchesToCm(feet, inches) {
-  const f = Number(feet) || 0;
-  const inch = Number(inches) || 0;
-  return Math.round((f * 12 + inch) * 2.54);
-}
-
-function parseHeightCm(unit, cm, feet, inches) {
+function parseHeightCm(unit, cm, inches) {
   if (unit === "cm") {
     const n = Number(cm);
     return Number.isFinite(n) && n >= 90 && n <= 250 ? Math.round(n) : null;
   }
-  const total = feetInchesToCm(feet, inches);
-  return total >= 90 && total <= 250 ? total : null;
+  const n = Number(inches);
+  const total = n * 2.54;
+  return total >= 90 && total <= 250 ? Math.round(total) : null;
 }
 
 function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
@@ -176,7 +171,6 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [sidePreview, setSidePreview] = useState(null);
   const [heightUnit, setHeightUnit] = useState("cm");
   const [heightCm, setHeightCm] = useState("");
-  const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -274,7 +268,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
     }
   }
 
-  const heightValue = parseHeightCm(heightUnit, heightCm, heightFt, heightIn);
+  const heightValue = parseHeightCm(heightUnit, heightCm, heightIn);
   const canSubmit =
     Boolean(
       frontFile &&
@@ -440,10 +434,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     </button>
                     <button
                       type="button"
-                      className={heightUnit === "ft" ? "is-active" : ""}
-                      onClick={() => setHeightUnit("ft")}
+                      className={heightUnit === "in" ? "is-active" : ""}
+                      onClick={() => setHeightUnit("in")}
                     >
-                      ft / in
+                      inches
                     </button>
                   </div>
                 </div>
@@ -464,36 +458,22 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     required
                   />
                 ) : (
-                  <div className="size-tool-ftin">
-                    <input
-                      id={`${baseId}-height`}
-                      type="number"
-                      inputMode="numeric"
-                      min={3}
-                      max={8}
-                      placeholder="ft"
-                      aria-label="Feet"
-                      value={heightFt}
-                      onChange={(e) => {
-                        progress.current = {};
-                        setHeightFt(e.target.value);
-                      }}
-                      required
-                    />
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={11}
-                      placeholder="in"
-                      aria-label="Inches"
-                      value={heightIn}
-                      onChange={(e) => {
-                        progress.current = {};
-                        setHeightIn(e.target.value);
-                      }}
-                    />
-                  </div>
+                  <input
+                    id={`${baseId}-height`}
+                    type="number"
+                    inputMode="decimal"
+                    min={90 / 2.54}
+                    max={250 / 2.54}
+                    step="any"
+                    placeholder="e.g. 67"
+                    aria-label="Height in inches"
+                    value={heightIn}
+                    onChange={(e) => {
+                      progress.current = {};
+                      setHeightIn(e.target.value);
+                    }}
+                    required
+                  />
                 )}
               </div>
 
