@@ -4992,6 +4992,10 @@ h1 {
   cursor: not-allowed;
 }
 
+.size-tool-panel > .size-tool-cta:not(:disabled) {
+  background: #1599E3;
+}
+
 .size-tool-privacy {
   margin: 12px 0 0;
   font-size: 0.8rem;
