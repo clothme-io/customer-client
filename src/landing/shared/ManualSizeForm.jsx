@@ -1,8 +1,9 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { sessionFetch } from "../../../app/(webclient)/lib/session-client";
 import { MANUAL_SHAPES, validateManualAnswers } from "../../lib/manualSizeProfile";
 import { track } from "../../lib/track";
 import { ManualBodyPreview } from "./ManualBodyPreview";
+import { SizeProcessingFeedback } from "./SizeProcessingFeedback";
 
 const THREE_CHOICES = [[1, "Short"], [2, "Average"], [3, "Long"]];
 
@@ -35,6 +36,15 @@ export function ManualSizeForm({ onGenerated }) {
   const [cup, setCup] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [processingSeconds, setProcessingSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!busy) return undefined;
+    setProcessingSeconds(0);
+    const started = Date.now();
+    const timer = window.setInterval(() => setProcessingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
 
   async function submit(event) {
     event.preventDefault();
@@ -117,6 +127,7 @@ export function ManualSizeForm({ onGenerated }) {
       </div>
       {error ? <p className="size-tool-error" role="alert">{error}</p> : null}
       <button className="size-tool-cta" type="submit" disabled={busy}>{busy ? "Estimating your size…" : "Generate my sizing →"}</button>
+      {busy ? <SizeProcessingFeedback status={{ stage: processingSeconds < 2 ? "preparing" : "manual" }} seconds={processingSeconds} factIndex={Math.floor(processingSeconds / 3)} /> : null}
       <p className="size-tool-privacy">These answers are used to estimate your sizing. You can review and adjust the result.</p>
     </form>
   );

@@ -10,8 +10,9 @@ export const runtime = "nodejs";
 function errorResponse(error: unknown) {
   const status = error instanceof CustomerApiError ? error.status :
     error instanceof Error && /^(Manual sizing|Enter |Choose )/.test(error.message) ? 400 : 503;
+  if (status >= 500) console.error("Manual sizing request failed", error);
   return NextResponse.json(
-    { message: error instanceof Error ? error.message : "Manual sizing is unavailable. Please try again." },
+    { message: status >= 500 ? "We couldn't reach the sizing service. Please try again shortly." : error instanceof Error ? error.message : "Check your answers and try again." },
     { status },
   );
 }
@@ -61,10 +62,22 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers),
+        signal: AbortSignal.timeout(90_000),
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok || body.error || Number(body.status) >= 400)
-        return NextResponse.json({ message: body.error?.message || "Manual sizing is temporarily unavailable." }, { status: response.ok ? 502 : response.status });
+      if (!response.ok || body.error || Number(body.status) >= 400) {
+        const status = response.ok ? 502 : response.status;
+        const upstreamError = typeof body.error === "string" ? body.error : body.error?.message;
+        console.error("Manual sizing service rejected request", { status, upstreamError });
+        const message = status === 401 || status === 403
+          ? "Your sizing session expired. Please try again."
+          : status === 429
+            ? "Too many sizing requests. Please wait a moment and try again."
+            : status >= 400 && status < 500
+              ? upstreamError || "Check your answers and try again."
+              : "We couldn't complete your sizing right now. Please try again shortly.";
+        return NextResponse.json({ message }, { status });
+      }
       result = body.result;
       if (!result?.sizing?.top || !result?.sizing?.bottom || !result?.measurements)
         throw new Error("Manual sizing returned an incomplete profile.");

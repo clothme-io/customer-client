@@ -5322,6 +5322,16 @@ h1 {
   transition: width .5s ease;
 }
 
+.size-tool-progress-track span.is-indeterminate {
+  width: 35%;
+  animation: size-tool-progress-sweep 1.7s ease-in-out infinite alternate;
+}
+
+@keyframes size-tool-progress-sweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(185%); }
+}
+
 .size-tool-progress-time,
 .size-tool-progress-connection {
   margin: 8px 0 0;
@@ -5362,6 +5372,7 @@ h1 {
 
 @media (prefers-reduced-motion: reduce) {
   .size-tool-progress-track span { transition: none; }
+  .size-tool-progress-track span.is-indeterminate { animation: none; }
   .size-tool-progress-fact,
   .size-tool-progress-icon { animation: none; }
 }
