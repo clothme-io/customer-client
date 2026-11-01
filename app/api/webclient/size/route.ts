@@ -17,6 +17,12 @@ import {
 export const runtime = "nodejs";
 function sizeResponse(body: unknown, status: number, operation: SizeOperation) {
   const reply = normalizeSizeReply(body, status, operation);
+  if (status >= 400) {
+    const upstreamError = body && typeof body === "object" && "error" in body
+      ? (body as { error?: unknown }).error
+      : undefined;
+    console.error("Sizing service rejected request", { operation, status, error: typeof upstreamError === "string" ? upstreamError.slice(0, 160) : undefined });
+  }
   return NextResponse.json(reply, {
     status: reply.status,
     headers: { "Cache-Control": "no-store" },
