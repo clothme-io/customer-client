@@ -4866,6 +4866,14 @@ h1 {
   color: var(--ink);
 }
 
+.size-tool-required {
+  color: #d92d20;
+  font-size: .85em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: top;
+}
+
 .size-tool-tile-zone {
   position: relative;
   display: flex;

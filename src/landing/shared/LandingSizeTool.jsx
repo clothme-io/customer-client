@@ -66,7 +66,7 @@ function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
       }}
     >
       <label className="size-tool-tile-label" htmlFor={id}>
-        <span className="size-tool-tile-title">{label}</span>
+        <span className="size-tool-tile-title">{label} <span className="size-tool-required" aria-hidden="true">*</span></span>
         <span className="size-tool-tile-zone">
           {previewUrl ? (
             <img src={previewUrl} alt="" className="size-tool-tile-preview" />
@@ -101,6 +101,7 @@ function PoseTile({ id, label, file, previewUrl, onFile, inputRef }) {
         id={id}
         className="size-tool-file"
         type="file"
+        aria-required="true"
         accept="image/*"
         capture="user"
         onChange={(e) => {
@@ -445,7 +446,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
               <div className="size-tool-height">
                 <div className="size-tool-height-head">
                   <label htmlFor={`${baseId}-height`}>
-                    Your height (for accuracy)
+                    Your height (for accuracy) <span className="size-tool-required" aria-hidden="true">*</span>
                   </label>
                   <div
                     className="size-tool-unit"
@@ -510,7 +511,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
                   details for your selected account profile.
                 </p>
                 <label>
-                  Age
+                  <span>Age <span className="size-tool-required" aria-hidden="true">*</span></span>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -524,7 +525,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
                   />
                 </label>
                 <label>
-                  Gender
+                  <span>Gender <span className="size-tool-required" aria-hidden="true">*</span></span>
                   <select
                     required
                     value={profile.gender}
