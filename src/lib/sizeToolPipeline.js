@@ -143,7 +143,7 @@ export function createSizeToolRunner({
         duration_ms: Date.now() - started,
         eventId: `size:${progress.taskId}`,
       });
-      return { ...result.result, savePending: result.savePending === true };
+      return { ...result.result, taskId: progress.taskId };
     } catch (error) {
       track("size_tool_failed", { stage, duration_ms: Date.now() - started });
       throw error;

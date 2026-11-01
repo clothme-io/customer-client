@@ -4,9 +4,7 @@ import {
   GET as readSize,
 } from "../../app/api/webclient/size/route";
 import { mapGenerateResult } from "./sizeApiServer";
-import { customerFetch } from "../../app/(webclient)/lib/api";
-import { WEBCLIENT_MOCK } from "../../app/(webclient)/lib/config";
-import { getSession } from "../../app/(webclient)/lib/session";
+import { cookies } from "next/headers";
 
 // Reuse the shopping app's session-aware adapter to the existing mobile APIs.
 export async function submitSizeTool(request, generate = false) {
@@ -31,9 +29,16 @@ export async function submitSizeTool(request, generate = false) {
     const headers = new Headers(request.headers);
     headers.delete("content-type");
     headers.delete("content-length");
-    return await submitSize(
+    const response = await submitSize(
       new Request(request.url, { method: "POST", headers, body: form }),
     );
+    if (generate && response.ok) {
+      const body = await response.clone().json();
+      if (body.taskId) (await cookies()).set("cm_photo_preview_task", body.taskId, {
+        httpOnly: true, sameSite: "lax", path: "/api/size-tool", maxAge: 3600,
+      });
+    }
+    return response;
   } catch {
     return NextResponse.json(
       { message: "Could not read sizing photos. Please try again." },
@@ -56,28 +61,6 @@ export async function readSizeTool(request, generate = false) {
   if (!generate || !response.ok) return response;
   const body = await response.json();
   if (body.state === "complete") {
-    if (!WEBCLIENT_MOCK) {
-      const session = await getSession();
-      if (!session) return NextResponse.json({ message: "Your sizing session expired. Please sign in and try again." }, { status: 401 });
-      try {
-        if (!body.result?.sizing?.top || !body.result?.sizing?.bottom) {
-          return NextResponse.json({ message: "Sizing completed without the measurements needed to save your fit profile." }, { status: 502 });
-        }
-        await customerFetch(`/v1/customer/persons/${session.personId}/sizing-profile`, {
-          method: "PUT",
-          accessToken: session.accessToken,
-          personId: session.personId,
-          body: { sizing: body.result.sizing, measurements: body.result.measurements },
-        });
-      } catch (error) {
-        console.warn("size-tool: generated profile save failed", {
-          status: typeof error?.status === "number" ? error.status : undefined,
-          error: error?.name || "UnknownError",
-        });
-        // Preserve the completed calculation. A GET with the same task ID can retry the save.
-        body.savePending = true;
-      }
-    }
     body.result = mapGenerateResult(body.result);
   }
   return NextResponse.json(body, {

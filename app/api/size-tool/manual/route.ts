@@ -1,13 +1,9 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { customerFetch, CustomerApiError } from "../../../(webclient)/lib/api";
+import { CustomerApiError } from "../../../(webclient)/lib/api";
 import { WEBCLIENT_MOCK } from "../../../(webclient)/lib/config";
 import { sizeApiFetch } from "../../../(webclient)/lib/size-api";
 import { getSession } from "../../../(webclient)/lib/session";
-import {
-  applyManualMeasurementEdits,
-  validateManualAnswers,
-} from "../../../../src/lib/manualSizeProfile";
+import { validateManualAnswers } from "../../../../src/lib/manualSizeProfile";
 
 export const runtime = "nodejs";
 
@@ -60,7 +56,6 @@ export async function POST(request: Request) {
     let result;
     if (WEBCLIENT_MOCK) {
       result = mockProfile(answers);
-      (await cookies()).set("cm_mock_fit", session.personId, { httpOnly: true, sameSite: "lax", path: "/" });
     } else {
       const response = await sizeApiFetch("/manual/generate", session, {
         method: "POST",
@@ -73,35 +68,8 @@ export async function POST(request: Request) {
       result = body.result;
       if (!result?.sizing?.top || !result?.sizing?.bottom || !result?.measurements)
         throw new Error("Manual sizing returned an incomplete profile.");
-      await customerFetch(`/v1/customer/persons/${session.personId}/sizing-profile`, {
-        method: "PUT", accessToken: session.accessToken, personId: session.personId,
-        body: { sizing: result.sizing, measurements: result.measurements },
-      });
     }
     return NextResponse.json({ result }, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    return errorResponse(error);
-  }
-}
-
-export async function PATCH(request: Request) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ message: "Your sizing session expired. Please sign in." }, { status: 401 });
-  try {
-    const { edits } = await request.json();
-    if (WEBCLIENT_MOCK) return NextResponse.json({ ok: true });
-    const profile = await customerFetch<{ sizing: object; measurements: object }>(
-      `/v1/customer/persons/${session.personId}/sizing-profile`,
-      { accessToken: session.accessToken, personId: session.personId },
-    );
-    if (!profile?.sizing || !profile?.measurements)
-      return NextResponse.json({ message: "Saved measurements were not found." }, { status: 409 });
-    const updated = applyManualMeasurementEdits(profile, edits);
-    const saved = await customerFetch(`/v1/customer/persons/${session.personId}/sizing-profile`, {
-      method: "PUT", accessToken: session.accessToken, personId: session.personId,
-      body: { sizing: updated.sizing, measurements: updated.measurements },
-    });
-    return NextResponse.json({ ok: true, result: saved }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);
   }

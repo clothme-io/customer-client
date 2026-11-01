@@ -149,6 +149,7 @@ export async function POST(request: Request) {
       ...(generate ? ["frontTaskId", "sideTaskId"] : ["type"]),
     ])
       outbound.set(key, String(form.get(key) || ""));
+    if (generate) outbound.set("deferPersistence", "true");
     for (const key of images)
       outbound.set(key, form.get(key) as File, `${key}.jpg`);
     const response = await sizeApiFetch(path, session, {
@@ -183,15 +184,7 @@ export async function GET(request: Request) {
       operation === "generateResult"
         ? `/generate/v1/size/${id}`
         : `/validate-${type}-result/${id}`;
-    if (sizeMockEnabled()) {
-      if (operation === "generateResult")
-        (await cookies()).set("cm_mock_fit", session.personId, {
-          httpOnly: true,
-          sameSite: "lax",
-          path: "/",
-        });
-      return sizeResponse(mockSizeResponse(path, "GET"), 200, operation);
-    }
+    if (sizeMockEnabled()) return sizeResponse(mockSizeResponse(path, "GET"), 200, operation);
     const response = await sizeApiFetch(path, session);
     return sizeResponse(await response.json(), response.status, operation);
   } catch (err) {

@@ -107,7 +107,7 @@ export function ManualSizeForm({ onGenerated }) {
       <div className={`size-tool-manual-shape-layout${shape ? " has-preview" : ""}`}>
         <div className="size-tool-manual-shape-options">
           <Choices title="Body shape" options={MANUAL_SHAPES} value={shape} onChange={setShape} />
-          {gender === "female" ? <Choices title="Cup size (optional)" required={false} options={[["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["DD", "DD"], ["F", "F"]]} value={cup} onChange={setCup} /> : null}
+          {gender === "female" ? <Choices title="Chest Size (optional)" required={false} options={[["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["DD", "DD"], ["F", "F"]]} value={cup} onChange={setCup} /> : null}
           <Choices title="Belly" options={[[1, "Flat"], [2, "Average"], [3, "Prominent"]]} value={belly} onChange={setBelly} />
           <Choices title="Build" options={[[1, "Soft"], [2, "Average"], [3, "Athletic"]]} value={build} onChange={setBuild} />
           <Choices title="Leg length relative to your height" options={THREE_CHOICES} value={legs} onChange={setLegs} />

@@ -142,7 +142,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [progressStatus, setProgressStatus] = useState({ stage: "session", percent: null, message: "" });
   const [processingSeconds, setProcessingSeconds] = useState(0);
   const [loadingFactIndex, setLoadingFactIndex] = useState(0);
-  const [retryingSave, setRetryingSave] = useState(false);
+  const [savingSize, setSavingSize] = useState(false);
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [city, setCity] = useState("");
@@ -152,8 +152,6 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [accountStep, setAccountStep] = useState("result");
   const [sizeReady, setSizeReady] = useState(false);
-  const [sizeCheckRetry, setSizeCheckRetry] = useState(0);
-  const [sizeCheckTimedOut, setSizeCheckTimedOut] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle");
   const [saveError, setSaveError] = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
@@ -187,27 +185,6 @@ export function LandingSizeTool({ accountHandoff = false }) {
     },
     [sidePreview],
   );
-  useEffect(() => {
-    if (!accountHandoff || phase !== "result" || sizeReady) return;
-    let cancelled = false;
-    let timer;
-    let attempts = 0;
-    const check = async () => {
-      try {
-        const response = await fetch("/api/size-tool/saved", { cache: "no-store" });
-        if (!response.ok) throw new Error("Saved size check failed");
-        const data = await response.json();
-        if (!cancelled && data.ready) {
-          setSizeReady(true);
-          return;
-        }
-      } catch { /* Keep the result visible while the save is checked again. */ }
-      if (!cancelled && ++attempts < 30) timer = window.setTimeout(check, 2000);
-      else if (!cancelled) setSizeCheckTimedOut(true);
-    };
-    void check();
-    return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [accountHandoff, phase, sizeReady, sizeCheckRetry]);
   useEffect(() => {
     if (!accountHandoff || !modalOpen) return;
     const previous = document.body.style.overflow;
@@ -284,7 +261,6 @@ export function LandingSizeTool({ accountHandoff = false }) {
       setSideFile(null);
       setResult({ ...next, method: "photo" });
       setSizeReady(false);
-      setSizeCheckTimedOut(false);
       setAccountStep("result");
       setModalOpen(accountHandoff);
       setPhase("result");
@@ -296,19 +272,25 @@ export function LandingSizeTool({ accountHandoff = false }) {
     }
   }
 
-  async function retryProfileSave() {
-    if (!progress.current.taskId || retryingSave) return;
-    setRetryingSave(true);
+  async function saveSize() {
+    if (!result || savingSize || manualDirty) return;
+    setSavingSize(true);
     setSaveError("");
     try {
-      const next = await runSizeTool({ frontFile, sideFile, heightCm: heightValue, profile: sizeToolProfileFromAge(profile), progress: progress.current });
-      setResult((current) => ({ ...current, savePending: next.savePending }));
-      setSizeCheckTimedOut(false);
-      setSizeCheckRetry((value) => value + 1);
+      const response = await fetch("/api/size-tool/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result.method === "manual"
+          ? { method: "manual", result }
+          : { method: "photo", taskId: result.taskId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || "Could not save your size.");
+      setSizeReady(true);
+      setAccountStep("details");
     } catch (err) {
-      setSaveError(err?.message || "Could not confirm your saved size. Please try again.");
+      setSaveError(err?.message || "Could not save your size. Please try again.");
     } finally {
-      setRetryingSave(false);
+      setSavingSize(false);
     }
   }
 
@@ -317,7 +299,6 @@ export function LandingSizeTool({ accountHandoff = false }) {
     setManualDirty(false);
     setResult({ ...next, method: "manual" });
     setSizeReady(false);
-    setSizeCheckTimedOut(false);
     setAccountStep("result");
     setModalOpen(accountHandoff);
     setPhase("result");
@@ -581,7 +562,13 @@ export function LandingSizeTool({ accountHandoff = false }) {
               <p className="size-tool-result-label">Manual sizing result</p>
               <h3 className="size-tool-result-line" id={`${baseId}-result-title`}>Your estimated measurements</h3>
               <ManualSizeReview result={result} onDirtyChange={setManualDirty}
-                onSaved={(updated) => setResult((current) => ({ ...current, ...updated }))} />
+                onSaved={(updated) => {
+                  setResult((current) => ({ ...current, ...updated }));
+                  if (sizeReady) {
+                    setSizeReady(false);
+                    setAccountStep("result");
+                  }
+                }} />
             </> : <>
             <p className="size-tool-result-label">Your recommended size</p>
             <h3 className="size-tool-result-line" id={`${baseId}-result-title`}>{sizeTitle}</h3>
@@ -613,9 +600,9 @@ export function LandingSizeTool({ accountHandoff = false }) {
             <div className="size-tool-email">
               <h3>Keep this size in your ClothME account</h3>
               <p>Save it once, then log in to the app and choose the products you want to shop.</p>
-              {result.savePending ? <p role="status">Your size was calculated. We’re still saving your fit profile.</p> : null}
-              <button type="button" className="size-tool-cta" disabled={manualDirty} onClick={() => setAccountStep("details")}>Save this size →</button>
-              {manualDirty ? <p>Save your measurement changes before creating an account.</p> : null}
+              <button type="button" className="size-tool-cta" disabled={manualDirty || savingSize} onClick={() => void saveSize()}>{savingSize ? "Saving your size…" : "Save this size →"}</button>
+              {manualDirty ? <p>Apply your measurement changes before saving this size.</p> : null}
+              {saveError ? <p className="size-tool-error" role="alert">{saveError}</p> : null}
             </div>
           ) : phase === "result" && accountHandoff ? (
             <form className="size-tool-email" onSubmit={onSaveAccount}>
@@ -630,11 +617,8 @@ export function LandingSizeTool({ accountHandoff = false }) {
                 {!alreadyRegistered ? <label>Password<input name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} /></label> : null}
               </div>
               <button type="submit" className="size-tool-cta" disabled={!sizeReady || manualDirty || saveStatus === "submitting"}>
-                {saveStatus === "submitting" ? "Saving your size…" : sizeReady ? alreadyRegistered ? "Save my size →" : "Save my size and create account →" : "Saving your size profile…"}
+                {saveStatus === "submitting" ? "Creating your account…" : alreadyRegistered ? "Continue to the app →" : "Create account →"}
               </button>
-              {!sizeReady ? <p role="status">Your result is ready. We’re confirming it has been saved before you create an account.</p> : null}
-              {result.savePending && !sizeReady ? <button type="button" className="size-tool-ghost" disabled={retryingSave} onClick={retryProfileSave}>{retryingSave ? "Retrying save…" : "Retry saving my size"}</button> : null}
-              {sizeCheckTimedOut ? <button type="button" className="size-tool-ghost" onClick={() => { setSizeCheckTimedOut(false); setSizeCheckRetry((value) => value + 1); }}>Check saved size again</button> : null}
               {saveError ? <p className="size-tool-error" role="alert">{saveError}</p> : null}
               <p className="size-tool-privacy">
                 {result.method === "manual" ? "Your answers are used to estimate your sizing." : "Your photos are used for sizing."} Your account lets you use this size in the app.
