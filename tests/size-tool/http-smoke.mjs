@@ -6,6 +6,7 @@ const origin = "http://localhost:3112",
   upstream = "http://127.0.0.1:3113";
 const calls = [];
 const failures = [];
+let firstSaveFails = true;
 const stub = http.createServer(async (req, res) => {
   const send = (status, body) => {
     res.writeHead(status, { "Content-Type": "application/json" });
@@ -21,6 +22,15 @@ const stub = http.createServer(async (req, res) => {
         accessToken: "test-access",
         refreshToken: "test-refresh",
       });
+    if (url.pathname === "/v1/customer/persons/test-person/sizing-profile" && req.method === "PUT") {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const profile = JSON.parse(Buffer.concat(chunks).toString());
+      assert.equal(profile.sizing.top.chest_circumference.cm, 90);
+      assert.equal(profile.sizing.bottom.hip_circumference.cm, 100);
+      if (firstSaveFails) { firstSaveFails = false; return send(503, { message: "Service temporarily unavailable" }); }
+      return send(200, profile);
+    }
     assert.equal(req.headers.authorization, "Bearer test-access");
     assert.equal(req.headers["x-token"], "test-size-token");
     assert.equal(req.headers["x-account-id"], "test-account");
@@ -28,6 +38,18 @@ const stub = http.createServer(async (req, res) => {
     if (req.method === "POST") {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
+      if (url.pathname === "/manual/generate") {
+        const answers = JSON.parse(Buffer.concat(chunks).toString());
+        assert.equal(answers.cupsize, "C");
+        return send(200, { result: {
+          source: "questionnaire",
+          sizing: {
+            top: { chest_circumference: { cm: 90 } },
+            bottom: { hip_circumference: { cm: 100 } },
+          },
+          measurements: { "chest/bust": { cm: 90 } },
+        } });
+      }
       const request = new Request(new URL(req.url, upstream), {
         method: "POST",
         headers: req.headers,
@@ -50,6 +72,7 @@ const stub = http.createServer(async (req, res) => {
       assert.equal(url.pathname, "/generate/v1/size");
       assert.equal(form.get("frontTaskId"), "front-prediction");
       assert.equal(form.get("sideTaskId"), "side-prediction");
+      assert.equal(form.get("deferPersistence"), "true");
       assert.ok(form.get("frontImage").size > 0);
       assert.ok(form.get("sideImage").size > 0);
       return send(202, { status: 202, result: { task_id: "generation" } });
@@ -70,6 +93,7 @@ const stub = http.createServer(async (req, res) => {
         task_id: "generation",
         result: {
           measurements: { waist: { cm: 80 } },
+          sizing: { top: { chest_circumference: { cm: 90 } }, bottom: { hip_circumference: { cm: 100 } } },
           size_recommendations: {
             US_CAD: { tops: { regular: { size: "M" } } },
           },
@@ -122,7 +146,14 @@ try {
       headers: { ...options.headers, cookie },
     });
     const set = r.headers.getSetCookie();
-    if (set.length) cookie = set.map((s) => s.split(";")[0]).join("; ");
+    if (set.length) {
+      const jar = new Map(cookie.split("; ").filter(Boolean).map((part) => part.split(/=(.*)/s).slice(0, 2)));
+      for (const part of set.map((s) => s.split(";")[0])) {
+        const [name, value] = part.split(/=(.*)/s).slice(0, 2);
+        jar.set(name, value);
+      }
+      cookie = [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+    }
     const body = await r.json();
     assert.ok(r.ok, JSON.stringify(body));
     return body;
@@ -178,11 +209,44 @@ try {
     method: "POST",
     body: f,
   });
-  const result = await request(
+  const preview = await request(
     `/api/size-tool/generate?taskId=${queued.taskId}`,
   );
-  assert.equal(result.result.size, "M");
-  assert.equal(result.result.confidence, null);
+  assert.equal(preview.state, "complete");
+  assert.equal(preview.result.size, "M");
+  assert.equal(preview.result.confidence, null);
+  assert.equal(calls.filter((call) => call.includes("sizing-profile")).length, 0);
+  const wrongTask = await fetch(origin + "/api/size-tool/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", cookie },
+    body: JSON.stringify({ method: "photo", taskId: "another-task" }),
+  });
+  assert.equal(wrongTask.status, 409);
+  assert.equal(calls.filter((call) => call.includes("sizing-profile")).length, 0);
+  const save = () => request("/api/size-tool/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ method: "photo", taskId: queued.taskId }),
+  });
+  await assert.rejects(save);
+  assert.equal(calls.filter((call) => call.includes("sizing-profile")).length, 1);
+  const saved = await save();
+  assert.equal(saved.ok, true);
+  const manual = await request("/api/size-tool/manual", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      age: 30, height_cm: 170, mass_kg: 70, gender: "female",
+      body_shape: "hourglass", belly: 2, build: 2, legs: 2, arms: 2, cupsize: "C",
+    }),
+  });
+  assert.equal(manual.result.sizing.top.chest_circumference.cm, 90);
+  assert.equal(calls.filter((call) => call.includes("sizing-profile")).length, 2);
+  const manualSaved = await request("/api/size-tool/save", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ method: "manual", result: manual.result }),
+  });
+  assert.equal(manualSaved.ok, true);
+  assert.equal(calls.filter((call) => call.includes("sizing-profile")).length, 3);
   assert.deepEqual(failures, []);
   assert.deepEqual(calls, [
     "POST /v1/account/setup",
@@ -192,6 +256,12 @@ try {
     "GET /validate-side-result/validate-side",
     "POST /generate/v1/size",
     "GET /generate/v1/size/generation",
+    "GET /generate/v1/size/generation",
+    "PUT /v1/customer/persons/test-person/sizing-profile",
+    "GET /generate/v1/size/generation",
+    "PUT /v1/customer/persons/test-person/sizing-profile",
+    "POST /manual/generate",
+    "PUT /v1/customer/persons/test-person/sizing-profile",
   ]);
   console.log(
     "PASS: homepage HTTP routes use mobile paths, session headers, multipart photos, result envelopes and GET polling",

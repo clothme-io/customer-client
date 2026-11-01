@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { sessionFetch } from "../../../app/(webclient)/lib/session-client";
 import { applyManualMeasurementEdits, linkedManualFields, manualProfileRows } from "../../lib/manualSizeProfile";
 
 export function ManualSizeReview({ result, onDirtyChange, onSaved }) {
   const [drafts, setDrafts] = useState({});
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const sections = manualProfileRows(result);
@@ -28,8 +26,8 @@ export function ManualSizeReview({ result, onDirtyChange, onSaved }) {
     setMessage("");
   }
 
-  async function save() {
-    if (!dirty || saving) return;
+  function save() {
+    if (!dirty) return;
     setError("");
     const edits = Object.fromEntries(Object.entries(drafts).map(([key, value]) => [key, Number(value)]));
     let updated;
@@ -39,23 +37,10 @@ export function ManualSizeReview({ result, onDirtyChange, onSaved }) {
       setError(cause.message);
       return;
     }
-    setSaving(true);
-    try {
-      const response = await sessionFetch("/api/size-tool/manual", {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ edits }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.message || "Could not save your measurement changes.");
-      setDrafts({});
-      onSaved(body.result || updated);
-      onDirtyChange(false);
-      setMessage("Measurement changes saved.");
-    } catch (cause) {
-      setError(cause.message || "Could not save your measurement changes.");
-    } finally {
-      setSaving(false);
-    }
+    setDrafts({});
+    onSaved(updated);
+    onDirtyChange(false);
+    setMessage("Changes applied to this preview. Save your size when you’re ready.");
   }
 
   return (
@@ -75,10 +60,10 @@ export function ManualSizeReview({ result, onDirtyChange, onSaved }) {
       </section>)}
       {error ? <p className="size-tool-error" role="alert">{error}</p> : null}
       {message ? <p role="status">{message}</p> : null}
-      {dirty ? <button type="button" className="size-tool-ghost" disabled={saving} onClick={() => void save()}>
-        {saving ? "Saving changes…" : "Save measurement changes"}
+      {dirty ? <button type="button" className="size-tool-ghost" onClick={save}>
+        Apply measurement changes
       </button> : null}
-      {dirty ? <p className="size-tool-manual-limit">Save your changes before closing this result.</p> : null}
+      {dirty ? <p className="size-tool-manual-limit">Apply your changes before saving this size.</p> : null}
     </div>
   );
 }

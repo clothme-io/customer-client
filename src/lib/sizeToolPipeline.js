@@ -9,17 +9,31 @@ export function createSizeToolRunner({
   async function request(url, options) {
     const response = await fetcher(url, options);
     const body = await response.json().catch(() => ({}));
-    if (!response.ok)
-      throw new Error(
+    if (!response.ok) {
+      const error = new Error(
         body.message ||
           body.error?.message ||
           "Sizing failed. Please try again.",
       );
+      error.status = response.status;
+      throw error;
+    }
     return body;
   }
-  async function poll(url) {
+  async function poll(url, onUpdate = () => {}) {
+    let temporaryFailures = 0;
     for (let i = 0; i < maxPolls; i++) {
-      const body = await request(url);
+      let body;
+      try {
+        body = await request(url);
+        temporaryFailures = 0;
+      } catch (error) {
+        if (![429, 502, 503, 504].includes(error.status) || ++temporaryFailures >= 5) throw error;
+        onUpdate({ state: "processing", message: "Still working. Reconnecting to the sizing service…" });
+        await pause(2000);
+        continue;
+      }
+      onUpdate(body);
       if (body.state === "complete") return body;
       if (body.state !== "processing")
         throw new Error(body.message || "Sizing failed.");
@@ -35,10 +49,12 @@ export function createSizeToolRunner({
     heightCm,
     profile,
     progress = {},
+    onProgress = () => {},
   }) {
     const started = Date.now();
     let stage = "session";
     try {
+      onProgress({ stage: "session", message: "Preparing your fit profile…" });
       await request("/api/webclient/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +87,7 @@ export function createSizeToolRunner({
         }
         async function validate(pose, file) {
           stage = "validation";
+          onProgress({ stage: pose, message: `Checking your ${pose} photo…`, percent: 0 });
           track("size_validation_started", { pose });
           const body = form();
           body.set("pose", pose);
@@ -83,6 +100,7 @@ export function createSizeToolRunner({
             throw new Error("Photo validation did not return a task ID.");
           const result = await poll(
             `/api/size-tool/validate-result?pose=${pose}&taskId=${encodeURIComponent(queued.taskId)}`,
+            (update) => onProgress({ stage: pose, percent: update.percent, message: update.message }),
           );
           if (!result.predictionId)
             throw new Error("Photo validation did not return a prediction ID.");
@@ -97,6 +115,7 @@ export function createSizeToolRunner({
         body.set("frontImage", front, "front.jpg");
         body.set("sideImage", side, "side.jpg");
         stage = "generation";
+        onProgress({ stage: "generation", message: "Calculating your measurements…", percent: 0 });
         track("size_generation_started");
         progress.submitting = true;
         const response = await fetcher("/api/size-tool/generate", {
@@ -115,14 +134,16 @@ export function createSizeToolRunner({
         progress.taskId = queued.taskId;
         progress.submitting = false;
       }
+      onProgress({ stage: "generation", message: "Calculating your measurements…", percent: 0 });
       const result = await poll(
         `/api/size-tool/generate?taskId=${encodeURIComponent(progress.taskId)}`,
+        (update) => onProgress({ stage: "generation", percent: update.percent, message: update.message }),
       );
       track("size_tool_result", {
         duration_ms: Date.now() - started,
         eventId: `size:${progress.taskId}`,
       });
-      return result.result;
+      return { ...result.result, taskId: progress.taskId };
     } catch (error) {
       track("size_tool_failed", { stage, duration_ms: Date.now() - started });
       throw error;

@@ -96,6 +96,26 @@ test("retry after polling failure reuses generation job instead of posting photo
     1,
   );
 });
+test("a brief service outage during polling recovers without submitting photos again", async () => {
+  const calls = [];
+  let outage = true;
+  const run = createSizeToolRunner({
+    compress: async (file) => file,
+    pause: async () => {},
+    fetcher: async (url, options = {}) => {
+      calls.push(url);
+      if (url === "/api/webclient/session") return reply(options.method ? { ok: true } : { authenticated: true, accountId: "a", personId: "p" });
+      if (url === "/api/size-tool/validate") return reply({ taskId: options.body.get("pose") }, 202);
+      if (url.startsWith("/api/size-tool/validate-result")) return reply({ state: "complete", predictionId: url.includes("front") ? "front-id" : "side-id" });
+      if (url === "/api/size-tool/generate") return reply({ taskId: "job" }, 202);
+      if (outage) { outage = false; return reply({ message: "Service temporarily unavailable" }, 503); }
+      return reply({ state: "complete", result: { size: "M" } });
+    },
+  });
+  assert.equal((await run(input())).size, "M");
+  assert.equal(calls.filter((url) => url === "/api/size-tool/generate").length, 1);
+  assert.equal(calls.filter((url) => url.includes("generate?taskId=")).length, 2);
+});
 test("validation rejection stops generation and preserves caller-owned photos", async () => {
   const h = harness({ failValidate: true }),
     params = input();

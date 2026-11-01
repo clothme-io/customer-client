@@ -121,7 +121,7 @@ export function validateManualAnswers(input) {
   }
   if (input.gender === "female" && input.cupsize) {
     if (!["A", "B", "C", "D", "DD", "F"].includes(input.cupsize))
-      throw new Error("Choose a valid cup size.");
+      throw new Error("Choose a valid chest size.");
     answers.cupsize = input.cupsize;
   }
   return answers;
