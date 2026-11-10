@@ -138,7 +138,7 @@ export type ProductDetail = {
     country?: string;
     address?: string;
   }[];
-  color?: { id: string; name: string; hex: string }[];
+  color?: { id: string; name: string; hex: string; componentColors?: { name: string; hex: string }[] }[];
   sizes?: { id: string; size: string; quantity: number }[];
   variantLocations?: {
     id: string;
@@ -152,6 +152,7 @@ export type ProductDetail = {
       id: string;
       name: string;
       hex?: string;
+      componentColors?: { name: string; hex: string }[];
       images?: string[];
       sizes?: { variantId: string; sizeLabel: string; quantity: number }[];
     }[];

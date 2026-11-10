@@ -193,8 +193,10 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 key={color.id}
                 type="button"
                 className={`${styles.swatch} ${color.id === colorId ? styles.swatchActive : ""}`}
-                style={{ background: color.hex || "#ccc" }}
-                aria-label={color.name}
+                style={{ background: color.componentColors && color.componentColors.length > 1
+                  ? `linear-gradient(90deg, ${color.componentColors.map((part, index) => `${part.hex} ${index * 100 / color.componentColors!.length}% ${(index + 1) * 100 / color.componentColors!.length}%`).join(', ')})`
+                  : color.hex || "#ccc" }}
+                aria-label={color.componentColors?.length ? color.componentColors.map((part) => part.name).join(" and ") : color.name}
                 onClick={() => {
                   commerceEvent("product_selection_changed", {
                     stage: "color",
