@@ -6,6 +6,8 @@ import { lexicalToHtml } from "../../src/lib/lexicalToHtml.mjs";
 // ── Category auto-classification ─────────────────────────────────────────────
 
 const CATEGORY_KEYWORDS = {
+  "clothme-updates": ["clothme update", "clothme launch", "clothme release", "new clothme feature", "new on clothme", "product announcement"],
+  "ai-fashion-technology": ["artificial intelligence", "ai body measurement", "ai sizing", "body scanning", "virtual try-on", "virtual try on", "fashion technology", "personalized shopping", "shopping technology"],
   "fit-guide": [
     "fit guide", "sizing", "size chart", "how to measure", "body measurements",
     "true to size", "fits like", "fit tips", "size guide", "fitting"
@@ -22,21 +24,24 @@ const CATEGORY_KEYWORDS = {
   "location-guide": [
     "shopping in", "best stores in", "boutiques in", "where to shop",
     "local fashion", "city guide", "neighborhood guide", "store guide"
-  ]
+  ],
+  "brands-fabrics": ["fabric", "material", "cotton", "denim", "linen", "polyester", "textile", "brand comparison", "clothing brand", "garment quality"],
+  "shopping-guides": ["online shopping", "shopping guide", "buying guide", "return policy", "returns", "what to buy", "where to buy", "shopping tips", "product comparison"]
 };
 
-export function classifyCategory(title, textContent) {
-  const searchText = `${title} ${textContent}`.toLowerCase();
-  let bestCategory = null;
+export function classifyCategory(title, textContent = "", tags = []) {
+  const titleText = String(title || "").toLowerCase();
+  const tagText = (Array.isArray(tags) ? tags : []).filter(tag => typeof tag === "string").join(" ").toLowerCase();
+  const bodyText = String(textContent || "").toLowerCase();
+  let bestCategory = "shopping-guides";
   let bestScore = 0;
 
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     let score = 0;
     for (const keyword of keywords) {
-      if (searchText.includes(keyword)) {
-        score += 1;
-        if (title.toLowerCase().includes(keyword)) score += 2;
-      }
+      if (bodyText.includes(keyword)) score += 1;
+      if (tagText.includes(keyword)) score += 3;
+      if (titleText.includes(keyword)) score += 5;
     }
     if (score > bestScore) {
       bestScore = score;
@@ -44,7 +49,7 @@ export function classifyCategory(title, textContent) {
     }
   }
 
-  return bestScore >= 2 ? bestCategory : null;
+  return bestCategory;
 }
 
 // ── HTML utilities ────────────────────────────────────────────────────────────
@@ -389,6 +394,20 @@ export function validateNormalizedArticle(article) {
   if (!title) errors.push("Missing title");
   if (!slug) errors.push("Missing slug and title could not generate one");
   if (!content || !stripHtml(content)) errors.push("Missing article content");
+  if (content && stripHtml(content).split(/\s+/).filter(Boolean).length < 75) {
+    errors.push("Article content is shorter than 75 words");
+  }
+  const html = parseHtml(content || "");
+  for (const link of html.querySelectorAll("a[href]")) {
+    const href = (link.getAttribute("href") || "").trim();
+    if (!/^(https?:\/\/|\/[^/]|#)/i.test(href)) {
+      errors.push(`Unsafe article link: ${href.slice(0, 80)}`);
+      break;
+    }
+  }
+  if (article.featuredImageUrl && !/^https?:\/\//i.test(article.featuredImageUrl)) {
+    errors.push("Hero image URL must use HTTP or HTTPS");
+  }
 
   return { valid: errors.length === 0, errors, slug };
 }
@@ -403,18 +422,21 @@ function keywordRows(tags) {
 
 /**
  * Transforms a normalized article into a Payload CMS cms-posts create/update payload.
- * Webhook posts stay uncategorized drafts until a human reviews and publishes them.
+ * Assigns a category from article content and publishes qualifying webhook posts.
  */
 export function transformToPayloadPost(article) {
   const receivedAt = article.receivedAt || new Date().toISOString();
   const contentHtml = sanitizeWebhookHtml(article.content);
+  const publish = process.env.BLOG_AUTO_PUBLISH_ENABLED !== "false";
+  const status = publish ? "published" : "draft";
 
   return {
     title: decodeHtmlEntities(article.title.trim()),
     slug: normalizeSlug(article.slug, article.title),
     excerpt: decodeHtmlEntities(generateExcerpt(contentHtml, article.metaDescription)),
-    status: "draft",
-    _status: "draft",
+    status,
+    _status: status,
+    category: classifyCategory(article.title, `${article.metaDescription || ""} ${stripHtml(contentHtml)}`, article.tags),
     content: htmlToLexical(contentHtml),
     externalHeroImageUrl: article.featuredImageUrl || "",
     aiSummary: decodeHtmlEntities(article.metaDescription || ""),
@@ -429,7 +451,7 @@ export function transformToPayloadPost(article) {
       title: decodeHtmlEntities(article.metaTitle || article.title || ""),
       description: decodeHtmlEntities(article.metaDescription || ""),
       keywords: keywordRows(article.tags),
-      canonicalUrl: article.publicUrl || ""
+      canonicalUrl: new URL(`/blog/${normalizeSlug(article.slug, article.title)}`, process.env.NEXT_PUBLIC_SITE_URL || "https://clothme.io").toString()
     }
   };
 }

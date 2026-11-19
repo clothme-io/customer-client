@@ -8,6 +8,7 @@ import * as departmentsAndOperations from './20261030_000005_departments_and_ope
 import * as publishEngineeringRoles from './20261030_000006_publish_engineering_roles';
 import * as publishPeopleSpecialist from './20261030_000007_publish_people_specialist';
 import * as removeCareersHowToApply from './20261031_000001_remove_careers_how_to_apply';
+import * as blogCategories from './20261119_000001_blog_categories';
 import * as migration_20260626_183444 from './20260626_183444';
 import * as migration_20260702_000001_waitlist_entries from './20260702_000001_waitlist_entries';
 import * as migration_20260702_000002_drop_legacy_tables from './20260702_000002_drop_legacy_tables';
@@ -93,4 +94,5 @@ export const migrations = [
   { up: publishEngineeringRoles.up, down: publishEngineeringRoles.down, name: '20261030_000006_publish_engineering_roles' },
   { up: publishPeopleSpecialist.up, down: publishPeopleSpecialist.down, name: '20261030_000007_publish_people_specialist' },
   { up: removeCareersHowToApply.up, down: removeCareersHowToApply.down, name: '20261031_000001_remove_careers_how_to_apply' },
+  { up: blogCategories.up, down: blogCategories.down, name: '20261119_000001_blog_categories' },
 ];

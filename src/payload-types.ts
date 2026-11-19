@@ -342,7 +342,7 @@ export interface Location {
   createdAt: string;
 }
 /**
- * Webhook articles arrive here as drafts. Review the content, choose a category, then publish.
+ * Qualifying webhook articles publish automatically with a category. Articles that fail validation remain unpublished.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cms-posts".
@@ -353,12 +353,23 @@ export interface CmsPost {
   slug: string;
   excerpt: string;
   /**
-   * Mirrors Payload's publish state. Use the Publish button after choosing a category.
+   * Mirrors Payload's publish state.
    */
   status: 'draft' | 'published';
   publishedAt?: string | null;
   location?: (number | null) | Location;
-  category?: ('fit-guide' | 'family-shopping' | 'personal-style' | 'location-guide') | null;
+  category?:
+    | (
+        | 'fit-guide'
+        | 'family-shopping'
+        | 'personal-style'
+        | 'location-guide'
+        | 'shopping-guides'
+        | 'ai-fashion-technology'
+        | 'brands-fabrics'
+        | 'clothme-updates'
+      )
+    | null;
   heroImage?: (number | null) | Media;
   /**
    * Image URL received from an auto-blogging webhook. Upload a CMS hero image to replace it.

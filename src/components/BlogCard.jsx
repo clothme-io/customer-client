@@ -2,7 +2,11 @@ const CATEGORY_LABELS = {
   "fit-guide": "Fit Guide",
   "family-shopping": "Family Shopping",
   "personal-style": "Personal Style",
-  "location-guide": "Location Guide"
+  "location-guide": "Location Guide",
+  "shopping-guides": "Shopping Guides",
+  "ai-fashion-technology": "AI & Fashion Technology",
+  "brands-fabrics": "Brands & Fabrics",
+  "clothme-updates": "ClothME Updates"
 };
 
 export function categoryLabel(category) {

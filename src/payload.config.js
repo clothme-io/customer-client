@@ -499,7 +499,7 @@ export default buildConfig({
       },
       admin: {
         defaultColumns: ["title", "source.provider", "status", "category", "createdAt", "updatedAt"],
-        description: "Webhook articles arrive here as drafts. Review the content, choose a category, then publish.",
+        description: "Qualifying webhook articles publish automatically with a category. Articles that fail validation remain unpublished.",
         enableListViewSelectAPI: true,
         group: "Content",
         useAsTitle: "title"
@@ -560,7 +560,7 @@ export default buildConfig({
           type: "select",
           defaultValue: "draft",
           admin: {
-            description: "Mirrors Payload's publish state. Use the Publish button after choosing a category.",
+            description: "Mirrors Payload's publish state.",
             readOnly: true
           },
           options: [
@@ -593,7 +593,11 @@ export default buildConfig({
             { label: "Fit Guide", value: "fit-guide" },
             { label: "Family Shopping", value: "family-shopping" },
             { label: "Personal Style", value: "personal-style" },
-            { label: "Location Guide", value: "location-guide" }
+            { label: "Location Guide", value: "location-guide" },
+            { label: "Shopping Guides", value: "shopping-guides" },
+            { label: "AI & Fashion Technology", value: "ai-fashion-technology" },
+            { label: "Brands & Fabrics", value: "brands-fabrics" },
+            { label: "ClothME Updates", value: "clothme-updates" }
           ]
         },
         {

@@ -200,7 +200,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npm run test:analytics && npm run test:webclient && npm run test:size-tool && npm run test:email && node --test tests/deployment/*.test.mjs
+      - run: npm run test:analytics && npm run test:webclient && npm run test:size-tool && npm run test:email && npm run test:blog && node --test tests/deployment/*.test.mjs
       - run: npm run typecheck
 
   build:

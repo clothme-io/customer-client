@@ -132,12 +132,14 @@ export async function POST(request) {
           continue;
         }
 
-        await payload.update({
+        const updated = await payload.update({
           collection: "cms-posts",
           id: existing.docs[0].id,
           data: postData,
+          draft: false,
           overrideAccess: true,
         });
+        if (updated._status !== postData._status) throw new Error("Payload did not save the requested publish status");
         await recordWebhookEvent(payload, {
           provider: "outrank",
           eventType: event_type,
@@ -145,17 +147,20 @@ export async function POST(request) {
           slug,
           post: existing.docs[0].id,
           status: "updated",
+          message: `Category: ${updated.category}; ${updated._status}`,
           payload: raw,
           normalized: article
         });
-        results.push({ slug, status: "updated", id: existing.docs[0].id });
+        results.push({ slug, status: "updated", id: updated.id, category: updated.category, published: updated._status === "published" });
         console.log(`[webhooks/outrank] Updated: ${slug}`);
       } else {
         const created = await payload.create({
           collection: "cms-posts",
           data: postData,
+          draft: false,
           overrideAccess: true,
         });
+        if (created._status !== postData._status) throw new Error("Payload did not save the requested publish status");
         await recordWebhookEvent(payload, {
           provider: "outrank",
           eventType: event_type,
@@ -163,10 +168,11 @@ export async function POST(request) {
           slug,
           post: created.id,
           status: "created",
+          message: `Category: ${created.category}; ${created._status}`,
           payload: raw,
           normalized: article
         });
-        results.push({ slug, status: "created", id: created.id });
+        results.push({ slug, status: "created", id: created.id, category: created.category, published: created._status === "published" });
         console.log(`[webhooks/outrank] Created: ${slug}`);
       }
     } catch (error) {

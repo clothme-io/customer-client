@@ -19,7 +19,8 @@
     "test:size-tool": "node --test tests/size-tool/*.test.mjs",
     "test:careers": "node --test tests/careers/*.test.mjs",
     "test:size-tool:http": "node tests/size-tool/http-smoke.mjs",
-    "test:analytics": "node --test tests/analytics/*.test.mjs"
+    "test:analytics": "node --test tests/analytics/*.test.mjs",
+    "test:blog": "node --test tests/blog/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",

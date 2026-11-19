@@ -46,6 +46,12 @@ The Payload CMS editor lives at:
 
 Use it for CMS workflows such as media, SEO fields, drafts, scheduled publishing, and location-aware content. `/admin` redirects here.
 
+### Automatic blog publishing
+
+Outrank and BabyLoveGrowth webhooks create or update blog posts in Payload. Accepted articles are categorized from their title, description, tags, and body, then published immediately. If no specific category matches, the post uses **Shopping Guides**. Invalid articles are rejected and logged in the `webhook-events` collection; already published posts are not overwritten by later webhook deliveries.
+
+Set `BLOG_AUTO_PUBLISH_ENABLED=false` to save accepted incoming articles as drafts instead. The default is automatic publishing. Apply Payload migrations before deploying the new category options so the PostgreSQL enums accept them.
+
 Useful commands:
 
 ```bash

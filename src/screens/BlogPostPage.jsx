@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SEO } from "../components/SEO";
+import { categoryLabel } from "../components/BlogCard";
 import { siteConfig } from "../data/site";
 import { apiFetch } from "../lib/api";
 import { AiBodyMeasurementArticle } from "./AiBodyMeasurementArticle";
@@ -128,7 +129,7 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
           <AiBodyMeasurementArticle />
         ) : (
           <article className="article-page">
-            <p className="eyebrow">{post.category}</p>
+            <p className="eyebrow">{categoryLabel(post.category)}</p>
             <h1>{post.title}</h1>
             <p className="article-lede">{post.excerpt}</p>
             <div className="article-meta">
@@ -136,7 +137,7 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
               <span>{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
               <span>{post.readingTime}</span>
             </div>
-            <img className="article-image" src={post.image} alt={post.imageAlt} />
+            {post.image ? <img className="article-image" src={post.image} alt={post.imageAlt} /> : null}
             <aside className="ai-summary" aria-label="AI search summary">
               <h2>Quick answer</h2>
               <p>{post.aiSummary}</p>
@@ -174,7 +175,7 @@ export function BlogPostPage({ slug, previewToken = "", initialPost = null }) {
           <div className="post-grid">
             {relatedPosts.map((item) => (
               <article key={item.slug}>
-                <p>{item.category}</p>
+                <p>{categoryLabel(item.category)}</p>
                 <h3>{item.title}</h3>
                 <a href={`/blog/${item.slug}`}>Read article</a>
               </article>
