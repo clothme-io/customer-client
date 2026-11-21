@@ -28,7 +28,6 @@ on:
           - deploy
           - rollback
           - rollback-fast
-          - promote-sizing-fix
         default: deploy
       promote_to:
         description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
@@ -1247,46 +1246,3 @@ jobs:
       - name: Confirm rollout healthy after fast rollback
         run: |
           kubectl argo rollouts status ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} --timeout 10m
-
-  promote-isolated-sizing-fix:
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'promote-sizing-fix'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: azure/setup-kubectl@v4
-      - name: Install rollout client
-        run: |
-          curl -fsSL https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64 -o kubectl-argo-rollouts
-          chmod +x kubectl-argo-rollouts
-          sudo mv kubectl-argo-rollouts /usr/local/bin/
-      - name: Promote only the verified sizing fix images
-        env:
-          PROD_CONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
-        run: |
-          mkdir -p "$HOME/.kube"
-          printf '%s' "$PROD_CONFIG" > "$HOME/.kube/config"
-          chmod 600 "$HOME/.kube/config"
-          for pair in size-api:sha-a90ae31 customer-client-web:sha-0eb34f5; do
-            app=${pair%%:*}
-            tag=${pair#*:}
-            ready=false
-            for i in $(seq 1 90); do
-              IMAGE=$(kubectl -n apps get rollout "$app" -o jsonpath='{.spec.template.spec.containers[0].image}')
-              PAUSE=$(kubectl -n apps get rollout "$app" -o jsonpath='{.status.pauseConditions[*].reason}')
-              PHASE=$(kubectl -n apps get rollout "$app" -o jsonpath='{.status.phase}')
-              if [[ "$IMAGE" == *":$tag" && "$PHASE" == "Healthy" ]]; then ready=true; break; fi
-              if [[ "$IMAGE" == *":$tag" && "$PAUSE" == *"BlueGreenPause"* ]]; then
-                echo "Promoting $app with $IMAGE after preview checks"
-                kubectl argo rollouts promote "$app" -n apps
-                ready=true
-                break
-              fi
-              echo "Waiting for $app target preview: $PHASE"
-              sleep 10
-            done
-            test "$ready" = true
-            kubectl argo rollouts status "$app" -n apps --timeout 8m
-            kubectl -n apps get rollout "$app" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}{.status.phase}{"\n"}'
-          done
-          kubectl -n apps rollout status deployment/celery-worker --timeout=180s
-          kubectl -n apps get deployment celery-worker -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}{.spec.template.spec.containers[0].env[?(@.name=="SIZE_GPU_WORKER_URL")].value}{"\n"}'
