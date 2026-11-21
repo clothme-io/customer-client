@@ -28,6 +28,7 @@ on:
           - deploy
           - rollback
           - rollback-fast
+          - build-height
         default: deploy
       promote_to:
         description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
@@ -175,7 +176,7 @@ jobs:
           exit 1
 
   test:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.action == 'deploy' || inputs.action == 'build-height'))
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -195,6 +196,8 @@ jobs:
       EMAIL_TEST_DATABASE_URL: postgresql://email_test:email_test@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: b50357b
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -206,20 +209,22 @@ jobs:
   build:
     needs: test
     if: |
-      (github.event_name == 'push' || inputs.action == 'deploy') &&
+      (github.event_name == 'push' || inputs.action == 'deploy' || inputs.action == 'build-height') &&
       (github.event_name == 'push' || inputs.image_tag == '')
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.sha_tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: b50357b
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: sha_tag
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=sha-b50357b" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
@@ -229,7 +234,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SITE_URL=https://clothme.io
             NEXT_PUBLIC_APP_ENV=production
-            NEXT_PUBLIC_RELEASE=${{ github.sha }}
+            NEXT_PUBLIC_RELEASE=b50357b
             NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS=clothme.io,www.clothme.io
           push: true
           tags: ${{ env.IMAGE_REPOSITORY }}:${{ steps.sha_tag.outputs.tag }}
