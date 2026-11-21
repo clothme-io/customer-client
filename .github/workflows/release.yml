@@ -1267,5 +1267,6 @@ jobs:
           POD=$(kubectl -n apps get pods -l app=celery-worker --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
           kubectl -n apps exec "$POD" -- python -c 'import os,requests; from providers.gpu_worker import gpu_worker_url,gpu_service_mode,gpu_worker_token; from urllib.parse import urlsplit; u=gpu_worker_url(); p=urlsplit(u); print("STAGING",gpu_service_mode(),p.hostname,p.path,"token_configured",bool(gpu_worker_token())); r=requests.get(u.rstrip("/")+"/health",headers={"Authorization":"Bearer "+gpu_worker_token()},timeout=20); print("HEALTH",r.status_code,"model_ready" if r.ok else "unavailable",r.headers.get("content-type"))'
           printf '%s' "$PROD_CONFIG" > "$HOME/.kube/config"
+          kubectl get applications.argoproj.io -A -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status,REVISION:.status.sync.revision || true
           POD=$(kubectl -n apps get pods -l app=celery-worker --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
           kubectl -n apps exec "$POD" -- python -c 'from providers.gpu_worker import gpu_worker_url,gpu_service_mode; from urllib.parse import urlsplit; p=urlsplit(gpu_worker_url()); print("PRODUCTION READ ONLY",gpu_service_mode(),p.hostname,p.path)'
