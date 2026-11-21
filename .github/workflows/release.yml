@@ -28,7 +28,6 @@ on:
           - deploy
           - rollback
           - rollback-fast
-          - diagnose
         default: deploy
       promote_to:
         description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
@@ -1247,27 +1246,3 @@ jobs:
       - name: Confirm rollout healthy after fast rollback
         run: |
           kubectl argo rollouts status ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} --timeout 10m
-
-  diagnose-staging-sizing:
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'diagnose'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: azure/setup-kubectl@v4
-      - name: Read staging sizing routing
-        env:
-          DEV_KUBECONFIG: ${{ secrets.CLOTHME_DEV_KUBECONFIG }}
-        run: |
-          mkdir -p "$HOME/.kube"
-          printf '%s' "$DEV_KUBECONFIG" > "$HOME/.kube/config"
-          chmod 600 "$HOME/.kube/config"
-          kubectl -n apps get pods -l app=size-api -o wide
-          kubectl -n apps get pods -l app=celery-worker -o wide
-          kubectl -n apps get rollout size-api -o jsonpath='{.spec.template.spec.containers[*].image}{"\n"}{.status.phase}{"\n"}'
-          kubectl -n apps get svc size-api -o wide
-          kubectl -n apps get endpoints size-api
-          kubectl -n apps get ingress size-api -o jsonpath='{.spec.rules}{"\n"}'
-          POD=$(kubectl -n apps get pods -l app=customer-client-web --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
-          kubectl -n apps exec "$POD" -- node -e 'const raw=process.env.SIZE_API_URL; const u=new URL(raw); console.log("SIZE_API target",u.origin+u.pathname); (async()=>{for(const p of ["/health","/validate-front"]){const r=await fetch(raw.replace(/\/$/,"")+p,{method:p.includes("validate")?"POST":"GET",signal:AbortSignal.timeout(15000)}); console.log(p,r.status,r.headers.get("content-type"),(await r.text()).slice(0,200));}})().catch(e=>{console.log(e.message);process.exitCode=1})'
-      - name: Read test generation failure
-        run: |
-          kubectl -n apps logs -l app=celery-worker --all-containers=true --since=10m --tail=500 --prefix | python3 -c 'import sys,re; lines=[line for line in sys.stdin if "3af7085d-ad08-4501-aaf6-9e59fc05c60c" in line or "[generate_size] ERROR" in line or any(x in line for x in ["ConnectionError:","HTTPError:","TimeoutError:","RuntimeError:","ValueError:"])]; print("".join(re.sub(r"https?://[^\s\"\x27]+", "<service-url>", line)[:1200] for line in lines[-30:]))'
