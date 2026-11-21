@@ -28,6 +28,7 @@ on:
           - deploy
           - rollback
           - rollback-fast
+          - diagnose
         default: deploy
       promote_to:
         description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
@@ -1246,3 +1247,19 @@ jobs:
       - name: Confirm rollout healthy after fast rollback
         run: |
           kubectl argo rollouts status ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} --timeout 10m
+
+  diagnose-production-gpu:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'diagnose'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/setup-kubectl@v4
+      - name: Read production GPU health
+        env:
+          PROD_CONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$PROD_CONFIG" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+          kubectl -n apps get pods -l app=celery-worker
+          POD=$(kubectl -n apps get pods -l app=celery-worker --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+          kubectl -n apps exec "$POD" -- python -c 'import requests; from providers.gpu_worker import gpu_worker_url,gpu_service_mode,gpu_worker_token; from urllib.parse import urlsplit; u=gpu_worker_url(); print("PRODUCTION",gpu_service_mode(),urlsplit(u).hostname,"token_configured",bool(gpu_worker_token())); r=requests.get(u.rstrip("/")+"/health",headers={"Authorization":"Bearer "+gpu_worker_token()},timeout=30); print("HEALTH",r.status_code,r.headers.get("content-type")); print("RETIRED_ENDPOINT_PAGE", "Nothing running here" in r.text)'
