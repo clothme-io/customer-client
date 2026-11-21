@@ -28,7 +28,6 @@ on:
           - deploy
           - rollback
           - rollback-fast
-          - diagnose
         default: deploy
       promote_to:
         description: "dev = deploy+soak issue (leave open, approve later); prod = open/approve issue only; push to main always does dev then opens soak issue"
@@ -1247,26 +1246,3 @@ jobs:
       - name: Confirm rollout healthy after fast rollback
         run: |
           kubectl argo rollouts status ${{ env.ROLLOUT_NAME }} -n ${{ env.ROLLOUT_NAMESPACE }} --timeout 10m
-
-  diagnose-production-gpu:
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'diagnose'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: azure/setup-kubectl@v4
-      - name: Verify production endpoint rollout
-        env:
-          PROD_CONFIG: ${{ secrets.CLOTHME_PROD_KUBECONFIG }}
-        run: |
-          mkdir -p "$HOME/.kube"
-          printf '%s' "$PROD_CONFIG" > "$HOME/.kube/config"
-          chmod 600 "$HOME/.kube/config"
-          for i in $(seq 1 30); do
-            URL=$(kubectl -n apps get deployment celery-worker -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="SIZE_GPU_WORKER_URL")].value}')
-            if [ "$URL" = "https://aff1ij59-8000.thundercompute.net" ]; then break; fi
-            sleep 10
-          done
-          test "$URL" = "https://aff1ij59-8000.thundercompute.net"
-          kubectl -n apps rollout status deployment/celery-worker --timeout=180s
-          kubectl -n apps get deployment celery-worker -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-          POD=$(kubectl -n apps get pods -l app=celery-worker --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
-          kubectl -n apps exec "$POD" -- python -c 'import requests; from providers.gpu_worker import gpu_worker_url,gpu_worker_token; from urllib.parse import urlsplit; u=gpu_worker_url(); print("PRODUCTION",urlsplit(u).hostname,"token_configured",bool(gpu_worker_token())); r=requests.get(u.rstrip("/")+"/health",headers={"Authorization":"Bearer "+gpu_worker_token()},timeout=30); print("HEALTH",r.status_code,r.headers.get("content-type")); r.raise_for_status()'
