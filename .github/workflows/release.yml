@@ -198,7 +198,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: b50357b
+          ref: b50357be482342e701316ccab398c10ccbf9ef74
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -218,7 +218,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: b50357b
+          ref: b50357be482342e701316ccab398c10ccbf9ef74
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -235,7 +235,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SITE_URL=https://clothme.io
             NEXT_PUBLIC_APP_ENV=production
-            NEXT_PUBLIC_RELEASE=b50357b
+            NEXT_PUBLIC_RELEASE=b50357be482342e701316ccab398c10ccbf9ef74
             NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS=clothme.io,www.clothme.io
           push: true
           tags: ${{ env.IMAGE_REPOSITORY }}:${{ steps.sha_tag.outputs.tag }}
