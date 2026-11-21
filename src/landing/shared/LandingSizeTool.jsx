@@ -110,6 +110,7 @@ export function LandingSizeTool({ accountHandoff = false }) {
   const [frontPreview, setFrontPreview] = useState(null);
   const [sidePreview, setSidePreview] = useState(null);
   const [heightUnit, setHeightUnit] = useState("cm");
+  const [heightSourceUnit, setHeightSourceUnit] = useState("cm");
   const [heightCm, setHeightCm] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [result, setResult] = useState(null);
@@ -197,7 +198,19 @@ export function LandingSizeTool({ accountHandoff = false }) {
     }
   }
 
-  const heightValue = parseHeightCm(heightUnit, heightCm, heightIn);
+  function updateHeight(unit, value) {
+    progress.current = {};
+    setHeightSourceUnit(unit);
+    const number = Number(value);
+    const converted = value !== "" && Number.isFinite(number)
+      ? String(Math.round((unit === "cm" ? number / 2.54 : number * 2.54) * 100) / 100)
+      : "";
+    setHeightCm(unit === "cm" ? value : converted);
+    setHeightIn(unit === "in" ? value : converted);
+  }
+
+  // Calculate from the last edited value, not its rounded display conversion.
+  const heightValue = parseHeightCm(heightSourceUnit, heightCm, heightIn);
   const canSubmit =
     Boolean(
       frontFile &&
@@ -432,13 +445,10 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     inputMode="decimal"
                     min={90}
                     max={250}
-                    step={1}
+                    step="any"
                     placeholder="e.g. 170"
                     value={heightCm}
-                    onChange={(e) => {
-                      progress.current = {};
-                      setHeightCm(e.target.value);
-                    }}
+                    onChange={(e) => updateHeight("cm", e.target.value)}
                     required
                   />
                 ) : (
@@ -446,16 +456,13 @@ export function LandingSizeTool({ accountHandoff = false }) {
                     id={`${baseId}-height`}
                     type="number"
                     inputMode="decimal"
-                    min={90 / 2.54}
-                    max={250 / 2.54}
+                    min={Number((90 / 2.54).toFixed(2))}
+                    max={Number((250 / 2.54).toFixed(2))}
                     step="any"
                     placeholder="e.g. 67"
                     aria-label="Height in inches"
                     value={heightIn}
-                    onChange={(e) => {
-                      progress.current = {};
-                      setHeightIn(e.target.value);
-                    }}
+                    onChange={(e) => updateHeight("in", e.target.value)}
                     required
                   />
                 )}
