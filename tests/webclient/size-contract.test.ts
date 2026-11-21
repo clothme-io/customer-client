@@ -92,6 +92,14 @@ test("return paths cannot escape the app", () => {
     "/product/123?utm_source=ad",
   );
 });
+test("photo-resolution rejection preserves the existing validation error envelope", () => {
+  const message = "This photo is too small. Please upload the original photo with both sides at least 720 pixels.";
+  const reply = normalizeSizeReply({ status: 400, error: { message }, result: null }, 400, "validateResult");
+  assert.equal(reply.status, 400);
+  assert.equal(reply.state, "failed");
+  assert.equal(reply.message, message);
+  assert.equal(reply.predictionId, undefined);
+});
 test("readiness requires a saved primary size, not mock ok or old measurements", () => {
   assert.equal(hasSavedSizes({ ok: true }), false);
   assert.equal(
